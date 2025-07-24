@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await logout();
         setLoading(false);
         return;
-      }
+      };
 
       try {
         const res = await fetch(`${API_URL}/auth/verify`, {
