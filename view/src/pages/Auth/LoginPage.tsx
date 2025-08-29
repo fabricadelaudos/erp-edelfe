@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 import { toast } from "react-hot-toast";
+import { Input } from "../../components/Inputs";
+
+import logo from "../../media/logo.png";
+import ilustracao from "../../media/ilustracao.png";
 
 export default function LoginPage() {
 
@@ -24,38 +28,47 @@ export default function LoginPage() {
       }
     );
     navigate("/");
-
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleLogin} className="bg-white p-6 rounded shadow w-96 space-y-4">
-        <h1 className="text-2xl font-bold text-center text-gray-800">Login</h1>
+    <div className="min-h-screen flex">
+      {/* Lado esquerdo: formulário */}
+      <div className="w-full flex flex-col justify-center items-center px-8 bg-gray-100">
+        <div className="w-full max-w-lg">
+          <div className="flex items-center justify-center gap-2">
+            <img src={logo} alt="Logo" className="w-8 h-8" />
+          </div>
 
-        <input
-          type="email"
-          className="w-full border rounded px-4 py-2"
-          placeholder="E-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          className="w-full border rounded px-4 py-2"
-          placeholder="Senha"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          required
-        />
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 text-center">Bem vindo de volta</h1>
 
-        <button
-          type="submit"
-          className="w-full bg-sky-600 text-white py-2 rounded hover:bg-sky-700"
-        >
-          Entrar
-        </button>
-      </form>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              label="E-mail"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="stanley@gmail.com"
+            />
+
+            <Input
+              label="Senha"
+              name="senha"
+              type="password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="********"
+            />
+
+            <button
+              type="submit"
+              className="w-full bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 rounded transition"
+            >
+              Entrar
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

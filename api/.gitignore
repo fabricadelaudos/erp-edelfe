@@ -12,4 +12,4 @@ prisma/dev.db
 prisma/dev.db-journal
 
 # Ignorar Json de configuração do firebase
-src/infra/firebase/ava-cursos-fdbbb-firebase-adminsdk-fbsvc-e9b86042ff.json
+src/infra/firebase/edelfe-ea70f-firebase-adminsdk-fbsvc-cfaa9e4e7b.json

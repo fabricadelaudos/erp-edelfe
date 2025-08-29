@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   Home,
   Boxes,
@@ -7,11 +7,14 @@ import {
   ChevronLast,
   Settings,
   LogOut,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import ToolTip from "./Auxiliares/ToolTip";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import logo from "../media/logo.png";
 
 // Props
 interface SidebarProps {
@@ -22,25 +25,30 @@ interface SidebarProps {
 interface SidebarItemProps {
   icon: React.ReactNode;
   text: string;
-  path: string;
+  path?: string;
+  children?: { label: string; path: string }[];
+  isOpenSubmenu: boolean;
+  onToggle: () => void;
 }
 
 const SidebarContext = createContext<{ isOpen: boolean } | undefined>(undefined);
 
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const { user, logout } = useAuth();
-  console.log(user);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  if (location.pathname === "/login") {
-    return null;
-  }
+  const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
 
   const menuItems = [
-    { label: "Home", icon: <Home />, path: "/", permissoes: [] },
-    { label: "Empresa", icon: <Boxes />, path: "/empresa", permissoes: ["gerenciar_usuarios"] },
-    { label: "Cursos", icon: <HeartHandshake />, path: "/cursos", permissoes: ["visualizar_cursos"] },
+    { label: "Home", icon: <Home />, path: "/" },
+    { label: "Empresa", icon: <Boxes />, path: "/cadastro/empresa" },
+    {
+      label: "Cursos", icon: <HeartHandshake />,
+      children: [
+        { label: "Gerenciar Cursos", path: "/cursos/gerenciar", permissoes: ['criar_cursos'] },
+        { label: "Meus Cursos", path: "/cursos/meuscursos", permissoes: ['ver_cursos'] },
+      ],
+    },
   ];
 
   return (
@@ -48,7 +56,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
       <nav className="h-full flex flex-col bg-white border-r border-gray-300 shadow-sm">
         {/* Header */}
         <div className={`flex items-center h-16 px-4 border-b border-gray-300 ${isOpen ? "justify-between" : "justify-center"}`}>
-          {isOpen && <span className="text-lg font-bold text-center w-full text-gray-700">AVA</span>}
+          {isOpen && (
+            <button className="mx-auto" onClick={() => navigate("/")}>
+              <img src={logo} alt="logo" className="w-10 h-10" />
+            </button>
+          )}
           <ToolTip text={isOpen ? "Minimizar" : "Expandir"} position="right" key={isOpen ? "open" : "closed"}>
             <button
               onClick={toggleSidebar}
@@ -62,13 +74,19 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         <SidebarContext.Provider value={{ isOpen }}>
           <ul className="flex-1 space-y-1 px-2 py-4">
             {menuItems
-              .filter((item) =>
-                item.permissoes.length === 0 ||
-                (user?.permissoes && item.permissoes.some(p => user.permissoes!.includes(p)))
-              )
-              .map((item) => (
-                <SidebarItem key={item.label} icon={item.icon} text={item.label} path={item.path} />
-              ))}
+              .map(item => {
+                return (
+                  <SidebarItem
+                    key={item.label}
+                    icon={item.icon}
+                    text={item.label}
+                    path={item.path}
+                    children={item.children}
+                    isOpenSubmenu={openMenuKey === item.label}
+                    onToggle={() => setOpenMenuKey(openMenuKey === item.label ? null : item.label)}
+                  />
+                );
+              })}
 
           </ul>
         </SidebarContext.Provider>
@@ -117,46 +135,85 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   );
 }
 
-function SidebarItem({ icon, text, path }: SidebarItemProps) {
-  const context = useContext(SidebarContext);
-  if (!context) throw new Error("SidebarItem must be used within SidebarContext");
-  const { isOpen } = context;
+function SidebarItem({ icon, text, path, children, isOpenSubmenu, onToggle }: SidebarItemProps) {
+  const { isOpen } = useContext(SidebarContext)!;
   const location = useLocation();
-  const isActive = location.pathname === path;
+  const navigate = useNavigate();
+  const [openPopover, setOpenPopover] = useState(false);
+  const isActive = (() => {
+    if (!path) return false;
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  })();
+
+  const renderSubmenu = () => (
+    isOpenSubmenu && (
+      <div className="w-full rounded px-5 py-1 select-none">
+        <div className="space-y-1 border-l-1 border-orange-400 border-primary mt-1">
+          {children?.map((child) => (
+            <Link key={child.label} to={child.path} onClick={() => onToggle()}>
+              <div className={`ml-4 text-sm px-2 py-1 rounded hover:bg-gray-100 ${location.pathname === child.path ? "text-orange-700 font-semibold" : "text-gray-600"}`}>
+                {child.label}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )
+  );
+
+  const renderPopover = () => (
+    <>
+      <div className="fixed inset-0 left-20 backdrop-blur-xs z-40" onClick={() => setOpenPopover(false)} />
+      <div className="absolute left-full top-0 ml-3 bg-white border border-gray-300 shadow-md rounded p-2 z-50 min-w-[150px]">
+        {children?.map((child) => (
+          <Link key={child.label} to={child.path} onClick={() => setOpenPopover(false)}>
+            <div className={`text-sm px-2 py-1 rounded hover:bg-gray-100 whitespace-nowrap ${location.pathname === child.path ? "text-sky-700 font-semibold" : "text-gray-600"}`}>
+              {child.label}
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
+  );
 
   return (
-    <li>
-      <Link to={path}>
+    <li className="relative">
+      {children ? (
         <div
-          className={`
-            flex p-2 cursor-pointer rounded transition-all
-            ${isOpen ? "items-center" : "flex-col items-center justify-center"}
-            ${isActive
-              ? "border-l-4 border-sky-700 text-gray-600 hover:text-sky-700"
-              : "text-gray-600 hover:text-gray-800"
+          onClick={() => {
+            if (isOpen) {
+              onToggle();
+              if (path) navigate(path);
+            } else {
+              setOpenPopover(!openPopover);
             }
-          `}
+          }}
+          className={`flex p-2 cursor-pointer rounded transition-all ${isOpen ? "items-center" : "flex-col items-center justify-center"} ${isActive ? "border-l-4 border-orange-700 text-gray-600 hover:text-orange-700" : "text-gray-600 hover:text-gray-800"}`}
         >
-          <span className={`text-xl ${isOpen ? "" : "mb-1"}`}>
-            {isOpen ? (
-              <>
-                {icon}
-              </>
-            ) : (
-              <>
-                <ToolTip text={text} position="right">
-                  {icon}
-                </ToolTip>
-              </>
-            )}
-          </span>
+          <span className={`text-xl ${isOpen ? "" : "mb-1"}`}>{icon}</span>
           {isOpen && (
-            <span className="ml-3 text-sm font-medium transition-all">
-              {text}
-            </span>
+            <>
+              <span className="ml-3 text-sm font-medium flex-1">{text}</span>
+              {isOpenSubmenu ? <ChevronDown size={16} className="text-gray-500" /> : <ChevronUp size={16} className="text-gray-400" />}
+            </>
           )}
         </div>
-      </Link>
+      ) : (
+        <Link to={path!}>
+          <div
+            className={`flex p-2 cursor-pointer rounded transition-all ${isOpen ? "items-center" : "flex-col items-center justify-center"} ${isActive ? "border-l-4 border-orange-500 text-gray-600 hover:text-gray-700" : "text-gray-600 hover:text-gray-800"}`}
+          >
+            <span className={`text-xl ${isOpen ? "" : "mb-1"}`}>
+              {!isOpen ? <ToolTip text={text} position="right">{icon}</ToolTip> : icon}
+            </span>
+            {isOpen && <span className="ml-3 text-sm font-medium transition-all">{text}</span>}
+          </div>
+        </Link>
+      )}
+
+      {isOpen && children && renderSubmenu()}
+      {!isOpen && openPopover && children && renderPopover()}
     </li>
   );
 }

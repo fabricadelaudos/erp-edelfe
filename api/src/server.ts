@@ -4,6 +4,9 @@ import { env } from './config/env';
 
 // Rotas
 import authRoutes from './routes/auth.routes';
+// Empresa
+import empresaRoutes from './routes/empresa/empresa.routes';
+
 
 const app = express();
 
@@ -15,6 +18,8 @@ app.use(cors({
 app.use(express.json());
 
 app.use("/api", authRoutes);
+// Empresa
+app.use("/api/empresa", empresaRoutes );
 
 app.listen(env.PORT, () => {
   console.log(`Servidor rodando na porta ${env.PORT}`);

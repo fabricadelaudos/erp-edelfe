@@ -2,7 +2,41 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      backdropBlur: {
+        xs: "1px",
+      },
+      fontFamily: {
+        body: ["Open Sans", "sans-serif"],
+      },
+    },
   },
-  plugins: [],
+  plugins: [
+    function ({ addUtilities }) {
+      addUtilities({
+        ".custom-scrollbar": {
+          "&::-webkit-scrollbar": {
+            width: "6px",
+            height: "6px",
+            appearance: "none",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#888",
+            borderRadius: "10px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#555",
+          },
+          "&::-webkit-scrollbar-button": {
+            display: "none",
+            width: "0",
+            height: "0",
+          },
+        },
+      });
+    },
+  ],
 };

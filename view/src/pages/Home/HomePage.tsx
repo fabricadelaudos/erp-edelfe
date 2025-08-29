@@ -4,9 +4,9 @@ export default function HomePage() {
   const { user, logout } = useAuth();
 
   return (
-    <div className="flex flex-col items-center justify-center bg-white">
-      <h1 className="text-3xl font-bold mb-4 text-blue-500">
-        Bem-vindo ao AVA, {user?.email}
+    <div className="flex flex-col items-center justify-center p-6 bg-white">
+      <h1 className="text-xl font-bold mb-4 text-orange-400">
+        Bem-vindo ao ERP da e-Delfe, {user?.email}
       </h1>
       <button
         onClick={logout}

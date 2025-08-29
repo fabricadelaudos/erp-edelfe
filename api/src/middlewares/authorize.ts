@@ -2,40 +2,31 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 
-export function authorize(permissoesNecessarias: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: 'Token não fornecido' });
-
-    const [, token] = authHeader.split(' ');
-    try {
-      const payload = jwt.verify(token, env.JWT_SECRET) as any;
-
-      const permissoesDoUsuario = payload.permissoes || [];
-
-      const temPermissao = permissoesNecessarias.every((p) =>
-        permissoesDoUsuario.includes(p)
-      );
-
-      if (!temPermissao) return res.status(403).json({ error: 'Acesso negado' });
-
-      req.user = payload;
-      next();
-    } catch (err) {
-      return res.status(401).json({ error: 'Token inválido' });
-    }
-  };
+interface TokenPayload {
+  idUsuario: number;
+  email: string;
+  iat?: number;
+  exp?: number;
 }
 
-export function authOnly() {
+export function authorize() {
   return (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "Token não fornecido" });
+    if (!authHeader) {
+      return res.status(401).json({ error: "Token não fornecido" });
+    }
 
-    const [, token] = authHeader.split(" ");
+    const [scheme, token] = authHeader.split(" ");
+    if (scheme !== "Bearer" || !token) {
+      return res.status(401).json({ error: "Formato de token inválido" });
+    }
+
     try {
-      const payload = jwt.verify(token, env.JWT_SECRET) as any;
-      req.user = payload; // payload já contém idUsuario, nome, email, etc
+      const payload = jwt.verify(token, env.JWT_SECRET, {
+        algorithms: ["HS256"],
+      }) as TokenPayload;
+
+      req.user = payload;
       next();
     } catch (err) {
       return res.status(401).json({ error: "Token inválido ou expirado" });

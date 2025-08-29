@@ -1,16 +1,23 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { useState } from "react";
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const location = useLocation();
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
+  // Telas em que o sidebar não aparece
+  const esconderSidebar =
+    location.pathname === "/login"
+
   return (
     <div className="flex">
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      <main className="transition-all duration-300 min-h-screen bg-gray-100 p-4 w-full">
+      {!esconderSidebar && (
+        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      )}
+      <main className={`transition-all duration-300 min-h-screen bg-gray-100 w-full ${!esconderSidebar && "p-4"}`}>
         <Outlet />
       </main>
     </div>
