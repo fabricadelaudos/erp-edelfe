@@ -1,10 +1,12 @@
 import toast from "react-hot-toast";
+import { obterDoStorage } from "../contexts/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
 
-  const token = localStorage.getItem("token");
+  const dados = obterDoStorage();
+  const token = dados?.token;
 
   const res = await fetch(`${API_URL}${url}`, {
     ...options,

@@ -18,7 +18,7 @@ function salvarNoStorage(dados: { token: string; user: Usuario }) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
 }
 
-function obterDoStorage() {
+export function obterDoStorage() {
   const dados = localStorage.getItem(STORAGE_KEY);
   if (!dados) return null;
   try {

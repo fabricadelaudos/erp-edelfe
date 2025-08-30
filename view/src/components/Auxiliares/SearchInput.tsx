@@ -21,11 +21,14 @@ export default function SearchInput({
   };
 
   return (
-    <div className="flex items-center gap-2 mb-4" style={{ minWidth: larguraMinima }}>
+    <div
+      className="flex items-center mb-4 h-10 rounded-full border border-gray-300 shadow-sm bg-white overflow-hidden"
+      style={{ minWidth: larguraMinima }}
+    >
       <input
         type="text"
         placeholder={placeholder}
-        className="border border-gray-300 rounded px-3 py-2 w-full"
+        className="px-5 h-full w-full text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
         value={valor}
         onChange={(e) => setValor(e.target.value)}
         onKeyDown={(e) => {
@@ -34,11 +37,12 @@ export default function SearchInput({
       />
       <button
         onClick={buscar}
-        className="bg-gray-200 px-3 py-2 rounded hover:bg-gray-300"
+        className="flex items-center justify-center h-full px-5 bg-orange-400 text-white hover:bg-orange-500 transition-colors"
         title="Buscar"
       >
         <Search size={18} />
       </button>
     </div>
+
   );
 }

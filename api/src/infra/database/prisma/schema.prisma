@@ -32,18 +32,19 @@ model unidade {
   nomeFantasia        String
   razaoSocial         String
   tipoDocumento       TipoDocumento
-  cnpj                String
+  documento           String
   inscricaoEstadual   String?
   endereco            String
   numero              String
   complemento         String?
   bairro              String
   cidade              String
+  uf                  String
   cep                 String
   ativo               Boolean         @default(true)
   observacao          String?
 
-  empresa             empresa         @relation(fields: [fkEmpresaId], references: [idEmpresa])
+  empresa             empresa?         @relation(fields: [fkEmpresaId], references: [idEmpresa])
   contato             contato?
   contratos           contrato[]
 }
@@ -52,7 +53,7 @@ model contato {
   idContato       Int    @id @default(autoincrement())
   fkUnidadeId     Int    @unique
   nome            String
-  email           String
+  email           String?
   emailSecundario String?
   telefoneFixo    String?
   telefoneWpp     String?

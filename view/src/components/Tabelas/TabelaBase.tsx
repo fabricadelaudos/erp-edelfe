@@ -3,7 +3,7 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2 } from "lucide-r
 import Loading from "../Loading";
 import ToolTip from "../Auxiliares/ToolTip";
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
   accessor: keyof T;
   sortable?: boolean;

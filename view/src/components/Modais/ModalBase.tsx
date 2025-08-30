@@ -9,7 +9,7 @@ interface ModalBaseProps {
   largura?: string;
 }
 
-export default function ModalBase({ titulo, isOpen, onClose, children, largura = "max-w-lg" }: ModalBaseProps) {
+export default function ModalBase({ titulo, isOpen, onClose, children, largura = "max-w-10/12" }: ModalBaseProps) {
   if (!isOpen) return null;
 
   return (

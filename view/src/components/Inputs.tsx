@@ -14,6 +14,7 @@ interface InputProps {
   maxLength?: number;
   disable?: boolean;
   placeholder?: string
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void
 }
 
 export const Input = ({
@@ -26,7 +27,8 @@ export const Input = ({
   min = 0,
   maxLength,
   disable = false,
-  placeholder = ""
+  placeholder = "",
+  onBlur,
 }: InputProps) => (
   <div className="w-full">
     <label htmlFor={name} className="block mb-1 text-sm font-medium text-gray-900">
@@ -43,6 +45,7 @@ export const Input = ({
       disabled={disable}
       placeholder={placeholder}
       className="border border-gray-300 text-gray-900 text-sm rounded-md focus:border-2 focus:border-blue-500 focus:outline-none block w-full p-2.5 bg-white"
+      onBlur={onBlur}
     />
   </div>
 );
