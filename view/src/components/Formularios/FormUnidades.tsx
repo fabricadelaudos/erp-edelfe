@@ -4,6 +4,7 @@ import { Input, SelectInput, TextArea } from "../Inputs";
 import ListaContato from "../Listas/ListaContato";
 import ListaContratos from "../Listas/ListaContrato";
 import { buscarCep } from "../../services/apiEmpresa";
+import { formatarDocumento, limparFormatacao } from "../Auxiliares/formatter";
 
 interface Props {
   unidade: Unidade;
@@ -15,7 +16,14 @@ export default function FormUnidade({ unidade, onChange }: Props) {
   const [formLocal, setFormLocal] = useState<Unidade>({ ...unidade });
 
   useEffect(() => {
-    setFormLocal({ ...unidade });
+    setFormLocal({
+      ...unidade,
+      contato: Array.isArray(unidade.contato)
+        ? unidade.contato
+        : unidade.contato
+          ? [unidade.contato]
+          : [],
+    });
   }, [unidade]);
 
   const atualizarCampo = (campo: keyof Unidade, valor: any) => {
@@ -70,9 +78,9 @@ export default function FormUnidade({ unidade, onChange }: Props) {
                 ]}
                 required
               />
-              <Input name="documento" label="Documento" value={formLocal.documento} onChange={(e) => atualizarCampo("documento", e.target.value)} required />
+              <Input name="documento" label="Documento" value={formatarDocumento(formLocal.documento, formLocal.tipoDocumento)} onChange={(e) => atualizarCampo("documento", limparFormatacao(e.target.value))} required />
               <Input name="inscricaoEstadual" label="Insc. Estadual" value={formLocal.inscricaoEstadual || ""} onChange={(e) => atualizarCampo("inscricaoEstadual", e.target.value)} required={false} />
-              <Input name="cep" label="CEP" value={formLocal.cep} onChange={(e) => atualizarCampo("cep", e.target.value)} required onBlur={async (e) => {
+              <Input name="cep" label="CEP" value={formatarDocumento(formLocal.cep, "CEP")} onChange={(e) => atualizarCampo("cep", limparFormatacao(e.target.value))} required onBlur={async (e) => {
                 const dados = await buscarCep(e.target.value);
                 if (dados) {
                   atualizarCampo("endereco", dados.logradouro);

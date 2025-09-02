@@ -37,17 +37,20 @@ export interface Contato {
 }
 
 export interface Contrato {
-  idContrato?: number;
+  idContrato: number;
   dataInicio: string;
-  dataFim: string;
-  parcelas: number;
-  valorBase: string;
+  dataFim?: string;
+  parcelas?: number;
+  valorBase?: string;        // Valor total do contrato (mensal)
+  valorPorVida?: string;     // Apenas para por vida
+  valorRecorrente?: string;  // Apenas para recorrente
   porVida: boolean;
   recorrente: boolean;
-  status: 'ABERTA' | 'PAGA' | 'ATRASADA';
-  faturadoPor: 'MEDWORK' | 'EDELFE';
+  status: "ATIVO" | "ENCERRADO" | "CANCELADO";
+  faturadoPor: "MEDWORK" | "EDELFE";
   observacao?: string;
-  fkUnidadeId?: number;
+  // Campo temporário para cálculo de por vida
+  vidasAtivasTemp?: number;
 }
 
 export interface EnderecoCep {

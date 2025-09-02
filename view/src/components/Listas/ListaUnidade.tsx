@@ -1,5 +1,5 @@
 import { FileText, Pencil, Trash2 } from "lucide-react";
-import { formatarEndereco } from "../Auxiliares/formatter";
+import { formatarDocumento, formatarEndereco } from "../Auxiliares/formatter";
 
 interface ListaUnidadesProps {
   unidades: any[];
@@ -8,10 +8,6 @@ interface ListaUnidadesProps {
 }
 
 export default function ListaUnidade({ unidades, onEditar, onRemover }: ListaUnidadesProps) {
-  if (!unidades || unidades.length === 0) {
-    return <p className="text-sm text-gray-500">Nenhuma unidade cadastrada.</p>;
-  }
-
   return (
     <div className="space-y-2">
       {unidades.map((unidade, index) => (
@@ -37,7 +33,7 @@ export default function ListaUnidade({ unidades, onEditar, onRemover }: ListaUni
                   {unidade.ativo ? "Ativa" : "Inativa"}
                 </span>
               </div>
-              <p className="text-sm text-gray-600">{unidade.tipoDocumento}: {unidade.documento || "—"}</p>
+              <p className="text-sm text-gray-600">{unidade.tipoDocumento}: {formatarDocumento(unidade.documento, unidade.tipoDocumento) || "—"}</p>
               <p className="text-xs text-gray-500">{formatarEndereco({
                 endereco: unidade.endereco,
                 numero: unidade.numero,

@@ -4,6 +4,17 @@ export function formatarData(data?: string | Date): string {
   return date.toLocaleDateString("pt-BR");
 }
 
+export function formatarCompetenciaParaExibicao(competencia: string): string {
+  if (!competencia) return "";
+
+  const [ano, mes] = competencia.split("-");
+  if (ano && mes) {
+    return `${mes}/${ano}`;
+  }
+
+  return competencia;
+}
+
 export function formatarCEP(cep: string): string {
   const clean = cep.replace(/\D/g, "");
   return clean.replace(/^(\d{5})(\d{3})$/, "$1-$2");
@@ -41,12 +52,12 @@ export function formatarDocumento(doc: string, type: string): string {
   const clean = doc.replace(/\D/g, "");
 
   switch (type) {
-    case 'rg': return formatarRG(clean);
-    case 'cnh': return formatarCNH(clean);
-    case 'caepf': return formatarCAEPF(clean);
-    case 'cnpj': return formatarCNPJ(clean);
-    case 'cpf': return formatarCPF(clean);
-    case 'cep': return formatarCEP(clean);
+    case 'RG': return formatarRG(clean);
+    case 'CNH': return formatarCNH(clean);
+    case 'CAEPF': return formatarCAEPF(clean);
+    case 'CNPJ': return formatarCNPJ(clean);
+    case 'CPF': return formatarCPF(clean);
+    case 'CEP': return formatarCEP(clean);
     default: return doc;
   }
 }
@@ -61,9 +72,15 @@ export function formatarMinutosEmHoras(min?: number): string {
   return `${m}min`;
 }
 
-export function formatarTelefone(telefone: string): string {
+export function formatarTelefone(telefone: string, type: string): string {
+  if (!telefone || !type) return "";
+
   const clean = telefone.replace(/\D/g, "");
-  return clean.replace(/^(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3");
+  switch (type) {
+    case 'WPP': return clean.replace(/^(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3");
+    case 'FIXO': return clean.replace(/^(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3");
+    default: return telefone;
+  }
 }
 
 export function formatarEndereco({
@@ -92,4 +109,8 @@ export function formatarEndereco({
   ];
 
   return partes.join("");
+}
+
+export function limparFormatacao(valor: string): string {
+  return valor.replace(/\D/g, "");
 }

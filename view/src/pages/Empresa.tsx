@@ -42,7 +42,6 @@ export default function EmpresaPage() {
     setModalAberto(true);
   };
 
-  // 🔎 Filtro local (ignora acentos e capitalização se quiser melhorar)
   const empresasFiltradas = empresas.filter((e) =>
     e.nome.toLowerCase().includes(busca.toLowerCase())
   );

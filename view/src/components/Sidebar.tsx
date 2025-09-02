@@ -1,14 +1,14 @@
 import { createContext, useContext, useState } from "react";
 import {
   Home,
-  Boxes,
-  HeartHandshake,
   ChevronFirst,
   ChevronLast,
   Settings,
   LogOut,
   ChevronDown,
   ChevronUp,
+  Building2,
+  FileChartColumnIncreasing,
 } from "lucide-react";
 
 import ToolTip from "./Auxiliares/ToolTip";
@@ -41,14 +41,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
 
   const menuItems = [
     { label: "Home", icon: <Home />, path: "/" },
-    { label: "Empresa", icon: <Boxes />, path: "/cadastro/empresa" },
-    {
-      label: "Cursos", icon: <HeartHandshake />,
-      children: [
-        { label: "Gerenciar Cursos", path: "/cursos/gerenciar", permissoes: ['criar_cursos'] },
-        { label: "Meus Cursos", path: "/cursos/meuscursos", permissoes: ['ver_cursos'] },
-      ],
-    },
+    { label: "Empresa", icon: <Building2 />, path: "/cadastro/empresa" },
+    { label: "Faturamento", icon: <FileChartColumnIncreasing />, path: "/faturamento"},
   ];
 
   return (
@@ -81,7 +75,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                     icon={item.icon}
                     text={item.label}
                     path={item.path}
-                    children={item.children}
+                    //children={item.children}
                     isOpenSubmenu={openMenuKey === item.label}
                     onToggle={() => setOpenMenuKey(openMenuKey === item.label ? null : item.label)}
                   />
@@ -102,7 +96,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                   <ToolTip text="Configurações" position="top">
-                    <button onClick={() => navigate("/")}>
+                    <button onClick={() => navigate("/configuracoes")}>
                       <Settings className="text-gray-400 hover:text-gray-700" size={16} />
                     </button>
                   </ToolTip>
@@ -116,7 +110,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             ) : (
               <div className="flex flex-col items-center gap-3">
                 <ToolTip text="Configurações" position={`${isOpen ? 'top' : 'right'}`}>
-                  <button className="cursor-pointer" onClick={() => navigate("/")}>
+                  <button className="cursor-pointer" onClick={() => navigate("/configuracoes")}>
                     <Settings className="text-gray-400 hover:text-gray-700" size={16} />
                   </button>
                 </ToolTip>

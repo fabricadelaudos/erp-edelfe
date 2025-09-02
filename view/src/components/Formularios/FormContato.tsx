@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "../Inputs";
 import type { Contato } from "../../types/EstruturaEmpresa";
+import { formatarTelefone, limparFormatacao } from "../Auxiliares/formatter";
 
 interface Props {
   contato: Contato;
@@ -59,15 +60,15 @@ export default function FormContato({
       <Input
         name="telefoneFixo"
         label="Telefone Fixo"
-        value={formLocal.telefoneFixo || ""}
-        onChange={(e) => atualizar("telefoneFixo", e.target.value)}
+        value={formatarTelefone(formLocal.telefoneFixo ?? "", "FIXO") || ""}
+        onChange={(e) => atualizar("telefoneFixo", limparFormatacao(e.target.value))}
         required={false}
       />
       <Input
         name="telefoneWpp"
         label="WhatsApp"
-        value={formLocal.telefoneWpp || ""}
-        onChange={(e) => atualizar("telefoneWpp", e.target.value)}
+        value={formatarTelefone(formLocal.telefoneWpp ?? "", "WPP") || ""}
+        onChange={(e) => atualizar("telefoneWpp", limparFormatacao(e.target.value))}
         required={false}
       />
 

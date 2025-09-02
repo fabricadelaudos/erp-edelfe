@@ -3,6 +3,7 @@ import type { Contato } from "../../types/EstruturaEmpresa";
 import FormContato from "../Formularios/FormContato";
 import ModalBase from "../Modais/ModalBase"; // mesmo ModalBase que você já usa em EmpresaPage
 import { Pencil, Trash2, Plus } from "lucide-react";
+import { formatarTelefone } from "../Auxiliares/formatter";
 
 interface Props {
   contatos: Contato[];
@@ -51,6 +52,7 @@ export default function ListaContato({ contatos = [], onChange }: Props) {
   };
 
   const isNovoContato = editIndex !== null && Array.isArray(contatos) && editIndex === contatos.length;
+  console.log("Contatos: ", contatos);
 
   return (
     <div className="space-y-3">
@@ -65,14 +67,14 @@ export default function ListaContato({ contatos = [], onChange }: Props) {
       </div>
 
       {/* Tabela simples */}
-      <div className="rounded-md border border-gray-200 overflow-hidden">
+      <div className="rounded-md border border-gray-200 overflow-hidden text-center">
         <table className="w-full bg-white text-sm">
           <thead className="bg-gray-50 text-gray-700">
             <tr>
-              <th className="px-3 py-2 text-left">Nome</th>
-              <th className="px-3 py-2 text-left">Email</th>
-              <th className="px-3 py-2 text-left">Telefone</th>
-              <th className="px-3 py-2 text-left">WhatsApp</th>
+              <th className="px-3 py-2">Nome</th>
+              <th className="px-3 py-2">Email</th>
+              <th className="px-3 py-2">Telefone</th>
+              <th className="px-3 py-2">WhatsApp</th>
               <th className="px-3 py-2 text-center w-28">Ações</th>
             </tr>
           </thead>
@@ -82,8 +84,8 @@ export default function ListaContato({ contatos = [], onChange }: Props) {
                 <tr key={i} className={i % 2 ? "bg-gray-50" : "bg-white"}>
                   <td className="px-3 py-2">{c.nome || "—"}</td>
                   <td className="px-3 py-2">{c.email || "—"}</td>
-                  <td className="px-3 py-2">{c.telefoneFixo || "—"}</td>
-                  <td className="px-3 py-2">{c.telefoneWpp || "—"}</td>
+                  <td className="px-3 py-2">{formatarTelefone(c.telefoneFixo ?? "", "FIXO") || "—"}</td>
+                  <td className="px-3 py-2">{formatarTelefone(c.telefoneWpp ?? "", "WPP") || "—"}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-center gap-2">
                       <button

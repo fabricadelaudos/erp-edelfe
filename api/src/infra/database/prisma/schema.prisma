@@ -44,7 +44,7 @@ model unidade {
   ativo               Boolean         @default(true)
   observacao          String?
 
-  empresa             empresa?         @relation(fields: [fkEmpresaId], references: [idEmpresa])
+  empresa             empresa?         @relation(fields: [fkEmpresaId], references: [idEmpresa], onDelete: Cascade)
   contato             contato?
   contratos           contrato[]
 }
@@ -58,7 +58,7 @@ model contato {
   telefoneFixo    String?
   telefoneWpp     String?
 
-  unidade         unidade @relation(fields: [fkUnidadeId], references: [idUnidade])
+  unidade         unidade @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
 }
 
 model contrato {
@@ -74,7 +74,7 @@ model contrato {
   faturadoPor      FaturadoPor
   observacao       String?
 
-  unidade          unidade          @relation(fields: [fkUnidadeId], references: [idUnidade])
+  unidade          unidade          @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
   projecoes        projecao[]
   faturamentos     faturamento[]
 }
@@ -87,7 +87,7 @@ model projecao {
   status           StatusProjecao
   vidas            Int?
 
-  contrato         contrato        @relation(fields: [fkContratoId], references: [idContrato])
+  contrato         contrato        @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
   faturamentos     faturamento[]
 }
 
@@ -106,8 +106,8 @@ model faturamento {
   pagoEm                    DateTime?
   competenciaPagamento      String?
 
-  contrato                  contrato            @relation(fields: [fkContratoId], references: [idContrato])
-  projecao                  projecao?           @relation(fields: [fkProjecaoId], references: [idProjecao])
+  contrato                  contrato            @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
+  projecao                  projecao?           @relation(fields: [fkProjecaoId], references: [idProjecao], onDelete: Cascade)
   competenciaFinanceira     competenciaFinanceira @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira])
 }
 
@@ -134,8 +134,8 @@ model despesa {
   parcelaTotal           Int?
   pagoEm                 DateTime?
 
-  despesaRecorrente      despesaRecorrente? @relation(fields: [fkDespesaRecorrenteId], references: [idDespesaRecorrente])
-  categoria              despesaCategoria?    @relation(fields: [fkDespesaCategoriaId], references: [idDespesaCategoria])
+  despesaRecorrente      despesaRecorrente? @relation(fields: [fkDespesaRecorrenteId], references: [idDespesaRecorrente], onDelete: SetNull)
+  categoria              despesaCategoria?    @relation(fields: [fkDespesaCategoriaId], references: [idDespesaCategoria], onDelete: SetNull)
 }
 
 model despesaRecorrente {

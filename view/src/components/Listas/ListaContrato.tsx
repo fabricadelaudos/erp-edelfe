@@ -36,14 +36,15 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
 
   const openNovo = () => {
     setDraft({
+      idContrato: 0,
       dataInicio: "",
       dataFim: "",
       parcelas: 1,
       valorBase: "",
       porVida: false,
       recorrente: false,
-      status: "ABERTA",
-      faturadoPor: "MEDWORK",
+      status: "ATIVO",
+      faturadoPor: "EDELFE",
       observacao: "",
     });
     setEditIndex(null);
@@ -90,9 +91,9 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
 
   const statusBadge = (s: Contrato["status"]) => {
     const map: Record<Contrato["status"], string> = {
-      ABERTA: "bg-yellow-100 text-yellow-800",
-      PAGA: "bg-green-100 text-green-800",
-      ATRASADA: "bg-red-100 text-red-800",
+      ATIVO: "bg-green-100 text-green-800",
+      ENCERRADO: "bg-gray-300 text-gray-800",
+      CANCELADO: "bg-red-100 text-red-800",
     };
     return (
       <span className={`px-2 py-1 rounded text-xs font-medium ${map[s] || "bg-gray-100 text-gray-800"}`}>
@@ -113,25 +114,25 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
         </button>
       </div>
 
-      <div className="rounded-md border border-gray-200 overflow-hidden">
+      <div className="rounded-md border border-gray-200 overflow-hidden text-center">
         <table className="w-full bg-white text-sm">
           <thead className="bg-gray-50 text-gray-700">
             <tr>
-              <th className="px-3 py-2 text-left">Início</th>
-              <th className="px-3 py-2 text-left">Fim</th>
-              <th className="px-3 py-2 text-right">Valor Base</th>
-              <th className="px-3 py-2 text-center">Parcelas</th>
-              <th className="px-3 py-2 text-center">Por Vida</th>
-              <th className="px-3 py-2 text-center">Recorrente</th>
-              <th className="px-3 py-2 text-left">Status</th>
-              <th className="px-3 py-2 text-left">Faturado por</th>
-              <th className="px-3 py-2 text-center w-28">Ações</th>
+              <th className="px-3 py-2">Início</th>
+              <th className="px-3 py-2">Fim</th>
+              <th className="px-3 py-2">Valor Base</th>
+              <th className="px-3 py-2">Parcelas</th>
+              <th className="px-3 py-2">Por Vida</th>
+              <th className="px-3 py-2">Recorrente</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Faturado por</th>
+              <th className="px-3 py-2 w-28">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {list.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-3 py-6 text-gray-500">
                   Nenhum contrato cadastrado.
                 </td>
               </tr>
@@ -140,10 +141,10 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
                 <tr key={i} className={i % 2 ? "bg-gray-50" : "bg-white"}>
                   <td className="px-3 py-2">{fmtDate(c.dataInicio)}</td>
                   <td className="px-3 py-2">{fmtDate(c.dataFim)}</td>
-                  <td className="px-3 py-2 text-right">{fmtMoney(c.valorBase)}</td>
-                  <td className="px-3 py-2 text-center">{c.parcelas ?? "—"}</td>
-                  <td className="px-3 py-2 text-center">{c.porVida ? "Sim" : "Não"}</td>
-                  <td className="px-3 py-2 text-center">{c.recorrente ? "Sim" : "Não"}</td>
+                  <td className="px-3 py-2">{fmtMoney(c.valorBase)}</td>
+                  <td className="px-3 py-2">{c.parcelas ?? "—"}</td>
+                  <td className="px-3 py-2">{c.porVida ? "Sim" : "Não"}</td>
+                  <td className="px-3 py-2">{c.recorrente ? "Sim" : "Não"}</td>
                   <td className="px-3 py-2">{statusBadge(c.status)}</td>
                   <td className="px-3 py-2">{c.faturadoPor}</td>
                   <td className="px-3 py-2">
@@ -179,7 +180,6 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
         {aberto && draft && (
           <FormContrato
             contrato={draft}
-            // (opcional) para pré-visualização live dentro do modal:
             onChange={setDraft}
             onSave={salvar}
             onCancel={closeModal}

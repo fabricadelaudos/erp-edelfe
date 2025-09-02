@@ -5,8 +5,10 @@ import Layout from '../components/Layout';
 import Loading from '../components/Loading';
 
 const LoginPage = lazy(() => import('../pages/Auth/LoginPage'));
+const ConfiguracoesPage = lazy(() => import('../pages/Configuracoes'));
 const HomePage = lazy(() => import('../pages/Home/HomePage'));
 const EmpresaPage = lazy(() => import('../pages/Empresa'));
+const FaturamentoPage = lazy(() => import('../pages/Faturamento'));
 
 function PrivateRoute() {
   const { user } = useAuth();
@@ -30,6 +32,8 @@ export default function AppRoutes() {
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/cadastro/empresa" element={<EmpresaPage />} />
+              <Route path="/faturamento" element={<FaturamentoPage />} />
+              <Route path="/configuracoes" element={<ConfiguracoesPage />} />
             </Route>
           </Route>
 

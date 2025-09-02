@@ -52,12 +52,6 @@ export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
     }
   };
 
-  const handleUnidadeChange = (index: number, novaUnidade: Unidade) => {
-    const unidadesAtualizadas = [...(form.unidades || [])];
-    unidadesAtualizadas[index] = novaUnidade;
-    setForm({ ...form, unidades: unidadesAtualizadas });
-  };
-
   const salvarUnidade = (index: number, unidadeAtualizada: Unidade) => {
     const novasUnidades = [...(form.unidades || [])];
     novasUnidades[index] = unidadeAtualizada;
@@ -65,16 +59,12 @@ export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
     setModoEdicaoUnidade(null); // volta para lista
   };
 
-  const cancelarUnidade = () => {
-    // Se era nova e cancelou, remove
-    if (modoEdicaoUnidade !== null && form.unidades?.[modoEdicaoUnidade]?.idUnidade === 0) {
-      const novasUnidades = [...form.unidades];
-      novasUnidades.splice(modoEdicaoUnidade, 1);
-      setForm({ ...form, unidades: novasUnidades });
-    }
-    setModoEdicaoUnidade(null); // volta para lista
+  const removerUnidade = (index: number) => {
+    const novasUnidades = [...(form.unidades || [])];
+    novasUnidades.splice(index, 1);
+    setForm({ ...form, unidades: novasUnidades });
+    setModoEdicaoUnidade(null);
   };
-
 
   const adicionarUnidade = () => {
     const novaUnidade: Unidade = {
@@ -182,6 +172,7 @@ export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
               <ListaUnidade
                 unidades={form.unidades || []}
                 onEditar={(index) => setModoEdicaoUnidade(index)}
+                onRemover={(index) => removerUnidade(index)}
               />
             </>
           )}

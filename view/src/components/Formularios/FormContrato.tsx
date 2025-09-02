@@ -3,11 +3,11 @@ import { Input, TextArea, SelectInput } from "../Inputs";
 import type { Contrato } from "../../types/EstruturaEmpresa";
 
 interface Props {
-  contrato: Contrato;                        // valor inicial
-  onChange?: (contrato: Contrato) => void;   // (opcional) emitir mudanças live
-  onSave?: (contrato: Contrato) => void;     // chama ao clicar em Salvar
-  onCancel?: () => void;                     // chama ao clicar em Cancelar
-  showActions?: boolean;                     // se true, mostra os botões (default: true)
+  contrato: Contrato;
+  onChange?: (contrato: Contrato) => void;
+  onSave?: (contrato: Contrato) => void;
+  onCancel?: () => void;
+  showActions?: boolean;
 }
 
 export default function FormContrato({
@@ -26,15 +26,16 @@ export default function FormContrato({
   const atualizar = <K extends keyof Contrato>(campo: K, valor: Contrato[K]) => {
     const atualizado = { ...formLocal, [campo]: valor };
     setFormLocal(atualizado);
-    // se quiser emitir live pro pai (ex.: pré-visualização), mantém esse onChange
     onChange?.(atualizado);
   };
 
   const handleSave = () => onSave?.(formLocal);
   const handleCancel = () => {
-    setFormLocal({ ...contrato }); // desfaz alterações
+    setFormLocal({ ...contrato });
     onCancel?.();
   };
+
+  const isMensal = !formLocal.porVida && !formLocal.recorrente;
 
   return (
     <div className="space-y-4">
@@ -46,46 +47,94 @@ export default function FormContrato({
           value={formLocal.dataInicio}
           onChange={(e) => atualizar("dataInicio", e.target.value)}
         />
+
         <Input
           type="date"
           name="dataFim"
           label="Data Fim"
-          value={formLocal.dataFim}
+          value={formLocal.dataFim || ""}
           onChange={(e) => atualizar("dataFim", e.target.value)}
         />
-        <Input
-          name="parcelas"
-          label="Parcelas"
-          type="number"
-          value={formLocal.parcelas}
-          onChange={(e) => atualizar("parcelas", Number(e.target.value))}
-        />
-        <Input
-          name="valorBase"
-          label="Valor Base"
-          type="text"
-          value={formLocal.valorBase}
-          onChange={(e) => atualizar("valorBase", e.target.value)}
-        />
+
+        {isMensal && (
+          <Input
+            name="parcelas"
+            label="Parcelas"
+            type="number"
+            min={1}
+            value={formLocal.parcelas || 1}
+            onChange={(e) => atualizar("parcelas", Number(e.target.value))}
+          />
+        )}
+
+        {!formLocal.porVida && !formLocal.recorrente && (
+          <Input
+            name="valorBase"
+            label="Valor Total (Mensal)"
+            type="text"
+            value={formLocal.valorBase || ""}
+            onChange={(e) => atualizar("valorBase", e.target.value)}
+          />
+        )}
+
+        {formLocal.porVida && (
+          <>
+            <Input
+              name="valorPorVida"
+              label="Valor por Vida"
+              type="text"
+              value={formLocal.valorBase || ""}
+              onChange={(e) => atualizar("valorBase", e.target.value)}
+            />
+            <Input
+              name="vidasAtivasTemp"
+              label="Vidas Ativas (Apenas cálculo)"
+              type="number"
+              value={formLocal.vidasAtivasTemp ?? ""}
+              onChange={(e) => atualizar("vidasAtivasTemp", Number(e.target.value))}
+            />
+          </>
+        )}
+
+        {formLocal.recorrente && !formLocal.porVida && (
+          <Input
+            name="valorRecorrente"
+            label="Valor Mensal Recorrente"
+            type="text"
+            value={formLocal.valorRecorrente || ""}
+            onChange={(e) => atualizar("valorRecorrente", e.target.value)}
+          />
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={formLocal.porVida}
-            onChange={(e) => atualizar("porVida", e.target.checked)}
-          />
-          Por Vida
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={formLocal.recorrente}
-            onChange={(e) => atualizar("recorrente", e.target.checked)}
-          />
-          Recorrente
-        </label>
+      <div className="grid grid-cols-2 gap-6">
+        {/* Toggle Por Vida */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">Por Vida</span>
+          <button
+            type="button"
+            onClick={() => atualizar("porVida", !formLocal.porVida)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formLocal.porVida ? "bg-green-500" : "bg-gray-300"}`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formLocal.porVida ? "translate-x-6" : "translate-x-1"}`}
+            />
+          </button>
+        </div>
+
+        {/* Toggle Recorrente */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">Recorrente</span>
+          <button
+            type="button"
+            onClick={() => atualizar("recorrente", !formLocal.recorrente)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formLocal.recorrente ? "bg-green-500" : "bg-gray-300"}`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formLocal.recorrente ? "translate-x-6" : "translate-x-1"}`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -7,6 +7,7 @@ export interface ContatoInput {
 }
 
 export interface ContratoInput {
+  idContrato: number;
   dataInicio: string;
   dataFim: string;
   parcelas: number;
@@ -16,6 +17,7 @@ export interface ContratoInput {
   status: string;
   faturadoPor: string;
   observacao?: string;
+  vidasAtivas?: number;
 }
 
 export interface UnidadeInput {
