@@ -43,9 +43,10 @@ model unidade {
   cep                 String
   ativo               Boolean         @default(true)
   observacao          String?
+  retemIss            Boolean         @default(false)
 
-  empresa             empresa?         @relation(fields: [fkEmpresaId], references: [idEmpresa], onDelete: Cascade)
-  contato             contato?
+  empresa             empresa?        @relation(fields: [fkEmpresaId], references: [idEmpresa], onDelete: Cascade)
+  contato             contato[]
   contratos           contrato[]
 }
 
@@ -67,12 +68,15 @@ model contrato {
   dataInicio       DateTime
   dataFim          DateTime
   parcelas         Int
-  valorBase        Decimal
+  valorBase        Decimal          @db.Decimal(10, 2)
   porVida          Boolean
   recorrente       Boolean
   status           StatusContrato
   faturadoPor      FaturadoPor
+  esocial          Boolean?
+  laudos           Boolean?
   observacao       String?
+  diaVencimento    String?
 
   unidade          unidade          @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
   projecoes        projecao[]
@@ -83,7 +87,7 @@ model projecao {
   idProjecao       Int             @id @default(autoincrement())
   fkContratoId     Int
   competencia      String
-  valorPrevisto    Decimal
+  valorPrevisto    Decimal         @db.Decimal(10, 2)
   status           StatusProjecao
   vidas            Int?
 
@@ -97,51 +101,53 @@ model faturamento {
   fkProjecaoId              Int?
   fkCompetenciaFinanceiraId Int
   competencia               String
-  valorBase                 Decimal
-  impostoPorcentagem        Decimal
-  impostoValor              Decimal
-  valorTotal                Decimal
+  valorBase                 Decimal             @db.Decimal(10, 2)
+  impostoPorcentagem        Decimal             @db.Decimal(10, 2)
+  impostoValor              Decimal             @db.Decimal(10, 2)
+  valorTotal                Decimal             @db.Decimal(10, 2)
   status                    StatusFaturamento
   vidas                     Int?
   pagoEm                    DateTime?
   competenciaPagamento      String?
+  numeroNota                String?
 
   contrato                  contrato            @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
-  projecao                  projecao?           @relation(fields: [fkProjecaoId], references: [idProjecao], onDelete: Cascade)
+  projecao                  projecao?           @relation(fields: [fkProjecaoId], references: [idProjecao])
   competenciaFinanceira     competenciaFinanceira @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira])
 }
 
 model competenciaFinanceira {
-  idCompetenciaFinanceira  Int         @id @default(autoincrement())
-  competencia              String      @unique
-  imposto                  Decimal
-  ipca                     Decimal
+  idCompetenciaFinanceira  Int            @id @default(autoincrement())
+  competencia              String         @unique
+  imposto                  Decimal        @db.Decimal(10, 2)
+  ipca                     Decimal        @db.Decimal(10, 2)
+  iss                      Decimal        @db.Decimal(10, 2)
 
   faturamentos             faturamento[]
 }
 
 model despesa {
-  idDespesa              Int           @id @default(autoincrement())
+  idDespesa              Int                 @id @default(autoincrement())
   fkDespesaRecorrenteId  Int?
   fkDespesaCategoriaId   Int?
   descricao              String
   competencia            String
   vencimento             DateTime
-  valor                  Decimal
+  valor                  Decimal              @db.Decimal(10, 2)
   status                 StatusDespesa
   tipoPagamento          TipoPagamento
   parcelaAtual           Int?
   parcelaTotal           Int?
   pagoEm                 DateTime?
 
-  despesaRecorrente      despesaRecorrente? @relation(fields: [fkDespesaRecorrenteId], references: [idDespesaRecorrente], onDelete: SetNull)
+  despesaRecorrente      despesaRecorrente?   @relation(fields: [fkDespesaRecorrenteId], references: [idDespesaRecorrente], onDelete: SetNull)
   categoria              despesaCategoria?    @relation(fields: [fkDespesaCategoriaId], references: [idDespesaCategoria], onDelete: SetNull)
 }
 
 model despesaRecorrente {
   idDespesaRecorrente Int        @id @default(autoincrement())
   descricao           String
-  valor               Decimal
+  valor               Decimal    @db.Decimal(10, 2)
   vencimento          Int
   dataInicio          DateTime
   dataFim             DateTime?

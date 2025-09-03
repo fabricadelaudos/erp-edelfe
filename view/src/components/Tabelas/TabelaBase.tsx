@@ -69,12 +69,12 @@ export default function TabelaBase<T extends object>({
     <div className="flex flex-col">
       <div className="rounded-md border border-gray-200">
         {/* Tabela */}
-        <div className="overflow-auto custom-scrollbar rounded-t-md">
-          <table className="w-full bg-white text-sm text-center rounded-t-md">
-            <thead className="bg-gray-50 text-gray-700 sticky top-0">
+        <div className="overflow-x-auto custom-scrollbar rounded-t-md">
+          <table className="min-w-[1200px] w-full bg-white text-sm text-center rounded-t-md">
+            <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
               <tr>
                 {columns.map((col, idx) => (
-                  <th key={idx} className="px-4 py-3 font-bold cursor-pointer select-none">
+                  <th key={idx} className="px-4 py-3 font-bold cursor-pointer select-none align-middle">
                     <div className="flex items-center justify-center gap-1">
                       <span>{col.header}</span>
                       {col.sortable && (
@@ -101,7 +101,13 @@ export default function TabelaBase<T extends object>({
                     </div>
                   </th>
                 ))}
-                {(onEdit || onDelete) && <th className="px-4 py-3 font-bold">Ações</th>}
+                {(onEdit || onDelete) && (
+                  <th className="font-bold text-right sticky right-0 z-10 bg-gray-50">
+                    <div className="px-4 py-3 border-l border-gray-300">
+                      Ações
+                    </div>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 border-b border-t border-gray-200">
@@ -119,28 +125,36 @@ export default function TabelaBase<T extends object>({
                 </tr>
               ) : (
                 currentData.map((row, idx) => (
-                  <tr key={idx} className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                  <tr key={idx} className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} align-middle`}>
                     {columns.map((col, i) => (
-                      <td key={i} className="px-4 py-3">
+                      <td key={i} className="px-4 py-3 align-middle">
                         {col.render ? col.render(row[col.accessor], row) : (row[col.accessor] as any) ?? "—"}
                       </td>
                     ))}
                     {(onEdit || onDelete) && (
-                      <td className="px-4 py-3 flex justify-center items-center gap-2">
-                        {onEdit && (
-                          <ToolTip text="Editar">
-                            <button onClick={() => onEdit(row)} className="text-blue-500 hover:text-blue-700 cursor-pointer">
-                              <Pencil size={14} />
-                            </button>
-                          </ToolTip>
-                        )}
-                        {onDelete && (
-                          <ToolTip text="Excluir">
-                            <button onClick={() => onDelete(row)} className="text-red-500 hover:text-red-700 cursor-pointer">
-                              <Trash2 size={14} />
-                            </button>
-                          </ToolTip>
-                        )}
+                      <td className={`sticky right-0 z-10 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                        <div className="px-4 py-3 align-middle inline-flex justify-center items-center gap-2 w-full h-full border-l border-gray-300">
+                          {onEdit && (
+                            <ToolTip text="Editar">
+                              <button
+                                onClick={() => onEdit(row)}
+                                className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            </ToolTip>
+                          )}
+                          {onDelete && (
+                            <ToolTip text="Excluir">
+                              <button
+                                onClick={() => onDelete(row)}
+                                className="text-red-500 hover:text-red-700 cursor-pointer"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </ToolTip>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>

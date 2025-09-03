@@ -3,4 +3,5 @@ export interface CompetenciaFinanceira {
   competencia: string;
   imposto: number;
   ipca: number;
+  iss: number;
 }

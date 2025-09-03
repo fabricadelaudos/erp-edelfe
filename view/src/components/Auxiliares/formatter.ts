@@ -4,12 +4,34 @@ export function formatarData(data?: string | Date): string {
   return date.toLocaleDateString("pt-BR");
 }
 
+export function formatarDataInput(data?: string | Date): string {
+  if (!data) return "";
+
+  const date = new Date(data);
+  const ano = date.getFullYear();
+  const mes = String(date.getMonth() + 1).padStart(2, "0");
+  const dia = String(date.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 export function formatarCompetenciaParaExibicao(competencia: string): string {
   if (!competencia) return "";
 
   const [ano, mes] = competencia.split("-");
   if (ano && mes) {
     return `${mes}/${ano}`;
+  }
+
+  return competencia;
+}
+
+export function formatarCompetenciaParaEnvio(competencia: string): string {
+  if (!competencia) return "";
+
+  const [mes, ano] = competencia.split("/");
+  if (mes && ano) {
+    return `${ano}-${mes.padStart(2, "0")}`;
   }
 
   return competencia;
@@ -113,4 +135,12 @@ export function formatarEndereco({
 
 export function limparFormatacao(valor: string): string {
   return valor.replace(/\D/g, "");
+}
+
+export function formatarReais(valor: number | string | null | undefined) {
+  const numero = Number(valor ?? 0);
+  return numero.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 }

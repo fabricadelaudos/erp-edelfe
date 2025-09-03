@@ -22,8 +22,11 @@ export interface Unidade {
   cep: string;
   ativo: boolean;
   observacao?: string;
+  retemIss?: boolean;
   contato: Contato[];
   contratos: Contrato[];
+  enderecoCep?: EnderecoCep;
+  empresa?: Empresa;
 }
 
 export interface Contato {
@@ -41,16 +44,19 @@ export interface Contrato {
   dataInicio: string;
   dataFim?: string;
   parcelas?: number;
-  valorBase?: string;        // Valor total do contrato (mensal)
-  valorPorVida?: string;     // Apenas para por vida
-  valorRecorrente?: string;  // Apenas para recorrente
+  valorBase?: string;
+  valorPorVida?: string;
+  valorRecorrente?: string;
   porVida: boolean;
   recorrente: boolean;
   status: "ATIVO" | "ENCERRADO" | "CANCELADO";
   faturadoPor: "MEDWORK" | "EDELFE";
+  esocial?: boolean;
+  laudos?: boolean;
   observacao?: string;
-  // Campo temporário para cálculo de por vida
-  vidasAtivasTemp?: number;
+  vidasAtivas?: number;
+  diaVencimento?: string;
+  unidade?: Unidade;
 }
 
 export interface EnderecoCep {

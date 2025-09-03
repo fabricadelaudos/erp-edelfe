@@ -1,23 +1,15 @@
+import type { Contrato } from "./EstruturaEmpresa";
+
 export interface Faturamento {
   idFaturamento: number;
   fkContratoId: number;
-  contrato?: {
-    idContrato: number;
-    unidade?: {
-      idUnidade: number;
-      nomeFantasia: string;
-      empresa?: {
-        idEmpresa: number;
-        nome: string;
-      };
-    };
-  };
+  contrato?: Contrato;
   valorBase: string;
   impostoPorcentagem: string;
   impostoValor: string;
   valorTotal: string;
   vidas?: number;
-  numeroNF?: string;
+  numeroNota?: string;
   status: "ABERTA" | "PAGA" | "ATRASADA";
   competencia: string;
 }

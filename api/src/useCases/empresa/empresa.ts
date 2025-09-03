@@ -1,6 +1,6 @@
 import { FaturadoPor, Prisma, StatusContrato, StatusProjecao, TipoDocumento } from "@prisma/client";
 import { prisma } from "../../config/prisma-client";
-import { ContratoInput, EmpresaInput } from "../../dto/EmpresaDto";
+import { EmpresaInput } from "../../dto/EmpresaDto";
 import { registrarEvento } from "../../shared/utils/registrarEvento";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -15,18 +15,26 @@ export type EmpresaComRelacionamentos = Prisma.empresaGetPayload<{
   };
 }>;
 
+function calcularMesesEntre(inicio: Date, fim: Date): number {
+  const anos = fim.getFullYear() - inicio.getFullYear();
+  const meses = fim.getMonth() - inicio.getMonth();
+  return anos * 12 + meses;
+}
+
 export async function gerarProjecoesParaContrato(contrato: {
   idContrato: number;
   dataInicio: string | Date;
+  dataFim: string | Date;
   parcelas: number;
   valorBase: string | number | Decimal;
   porVida: boolean;
   recorrente: boolean;
-  vidasAtivas?: number; // novo campo só para cálculo
+  vidasAtivas?: number;
 }) {
   const {
     idContrato,
     dataInicio,
+    dataFim,
     parcelas,
     valorBase,
     porVida,
@@ -35,6 +43,7 @@ export async function gerarProjecoesParaContrato(contrato: {
   } = contrato;
 
   const dataInicial = new Date(dataInicio);
+  const dataFinal = new Date(dataFim);
   const valor = typeof valorBase === "string" ? parseFloat(valorBase) : Number(valorBase);
 
   const projecoes: {
@@ -44,39 +53,28 @@ export async function gerarProjecoesParaContrato(contrato: {
     status: StatusProjecao;
   }[] = [];
 
-  const hoje = new Date();
-  const fimMensal = new Date(dataInicial);
-  fimMensal.setMonth(fimMensal.getMonth() + parcelas);
-
-  const mesesParaProjetar = recorrente ? 12 : parcelas;
+  const mesesParaProjetar = recorrente || porVida
+    ? calcularMesesEntre(dataInicial, dataFinal)
+    : parcelas;
 
   for (let i = 0; i < mesesParaProjetar; i++) {
     const data = new Date(dataInicial);
     data.setMonth(data.getMonth() + i);
 
-    // Se contrato é somente mensal (sem porVida ou recorrente)
     const competencia = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
-
     let valorPrevisto = 0;
 
-    // MENSAL
-    if (!porVida && !recorrente) {
+    // ✅ Apenas POR VIDA (com ou sem recorrente)
+    if (porVida) {
+      valorPrevisto = valor * vidasAtivas;
+    }
+    // ✅ Apenas MENSAL
+    else if (!recorrente && parcelas > 0) {
       valorPrevisto = parseFloat((valor / parcelas).toFixed(2));
     }
-
-    // POR VIDA
-    if (porVida) {
-      valorPrevisto += valor * vidasAtivas; // valor = valorPorVida
-    }
-
-    // RECORRENTE
-    if (recorrente && !porVida && parcelas === 0) {
+    // ✅ Apenas RECORRENTE
+    else if (recorrente && !porVida) {
       valorPrevisto = valor;
-    }
-
-    // MENSAL + POR VIDA
-    if (porVida && parcelas > 0) {
-      valorPrevisto += parseFloat((valor / parcelas).toFixed(2));
     }
 
     projecoes.push({
@@ -106,6 +104,102 @@ function parseDecimal(valor: string | number | undefined | null): string {
   if (!valor) return "0";
   if (typeof valor === "number") return valor.toFixed(2);
   return valor.replace(",", ".");
+}
+
+export async function sincronizarProjecoesParaContrato(contrato: {
+  idContrato: number;
+  dataInicio: string | Date;
+  dataFim: string | Date;
+  parcelas: number;
+  valorBase: string | number | Decimal;
+  porVida: boolean;
+  recorrente: boolean;
+  vidasAtivas?: number;
+}) {
+  const {
+    idContrato,
+    dataInicio,
+    dataFim,
+    parcelas,
+    valorBase,
+    porVida,
+    recorrente,
+    vidasAtivas = 0,
+  } = contrato;
+
+  const dataInicial = new Date(dataInicio);
+  const dataFinal = new Date(dataFim);
+  const valor = typeof valorBase === "string" ? parseFloat(valorBase) : Number(valorBase);
+
+  const meses = recorrente || porVida
+    ? calcularMesesEntre(dataInicial, dataFinal)
+    : parcelas;
+
+  const novasProjecoes: Record<string, number> = {};
+
+  for (let i = 0; i < meses; i++) {
+    const data = new Date(dataInicial);
+    data.setMonth(data.getMonth() + i);
+    const competencia = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+
+    let valorPrevisto = 0;
+
+    if (!porVida && !recorrente) {
+      valorPrevisto = parseFloat((valor / parcelas).toFixed(2));
+    }
+
+    if (porVida) {
+      valorPrevisto += valor * vidasAtivas;
+    }
+
+    if (recorrente && !porVida && parcelas === 0) {
+      valorPrevisto = valor;
+    }
+
+    if (porVida && parcelas > 0) {
+      valorPrevisto += parseFloat((valor / parcelas).toFixed(2));
+    }
+
+    novasProjecoes[competencia] = parseFloat(valorPrevisto.toFixed(2));
+  }
+
+  const existentes = await prisma.projecao.findMany({
+    where: { fkContratoId: idContrato },
+  });
+
+  const existentesMap = new Map(existentes.map((p) => [p.competencia, p]));
+
+  for (const [competencia, valorPrevisto] of Object.entries(novasProjecoes)) {
+    const projExistente = existentesMap.get(competencia);
+
+    if (projExistente) {
+      if (projExistente.status === "PENDENTE") {
+        await prisma.projecao.update({
+          where: { idProjecao: projExistente.idProjecao },
+          data: { valorPrevisto },
+        });
+      }
+      existentesMap.delete(competencia); // Remove da lista para não ser deletado depois
+    } else {
+      await prisma.projecao.create({
+        data: {
+          fkContratoId: idContrato,
+          competencia,
+          valorPrevisto,
+          status: "PENDENTE",
+        },
+      });
+    }
+  }
+
+  // Exclui competências antigas que não estão mais na projeção nova
+  for (const projOutdated of existentesMap.values()) {
+    if (projOutdated.status === "PENDENTE") {
+      await prisma.projecao.delete({
+        where: { idProjecao: projOutdated.idProjecao },
+      });
+    }
+  }
 }
 
 export const buscarEmpresa = {
@@ -190,6 +284,7 @@ export const criarEmpresa = {
               cep: unidade.cep,
               ativo: unidade.ativo ?? true,
               observacao: unidade.observacao,
+              retemIss: unidade.retemIss ?? false,
               fkEmpresaId: empresaCriada.idEmpresa,
             },
           });
@@ -207,18 +302,25 @@ export const criarEmpresa = {
           // 2.2 Contratos
           if (Array.isArray(unidade.contratos) && unidade.contratos.length > 0) {
             for (const contrato of unidade.contratos) {
+              const parcelas = contrato.recorrente
+                ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
+                : contrato.parcelas;
+
               const contratoCriado = await prisma.contrato.create({
                 data: {
                   fkUnidadeId: unidadeCriada.idUnidade,
                   dataInicio: new Date(contrato.dataInicio),
                   dataFim: new Date(contrato.dataFim),
-                  parcelas: contrato.parcelas,
+                  parcelas: parcelas,
                   valorBase: contrato.valorBase,
                   porVida: contrato.porVida,
                   recorrente: contrato.recorrente,
                   status: contrato.status as StatusContrato,
                   faturadoPor: contrato.faturadoPor as FaturadoPor,
+                  esocial: contrato.esocial ?? false,
+                  laudos: contrato.laudos ?? false,
                   observacao: contrato.observacao,
+                  diaVencimento: contrato.diaVencimento ?? null
                 },
               });
 
@@ -227,6 +329,7 @@ export const criarEmpresa = {
                 await gerarProjecoesParaContrato({
                   idContrato: contratoCriado.idContrato,
                   dataInicio: contratoCriado.dataInicio,
+                  dataFim: contratoCriado.dataFim,
                   parcelas: contratoCriado.parcelas,
                   valorBase: contratoCriado.valorBase.toString(),
                   porVida: contratoCriado.porVida,
@@ -328,6 +431,7 @@ export const editarEmpresa = {
             cep: unidadeFront.cep,
             ativo: unidadeFront.ativo ?? true,
             observacao: unidadeFront.observacao,
+            retemIss: unidadeFront.retemIss ?? false
           },
         });
 
@@ -355,18 +459,25 @@ export const editarEmpresa = {
 
           for (const contrato of unidadeFront.contratos) {
             if (contrato.idContrato && contratosMap.has(contrato.idContrato)) {
+              const parcelas = contrato.recorrente
+                ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
+                : contrato.parcelas;
+
               await prisma.contrato.update({
                 where: { idContrato: contrato.idContrato },
                 data: {
                   dataInicio: new Date(contrato.dataInicio),
                   dataFim: new Date(contrato.dataFim),
-                  parcelas: contrato.parcelas,
+                  parcelas: parcelas,
                   valorBase: new Decimal(parseDecimal(contrato.valorBase)),
                   porVida: contrato.porVida,
                   recorrente: contrato.recorrente,
                   status: contrato.status as StatusContrato,
                   faturadoPor: contrato.faturadoPor as FaturadoPor,
+                  esocial: contrato.esocial ?? false,
+                  laudos: contrato.laudos ?? false,
                   observacao: contrato.observacao,
+                  diaVencimento: contrato.diaVencimento ?? null,
                 },
               });
 
@@ -376,9 +487,10 @@ export const editarEmpresa = {
               }
 
               if (contrato.status === "ATIVO") {
-                await gerarProjecoesParaContrato({
+                await sincronizarProjecoesParaContrato({
                   idContrato: contrato.idContrato,
                   dataInicio: contrato.dataInicio,
+                  dataFim: contrato.dataFim,
                   parcelas: contrato.parcelas,
                   valorBase: new Decimal(parseDecimal(contrato.valorBase)),
                   porVida: contrato.porVida,
@@ -389,24 +501,32 @@ export const editarEmpresa = {
 
               contratosMap.delete(contrato.idContrato);
             } else {
+              const parcelas = contrato.recorrente
+                ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
+                : contrato.parcelas;
+
               const contratoCriado = await prisma.contrato.create({
                 data: {
                   fkUnidadeId: unidadeDB.idUnidade,
                   dataInicio: new Date(contrato.dataInicio),
                   dataFim: new Date(contrato.dataFim),
-                  parcelas: contrato.parcelas,
+                  parcelas: parcelas,
                   valorBase: new Decimal(parseDecimal(contrato.valorBase)),
                   porVida: contrato.porVida,
                   recorrente: contrato.recorrente,
                   status: contrato.status as StatusContrato,
                   faturadoPor: contrato.faturadoPor as FaturadoPor,
+                  esocial: contrato.esocial ?? false,
+                  laudos: contrato.laudos ?? false,
                   observacao: contrato.observacao,
+                  diaVencimento: contrato.diaVencimento ?? null
                 },
               });
 
               await gerarProjecoesParaContrato({
                 idContrato: contratoCriado.idContrato,
                 dataInicio: contratoCriado.dataInicio,
+                dataFim: contratoCriado.dataFim,
                 parcelas: contratoCriado.parcelas,
                 valorBase: new Decimal(parseDecimal(contrato.valorBase)),
                 porVida: contratoCriado.porVida,
@@ -444,6 +564,7 @@ export const editarEmpresa = {
             cep: unidade.cep,
             ativo: unidade.ativo ?? true,
             observacao: unidade.observacao,
+            retemIss: unidade.retemIss ?? false
           },
         });
 
@@ -458,21 +579,31 @@ export const editarEmpresa = {
 
         if (Array.isArray(unidade.contratos) && unidade.contratos.length > 0) {
           for (const contrato of unidade.contratos) {
+            const parcelas = contrato.recorrente
+                ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
+                : contrato.parcelas;
+
             const contratoCriado = await prisma.contrato.create({
               data: {
                 ...contrato,
+                parcelas: parcelas,
                 valorBase: new Decimal(parseDecimal(contrato.valorBase)),
                 fkUnidadeId: novaUnidade.idUnidade,
                 dataInicio: new Date(contrato.dataInicio),
                 dataFim: new Date(contrato.dataFim),
                 status: contrato.status as StatusContrato,
                 faturadoPor: contrato.faturadoPor as FaturadoPor,
+                esocial: contrato.esocial ?? false,
+                laudos: contrato.laudos ?? false,
+                observacao: contrato.observacao,
+                diaVencimento: contrato.diaVencimento ?? null
               },
             });
 
             await gerarProjecoesParaContrato({
               idContrato: contratoCriado.idContrato,
               dataInicio: contratoCriado.dataInicio,
+              dataFim: contratoCriado.dataFim,
               parcelas: contratoCriado.parcelas,
               valorBase: new Decimal(parseDecimal(contrato.valorBase)),
               porVida: contratoCriado.porVida,

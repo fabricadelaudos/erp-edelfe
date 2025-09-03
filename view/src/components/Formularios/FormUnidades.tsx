@@ -64,6 +64,25 @@ export default function FormUnidade({ unidade, onChange }: Props) {
       <div className="flex-1 space-y-4">
         {aba === "dados" && (
           <div className="space-y-4">
+            <div className="col-span-2 flex items-center justify-end gap-2">
+              <label htmlFor="retemIss" className="text-sm text-gray-700">
+                Esta unidade retém ISS na fonte
+              </label>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={formLocal.retemIss}
+                onClick={() => atualizarCampo("retemIss", !formLocal.retemIss)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${formLocal.retemIss ? "bg-orange-500" : "bg-gray-300"
+                  }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${formLocal.retemIss ? "translate-x-6" : "translate-x-1"
+                    }`}
+                />
+              </button>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <Input name="nomeFantasia" label="Nome Fantasia" value={formLocal.nomeFantasia} onChange={(e) => atualizarCampo("nomeFantasia", e.target.value)} required />
               <Input name="razaoSocial" label="Razão Social" value={formLocal.razaoSocial} onChange={(e) => atualizarCampo("razaoSocial", e.target.value)} required />

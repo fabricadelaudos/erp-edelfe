@@ -5,6 +5,7 @@ export interface CompetenciaFinanceiraInput {
   competencia: string;
   imposto: string;
   ipca: string;
+  iss: string;
 }
 
 export async function buscarCompetenciaAtual(): Promise<CompetenciaFinanceira> {

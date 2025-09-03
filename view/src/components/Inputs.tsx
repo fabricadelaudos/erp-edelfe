@@ -68,6 +68,7 @@ interface SelectInputProps {
   required?: boolean;
   placeholder?: string;
   disable?: boolean;
+  className?: string
 }
 
 export const SelectInput = ({
@@ -78,7 +79,8 @@ export const SelectInput = ({
   options,
   required = true,
   placeholder = 'Selecione uma opção',
-  disable = false
+  disable = false,
+  className = "border border-gray-300 text-sm rounded-md block w-full p-2.5 focus:border-2 focus:border-blue-500 focus:outline-none bg-white"
 }: SelectInputProps) => (
   <div className="w-full">
     {label && (
@@ -93,8 +95,7 @@ export const SelectInput = ({
       onChange={onChange}
       required={required}
       disabled={disable}
-      className={`border border-gray-300 text-sm rounded-md block w-full p-2.5 focus:border-2 focus:border-blue-500 focus:outline-none bg-white`}
-    >
+      className={className}>
       <option value="">{placeholder}</option>
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>

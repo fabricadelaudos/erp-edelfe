@@ -16,8 +16,11 @@ export interface ContratoInput {
   recorrente: boolean;
   status: string;
   faturadoPor: string;
+  esocial?: boolean;
+  laudos?: boolean;
   observacao?: string;
   vidasAtivas?: number;
+  diaVencimento?: string;
 }
 
 export interface UnidadeInput {
@@ -34,6 +37,7 @@ export interface UnidadeInput {
   uf: string;
   cep: string;
   observacao?: string;
+  retemIss?: boolean;
   ativo?: boolean;
 
   contato?: ContatoInput;

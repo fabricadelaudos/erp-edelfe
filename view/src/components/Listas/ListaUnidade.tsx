@@ -18,7 +18,7 @@ export default function ListaUnidade({ unidades, onEditar, onRemover }: ListaUni
               <div className="flex gap-1 items-center">
                 {/* Quantitade de contratos */}
                 {unidade.contratos?.length > 0 && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-green-100 text-green-800 border border-green-300">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-300">
                     <FileText className="w-4 h-4" />
                     {unidade.contratos.length}
                   </span>
@@ -27,11 +27,13 @@ export default function ListaUnidade({ unidades, onEditar, onRemover }: ListaUni
                 <span
                   className={`px-3 py-1 rounded-full text-xs border ${unidade.ativo
                     ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                    : "bg-gray-200 text-gray-600 border-gray-400"
+                    : "bg-gray-100 text-gray-400 border-gray-300"
                     }`}
                 >
                   {unidade.ativo ? "Ativa" : "Inativa"}
                 </span>
+                {/* Retem ISS */}
+                {unidade.retemIss && (<span className={`px-3 py-1 rounded-full text-xs border bg-orange-100 text-orange-800 border-orange-300`}>ISS</span>)}
               </div>
               <p className="text-sm text-gray-600">{unidade.tipoDocumento}: {formatarDocumento(unidade.documento, unidade.tipoDocumento) || "—"}</p>
               <p className="text-xs text-gray-500">{formatarEndereco({

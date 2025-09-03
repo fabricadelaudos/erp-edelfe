@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buscarFaturamentoCompetencia, buscarFaturamentosPorContrato, criarFaturamento, gerarFaturamento } from "../useCases/faturamento";
+import { buscarFaturamentoCompetencia, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, gerarFaturamento } from "../useCases/faturamento";
 
 export const buscarFaturamentosPorContratoController = async (req: Request, res: Response) => {
   try {
@@ -19,6 +19,19 @@ export const criarFaturamentoController = async (req: Request, res: Response) =>
   } catch (e) {
     console.error("Erro ao criar faturamento:", e);
     return res.status(500).json({ error: "Erro ao criar faturamento." });
+  }
+};
+
+export const editarFaturamentoController = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const dados = req.body;
+  const user = req.user;
+
+  try {
+    const faturamento = await editarFaturamento.execute(id, dados, user);
+    res.json(faturamento);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 };
 

@@ -5,11 +5,13 @@ interface Props {
     competencia: string;
     imposto: string;
     ipca: string;
+    iss: string;
   };
   setForm: React.Dispatch<React.SetStateAction<{
     competencia: string;
     imposto: string;
     ipca: string;
+    iss: string;
   }>>;
   onSalvar: () => void;
 }
@@ -41,6 +43,15 @@ export default function FormCompetencia({ form, setForm, onSalvar }: Props) {
         step={0.01}
         value={form.ipca}
         onChange={(e) => setForm({ ...form, ipca: e.target.value })}
+      />
+
+      <Input
+        label="ISS (%)"
+        name="iss"
+        type="number"
+        step={0.01}
+        value={form.iss}
+        onChange={(e) => setForm({ ...form, iss: e.target.value })}
       />
 
       <div className="text-right">

@@ -14,7 +14,7 @@ export interface FaturamentoInput {
   vidas?: number;
   pagoEm?: string;
   competenciaPagamento?: string;
-  numeroNF?: string;
+  numeroNota?: string;
 }
 
 export async function buscarFaturamentosPorContrato(idContrato: number): Promise<Faturamento[]> {
@@ -30,5 +30,12 @@ export async function gerarFaturamentoPorCompetencia(competencia: string): Promi
   return apiFetch<Faturamento[]>(`/faturamento/gerar`, {
     method: "POST",
     body: JSON.stringify({ competencia }),
+  });
+}
+
+export async function editarFaturamento(faturamento: Faturamento): Promise<Faturamento> {
+  return apiFetch<Faturamento>(`/faturamento/${faturamento.idFaturamento}`, {
+    method: "PUT",
+    body: JSON.stringify(faturamento),
   });
 }

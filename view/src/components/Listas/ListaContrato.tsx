@@ -118,6 +118,7 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
         <table className="w-full bg-white text-sm">
           <thead className="bg-gray-50 text-gray-700">
             <tr>
+              <th className="px-3 py-2">Modalidade</th>
               <th className="px-3 py-2">Início</th>
               <th className="px-3 py-2">Fim</th>
               <th className="px-3 py-2">Valor Base</th>
@@ -139,12 +140,23 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
             ) : (
               list.map((c, i) => (
                 <tr key={i} className={i % 2 ? "bg-gray-50" : "bg-white"}>
+                  <td className="px-3 py-2">{c.esocial && "e-Social"} - {c.laudos && "Laudos"}</td>
                   <td className="px-3 py-2">{fmtDate(c.dataInicio)}</td>
                   <td className="px-3 py-2">{fmtDate(c.dataFim)}</td>
                   <td className="px-3 py-2">{fmtMoney(c.valorBase)}</td>
                   <td className="px-3 py-2">{c.parcelas ?? "—"}</td>
-                  <td className="px-3 py-2">{c.porVida ? "Sim" : "Não"}</td>
-                  <td className="px-3 py-2">{c.recorrente ? "Sim" : "Não"}</td>
+                  <td className="px-3 py-2">
+                    <span
+                      className={`inline-block w-3 h-3 rounded-full ${c.porVida ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <span
+                      className={`inline-block w-3 h-3 rounded-full ${c.recorrente ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                    />
+                  </td>
                   <td className="px-3 py-2">{statusBadge(c.status)}</td>
                   <td className="px-3 py-2">{c.faturadoPor}</td>
                   <td className="px-3 py-2">

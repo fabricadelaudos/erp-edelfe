@@ -11,12 +11,13 @@ interface Competencia {
   competencia: string;
   imposto: number;
   ipca: number;
+  iss: number;
 }
 
 export default function CompetenciaFinanceiraTab() {
   const [competencias, setCompetencias] = useState<Competencia[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
-  const [form, setForm] = useState({ competencia: "", imposto: "", ipca: "" });
+  const [form, setForm] = useState({ competencia: "", imposto: "", ipca: "", iss: "" });
   const [erro, setErro] = useState("");
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function CompetenciaFinanceiraTab() {
       const nova = await criarCompetencia(form);
       setCompetencias([...competencias, nova]);
       setModalAberto(false);
-      setForm({ competencia: "", imposto: "", ipca: "" });
+      setForm({ competencia: "", imposto: "", ipca: "", iss: "" });
     } catch (error: any) {
       if (error?.message) {
         setErro(error.message);
@@ -68,6 +69,11 @@ export default function CompetenciaFinanceiraTab() {
           {
             header: "IPCA",
             accessor: "ipca",
+            render: (valor) => `${Number(valor).toFixed(2)}%`,
+          },
+          {
+            header: "ISS",
+            accessor: "iss",
             render: (valor) => `${Number(valor).toFixed(2)}%`,
           },
         ]}

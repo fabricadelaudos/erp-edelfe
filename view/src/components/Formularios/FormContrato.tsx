@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input, TextArea, SelectInput } from "../Inputs";
 import type { Contrato } from "../../types/EstruturaEmpresa";
+import { formatarDataInput } from "../Auxiliares/formatter";
 
 interface Props {
   contrato: Contrato;
@@ -24,92 +25,39 @@ export default function FormContrato({
   }, [contrato]);
 
   const atualizar = <K extends keyof Contrato>(campo: K, valor: Contrato[K]) => {
-    const atualizado = { ...formLocal, [campo]: valor };
+    let atualizado = { ...formLocal, [campo]: valor };
+
+    // Se porVida for ativado, forçamos recorrente = true
+    if (campo === "porVida") {
+      atualizado.recorrente = valor ? true : atualizado.recorrente;
+    }
+
     setFormLocal(atualizado);
     onChange?.(atualizado);
   };
 
-  const handleSave = () => onSave?.(formLocal);
+  const handleSave = () => {
+    const contratoFinal: Contrato = {
+      ...formLocal,
+      recorrente: formLocal.porVida ? true : formLocal.recorrente,
+    };
+    onSave?.(contratoFinal);
+  };
+
   const handleCancel = () => {
     setFormLocal({ ...contrato });
     onCancel?.();
   };
 
   const isMensal = !formLocal.porVida && !formLocal.recorrente;
+  const isRecorrente = formLocal.recorrente && !formLocal.porVida;
+  const isPorVida = formLocal.porVida;
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <Input
-          type="date"
-          name="dataInicio"
-          label="Data Início"
-          value={formLocal.dataInicio}
-          onChange={(e) => atualizar("dataInicio", e.target.value)}
-        />
-
-        <Input
-          type="date"
-          name="dataFim"
-          label="Data Fim"
-          value={formLocal.dataFim || ""}
-          onChange={(e) => atualizar("dataFim", e.target.value)}
-        />
-
-        {isMensal && (
-          <Input
-            name="parcelas"
-            label="Parcelas"
-            type="number"
-            min={1}
-            value={formLocal.parcelas || 1}
-            onChange={(e) => atualizar("parcelas", Number(e.target.value))}
-          />
-        )}
-
-        {!formLocal.porVida && !formLocal.recorrente && (
-          <Input
-            name="valorBase"
-            label="Valor Total (Mensal)"
-            type="text"
-            value={formLocal.valorBase || ""}
-            onChange={(e) => atualizar("valorBase", e.target.value)}
-          />
-        )}
-
-        {formLocal.porVida && (
-          <>
-            <Input
-              name="valorPorVida"
-              label="Valor por Vida"
-              type="text"
-              value={formLocal.valorBase || ""}
-              onChange={(e) => atualizar("valorBase", e.target.value)}
-            />
-            <Input
-              name="vidasAtivasTemp"
-              label="Vidas Ativas (Apenas cálculo)"
-              type="number"
-              value={formLocal.vidasAtivasTemp ?? ""}
-              onChange={(e) => atualizar("vidasAtivasTemp", Number(e.target.value))}
-            />
-          </>
-        )}
-
-        {formLocal.recorrente && !formLocal.porVida && (
-          <Input
-            name="valorRecorrente"
-            label="Valor Mensal Recorrente"
-            type="text"
-            value={formLocal.valorRecorrente || ""}
-            onChange={(e) => atualizar("valorRecorrente", e.target.value)}
-          />
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* Toggle Por Vida */}
-        <div className="flex items-center justify-between">
+      {/* Toggle Por Vida / Recorrente / e-Social / Laudos */}
+      <div className="flex items-center justify-end gap-4">
+        <div className="flex items-center gap-1">
           <span className="text-sm font-medium text-gray-700">Por Vida</span>
           <button
             type="button"
@@ -122,22 +70,134 @@ export default function FormContrato({
           </button>
         </div>
 
-        {/* Toggle Recorrente */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1">
           <span className="text-sm font-medium text-gray-700">Recorrente</span>
           <button
             type="button"
-            onClick={() => atualizar("recorrente", !formLocal.recorrente)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formLocal.recorrente ? "bg-green-500" : "bg-gray-300"}`}
+            onClick={() => {
+              if (!formLocal.porVida) {
+                atualizar("recorrente", !formLocal.recorrente);
+              }
+            }}
+            disabled={formLocal.porVida}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formLocal.recorrente ? "bg-green-500" : "bg-gray-300"} ${formLocal.porVida ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formLocal.recorrente ? "translate-x-6" : "translate-x-1"}`}
             />
           </button>
         </div>
+
+        <div className="flex items-center gap-1">
+          <span className="text-sm font-medium text-gray-700">e-Social</span>
+          <button
+            type="button"
+            onClick={() => atualizar("esocial", !formLocal.esocial)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formLocal.esocial ? "bg-green-500" : "bg-gray-300"
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formLocal.esocial ? "translate-x-6" : "translate-x-1"
+                }`}
+            />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <span className="text-sm font-medium text-gray-700">Laudos</span>
+          <button
+            type="button"
+            onClick={() => atualizar("laudos", !formLocal.laudos)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formLocal.laudos ? "bg-green-500" : "bg-gray-300"
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formLocal.laudos ? "translate-x-6" : "translate-x-1"
+                }`}
+            />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Form */}
+      <div className="grid grid-cols-4 gap-4">
+        <Input
+          type="date"
+          name="dataInicio"
+          label="Data Início"
+          value={formatarDataInput(formLocal.dataInicio)}
+          onChange={(e) => atualizar("dataInicio", e.target.value)}
+        />
+
+        <Input
+          type="date"
+          name="dataFim"
+          label="Data Fim"
+          value={formatarDataInput(formLocal.dataFim) || ""}
+          onChange={(e) => atualizar("dataFim", e.target.value)}
+        />
+
+        {isMensal && (
+          <>
+            <Input
+              name="parcelas"
+              label="Parcelas"
+              type="number"
+              min={1}
+              value={formLocal.parcelas || 1}
+              onChange={(e) => atualizar("parcelas", Number(e.target.value))}
+            />
+            <Input
+              name="valorBase"
+              label="Valor Total do Contrato"
+              type="text"
+              value={formLocal.valorBase || ""}
+              onChange={(e) => atualizar("valorBase", e.target.value)}
+            />
+          </>
+        )}
+
+        {isRecorrente && (
+          <div className="col-span-2">
+            <Input
+              name="valorBase"
+              label="Valor Mensal Recorrente"
+              type="text"
+              value={formLocal.valorBase || ""}
+              onChange={(e) => atualizar("valorBase", e.target.value)}
+            />
+          </div>
+        )}
+
+        {isPorVida && (
+          <>
+            <Input
+              name="valorBase"
+              label="Valor por Vida"
+              type="text"
+              value={formLocal.valorBase || ""}
+              onChange={(e) => atualizar("valorBase", e.target.value)}
+            />
+            <Input
+              name="vidasAtivasTemp"
+              label="Vidas Ativas (Apenas cálculo)"
+              type="number"
+              value={formLocal.vidasAtivas ?? ""}
+              onChange={(e) => atualizar("vidasAtivas", Number(e.target.value))}
+            />
+          </>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <Input
+          name="diaVencimento"
+          label="Dia Vencimento"
+          type="number"
+          value={formLocal.diaVencimento ?? ""}
+          onChange={(e) => atualizar("diaVencimento", e.target.value)}
+        />
         <SelectInput
           name="status"
           label="Status"
