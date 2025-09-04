@@ -29,7 +29,39 @@ export default function ModalEditarFaturamento({
   if (!dados) return null;
 
   const handleChange = (campo: keyof Faturamento, valor: any) => {
-    setDados((prev) => (prev ? { ...prev, [campo]: valor } : prev));
+    setDados((prev) => {
+      if (!prev) return prev;
+
+      const atualizado = { ...prev, [campo]: valor };
+
+      const porVida = prev.contrato?.porVida;
+      const valorPorVida = Number(prev.contrato?.valorBase ?? 0);
+      const vidas = campo === "vidas" ? Number(valor) : Number(prev.vidas ?? 0);
+      const imposto = campo === "impostoPorcentagem"
+        ? Number(valor)
+        : Number(prev.impostoPorcentagem ?? 0);
+
+      // ✔ recalcula se for por vida, mesmo com 0 vidas
+      if (porVida && !isNaN(vidas) && !isNaN(valorPorVida)) {
+        const valorBase = vidas * valorPorVida;
+        const impostoValor = valorBase * (imposto / 100);
+
+        atualizado.valorBase = valorBase.toFixed(2);
+        atualizado.impostoValor = impostoValor.toFixed(2);
+      }
+
+      // ✔ caso altere só o imposto e não seja por vida
+      if (
+        campo === "impostoPorcentagem" &&
+        !porVida &&
+        typeof prev.valorBase === "number"
+      ) {
+        const impostoValor = Number(prev.valorBase) * (Number(valor) / 100);
+        atualizado.impostoValor = impostoValor.toFixed(2);
+      }
+
+      return atualizado;
+    });
   };
 
   const salvar = () => {
@@ -42,6 +74,7 @@ export default function ModalEditarFaturamento({
   return (
     <ModalBase isOpen={aberto} onClose={onClose} titulo="Detalhes do Faturamento">
       <div className="flex flex-col gap-6 p-4 text-sm">
+        {/* Linha 1 */}
         <div className="grid grid-cols-5 gap-4">
           <div className="space-y-1">
             <label className="font-medium text-gray-600">Faturado por</label>
@@ -51,9 +84,9 @@ export default function ModalEditarFaturamento({
           <div className="space-y-1">
             <label className="font-medium text-gray-600">Modalidade</label>
             <div className="flex flex-wrap gap-2 text-xs">
-              {dados.contrato?.recorrente && <span>🔁 Recorrente</span>}
+              {!dados.contrato?.porVida && dados.contrato?.recorrente && <span>🔁 Recorrente</span>}
               {dados.contrato?.porVida && <span>🧍‍♂️ Por Vida</span>}
-              {dados.contrato?.parcelas && <span>📅 {dados.contrato.parcelas} Parcelas</span>}
+              {!dados.contrato?.porVida && dados.contrato?.parcelas && <span>📅 {dados.contrato.parcelas} Parcelas</span>}
             </div>
           </div>
 
@@ -78,7 +111,8 @@ export default function ModalEditarFaturamento({
           </div>
         </div>
 
-        <div className="grid grid-cols-6 gap-4">
+        {/* Linha 2 */}
+        <div className={`grid gap-4 ${dados.contrato?.porVida ? 'grid-cols-7' : 'grid-cols-6'}`}>
           <SelectInput
             name="status"
             label="Status"
@@ -102,20 +136,27 @@ export default function ModalEditarFaturamento({
           <Input
             name="numeroNota"
             label="Número da Nota"
-            value={dados.numeroNota ?? ""}
+            value={dados.numeroNota?.toString() ?? ""}
             onChange={(e) => handleChange("numeroNota", e.target.value)}
             disable={!editavel}
           />
 
           {dados.contrato?.porVida && (
-            <Input
-              name="vidas"
-              label="Vidas"
-              type="number"
-              value={dados.vidas ?? ""}
-              onChange={(e) => handleChange("vidas", Number(e.target.value))}
-              disable={!editavel}
-            />
+            <>
+              <Input
+                name="vidas"
+                label="Vidas"
+                type="number"
+                value={dados.vidas?.toString() ?? ""}
+                onChange={(e) => handleChange("vidas", Number(e.target.value))}
+                disable={!editavel}
+              />
+
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Valor Vida</label>
+                <p>{formatarReais(dados.contrato?.valorBase?.toString())}</p>
+              </div>
+            </>
           )}
 
           <div>
@@ -126,7 +167,7 @@ export default function ModalEditarFaturamento({
           <div>
             <label className="font-medium text-gray-600 mb-1 block">Imposto (%)</label>
             <Copiavel
-              valor={`${dados.impostoPorcentagem ?? "—"}%`}
+              valor={`${dados.impostoPorcentagem.toString() ?? "—"}%`}
             />
           </div>
 

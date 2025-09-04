@@ -20,6 +20,19 @@ export default function FaturamentoPage() {
 
   const colunasFaturamento: Column<Faturamento>[] = [
     {
+      header: "Status",
+      accessor: "status",
+      render: (v: string) => {
+        const cores: Record<string, string> = {
+          ABERTA: "text-yellow-600",
+          PAGA: "text-green-700",
+          ATRASADA: "text-red-600",
+        };
+        return <span className={`font-semibold ${cores[v] ?? ""}`}>{v}</span>;
+      },
+      sortable: true,
+    },
+    {
       header: "Empresa",
       accessor: "idFaturamento",
       render: (_: any, row: Faturamento) => row.contrato?.unidade?.empresa?.nome ?? "—",
@@ -132,19 +145,6 @@ export default function FaturamentoPage() {
       header: "Vencimento",
       accessor: "idFaturamento",
       render: (_: any, row: Faturamento) => row.contrato?.diaVencimento ?? "—",
-      sortable: true,
-    },
-    {
-      header: "Status",
-      accessor: "status",
-      render: (v: string) => {
-        const cores: Record<string, string> = {
-          ABERTA: "text-yellow-600",
-          PAGA: "text-green-700",
-          ATRASADA: "text-red-600",
-        };
-        return <span className={`font-semibold ${cores[v] ?? ""}`}>{v}</span>;
-      },
       sortable: true,
     },
   ];

@@ -89,7 +89,10 @@ export const buscarFaturamentoCompetencia = {
   async execute(competencia: string) {
     const faturamentos = await prisma.faturamento.findMany({
       where: { competencia },
-      orderBy: { fkContratoId: "asc" },
+      orderBy: [
+        { status: "asc" },
+        { fkContratoId: "asc" },
+      ],
       include: {
         contrato: {
           include: {
