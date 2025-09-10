@@ -215,7 +215,6 @@ export default function CheckboxStatus({ checked, onChange, disabled = false }: 
   );
 }
 
-
 // SelectSearch
 type Option = { label: string; value: string | number };
 
@@ -422,6 +421,40 @@ export function SearchableSelect({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+
+// Toggle
+interface ToggleInputProps {
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  disabled?: boolean;
+}
+
+export function ToggleInput({ label, value, onChange, disabled = false }: ToggleInputProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <label className="text-sm font-medium text-gray-900 select-none">{label}</label>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(!value)}
+        className={`
+          relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200
+          ${value ? "bg-orange-500" : "bg-gray-300"}
+          ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+        `}
+      >
+        <span
+          className={`
+            inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200
+            ${value ? "translate-x-6" : "translate-x-1"}
+          `}
+        />
+      </button>
     </div>
   );
 }

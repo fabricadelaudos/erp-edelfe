@@ -11,7 +11,7 @@ model usuario {
   idUsuario   Int      @id @default(autoincrement())
   nome        String   @db.VarChar(45)
   email       String   @unique(map: "email_UNIQUE") @db.VarChar(45)
-  ativo       Int      @default(1) @db.TinyInt
+  ativo       Boolean  @default(true)
   firebaseId  String   @unique
   criado_em   DateTime @default(now()) @db.DateTime(0)
   editado_em  DateTime @updatedAt @db.DateTime(0)
@@ -126,42 +126,78 @@ model competenciaFinanceira {
   faturamentos             faturamento[]
 }
 
-model despesa {
-  idDespesa              Int                 @id @default(autoincrement())
-  fkDespesaRecorrenteId  Int?
-  fkDespesaCategoriaId   Int?
-  descricao              String
-  competencia            String
-  vencimento             DateTime
-  valor                  Decimal              @db.Decimal(10, 2)
-  status                 StatusDespesa
-  tipoPagamento          TipoPagamento
-  parcelaAtual           Int?
-  parcelaTotal           Int?
-  pagoEm                 DateTime?
+model fornecedor {
+  idFornecedor  Int           @id @default(autoincrement())
+  tipoPessoa    TipoPessoa
+  tipoDocumento TipoDocumento 
+  documento     String        @unique
+  nome          String
+  observacao    String?
+  ativo         Boolean       @default(true)
 
-  despesaRecorrente      despesaRecorrente?   @relation(fields: [fkDespesaRecorrenteId], references: [idDespesaRecorrente], onDelete: SetNull)
-  categoria              despesaCategoria?    @relation(fields: [fkDespesaCategoriaId], references: [idDespesaCategoria], onDelete: SetNull)
+  contasPagar   contaPagar[]
 }
 
-model despesaRecorrente {
-  idDespesaRecorrente Int        @id @default(autoincrement())
-  descricao           String
-  valor               Decimal    @db.Decimal(10, 2)
-  vencimento          Int
-  dataInicio          DateTime
-  dataFim             DateTime?
-  ativa               Boolean     @default(true)
+model planoContaCategoria {
+  idPlanoContaCategoria    Int                      @id @default(autoincrement())
+  nome                     String
+  ativo                    Boolean                  @default(true)
 
-  despesas            despesa[]
+  subcategorias  planoContaSubcategoria[]
 }
 
-model despesaCategoria{
-  idDespesaCategoria  Int         @id @default(autoincrement())
-  nome                String
-  ativo               Int
+model planoContaSubcategoria {
+  idPlanoContaSubCategoria   Int                 @id @default(autoincrement())
+  nome                       String
+  fkPlanoContaCategoria      Int
+  ativo                      Boolean             @default(true)
 
-  despesas            despesa[]
+  contasPagar                contaPagar[]
+
+  categoria                  planoContaCategoria @relation(fields: [fkPlanoContaCategoria], references: [idPlanoContaCategoria])
+}
+
+model banco {
+  idBanco       Int           @id @default(autoincrement())
+  nome          String
+  ativo         Boolean       @default(true)
+
+  contasPagar   contaPagar[]
+}
+
+model contaPagar {
+  idContaPagar                Int                    @id @default(autoincrement())
+  dataEmissao                 DateTime
+  numeroDocumento             String
+  fkFornecedorId              Int
+  tipoDocumentoConta          TipoDocumentoConta
+  fkPlanoContaSubCategoriaId  Int
+  fkBancoId                   Int
+  descricao                   String
+  valorTotal                  Decimal                @db.Decimal(10, 2)
+  parcelas                    Int
+  vencimento                  DateTime               
+  intervalo                   Int                    
+  recorrente                  Boolean                @default(false)
+  status                      StatusParcela          @default(ABERTA)
+
+  fornecedor                  fornecedor             @relation(fields: [fkFornecedorId], references: [idFornecedor])
+  planoConta                  planoContaSubcategoria @relation(fields: [fkPlanoContaSubCategoriaId], references: [idPlanoContaSubCategoria])
+  banco                       banco                  @relation(fields: [fkBancoId], references: [idBanco])
+
+  parcelasConta               parcelaContaPagar[]
+}
+
+model parcelaContaPagar {
+  idParcela        Int           @id @default(autoincrement())
+  fkContaPagarId   Int
+  numero           Int
+  vencimento       DateTime
+  valor            Decimal       @db.Decimal(10, 2)
+  status           StatusParcela @default(ABERTA)
+  pagoEm           DateTime?
+
+  contaPagar       contaPagar    @relation(fields: [fkContaPagarId], references: [idContaPagar])
 }
 
 model logEvento {
@@ -181,6 +217,7 @@ model logEvento {
 enum TipoDocumento {
   CNPJ
   CAEPF
+  CPF
 }
 
 enum StatusContrato {
@@ -205,13 +242,22 @@ enum StatusFaturamento {
   ATRASADA
 }
 
-enum StatusDespesa {
-  ABERTA
-  PAGA
+enum TipoDocumentoConta {
+  BOLETO
+  DEBITO_AUTOMATICO
+  FATURA
+  NF
+  PIX
 }
 
-enum TipoPagamento {
-  AVISTA
-  APRAZO
-  RECORRENTE
+enum StatusParcela {
+  ABERTA
+  PAGA
+  ATRASADA
+}
+
+enum TipoPessoa {
+  CLIENTE
+  FORNECEDOR
+  CLIENTE_FORNECEDOR
 }

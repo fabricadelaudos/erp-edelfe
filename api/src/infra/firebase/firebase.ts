@@ -6,4 +6,8 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
+export async function gerarLinkRedefinicaoSenha(email: string) {
+  return await admin.auth().generatePasswordResetLink(email);
+}
+
 export default admin;

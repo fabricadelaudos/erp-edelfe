@@ -15,6 +15,7 @@ interface TabelaBaseProps<T> {
   data: T[];
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
+  acoesExtras?: (row: T) => React.ReactNode;
   itemsPerPage?: number;
   isLoading?: boolean;
   legenda?: { cor: string; texto: string }[];
@@ -25,6 +26,7 @@ export default function TabelaBase<T extends object>({
   data,
   onEdit,
   onDelete,
+  acoesExtras,
   itemsPerPage = 10,
   isLoading = false,
   legenda = [],
@@ -102,7 +104,7 @@ export default function TabelaBase<T extends object>({
                   </th>
                 ))}
                 {(onEdit || onDelete) && (
-                  <th className="font-bold text-right sticky right-0 z-10 bg-gray-50">
+                  <th className="font-bold text-center sticky right-0 z-10 bg-gray-50">
                     <div className="px-4 py-3 border-l border-gray-300">
                       Ações
                     </div>
@@ -131,7 +133,7 @@ export default function TabelaBase<T extends object>({
                         {col.render ? col.render(row[col.accessor], row) : (row[col.accessor] as any) ?? "—"}
                       </td>
                     ))}
-                    {(onEdit || onDelete) && (
+                    {(onEdit || onDelete || acoesExtras) && (
                       <td className={`sticky right-0 z-10 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                         <div className="px-4 py-3 align-middle inline-flex justify-center items-center gap-2 w-full h-full border-l border-gray-300">
                           {onEdit && (
@@ -154,6 +156,7 @@ export default function TabelaBase<T extends object>({
                               </button>
                             </ToolTip>
                           )}
+                          {acoesExtras && acoesExtras(row)} {/* ✅ Aqui adiciona as ações extras */}
                         </div>
                       </td>
                     )}

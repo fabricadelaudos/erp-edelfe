@@ -1,34 +1,27 @@
 import { useEffect, useState } from "react";
-import type { Empresa } from "../types/EstruturaEmpresa";
 import { getEmpresas } from "../services/apiEmpresa";
+import type { Empresa } from "../types/EstruturaEmpresa";
 
-import SearchInput from "../components/Auxiliares/SearchInput";
 import ModalBase from "../components/Modais/ModalBase";
 import FormEmpresa from "../components/Formularios/FormEmpresa";
-import TabelaBase, { type Column } from "../components/Tabelas/TabelaBase";
-import { Plus } from "lucide-react";
+import SearchInput from "../components/Auxiliares/SearchInput";
+import { Plus, ChevronDown, ChevronRight, Pencil } from "lucide-react";
+import ToolTip from "../components/Auxiliares/ToolTip";
+import { formatarDocumento } from "../components/Auxiliares/formatter";
 
 export default function EmpresaPage() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [empresaSelecionada, setEmpresaSelecionada] = useState<Empresa | null>(null);
   const [busca, setBusca] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
-
-  const columns: Column<Empresa>[] = [
-    { header: "Nome da Empresa", accessor: "nome", sortable: true },
-    {
-      header: "Status",
-      accessor: "ativo",
-      render: (valor) => (valor ? "Ativo" : "Inativo"),
-      sortable: true,
-    },
-  ];
+  const [empresasAbertas, setEmpresasAbertas] = useState<number[]>([]);
 
   useEffect(() => {
     const carregarEmpresas = async () => {
       const data = await getEmpresas();
       setEmpresas(data);
     };
+
     carregarEmpresas();
   }, []);
 
@@ -42,9 +35,34 @@ export default function EmpresaPage() {
     setModalAberto(true);
   };
 
-  const empresasFiltradas = empresas.filter((e) =>
-    e.nome.toLowerCase().includes(busca.toLowerCase())
-  );
+  const toggleEmpresaAberta = (id: number) => {
+    setEmpresasAbertas((prev) =>
+      prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]
+    );
+  };
+
+  const empresasFiltradas = empresas.filter((empresa) => {
+    const termo = busca.toLowerCase();
+
+    const nomeEmpresaMatch = empresa.nome.toLowerCase().includes(termo);
+
+    const unidadeMatch = (empresa.unidades ?? []).some((unidade) =>
+      unidade.nomeFantasia.toLowerCase().includes(termo) ||
+      unidade.cidade.toLowerCase().includes(termo) ||
+      unidade.uf.toLowerCase().includes(termo) ||
+      unidade.documento.toString().toLowerCase().includes(termo)
+    );
+
+    return nomeEmpresaMatch || unidadeMatch;
+  });
+
+  useEffect(() => {
+    if (busca.trim() === "") return;
+
+    const idsAbertos = empresasFiltradas.map((empresa) => empresa.idEmpresa);
+    setEmpresasAbertas(idsAbertos);
+  }, [busca, empresasFiltradas]);
+
 
   return (
     <div className="p-6 bg-white rounded-md border border-gray-300">
@@ -61,11 +79,106 @@ export default function EmpresaPage() {
 
       <SearchInput onBusca={setBusca} placeholder="Buscar empresa..." />
 
-      <TabelaBase
-        data={empresasFiltradas}
-        columns={columns}
-        onEdit={handleEditar}
-      />
+      <div className="mt-4 space-y-2">
+        {empresasFiltradas.map((empresa) => (
+          <div
+            key={empresa.idEmpresa}
+            className="border border-gray-300 rounded-md overflow-hidden"
+          >
+            {/* Linha da empresa */}
+            <div className="bg-gray-100 flex items-center justify-between px-4 py-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleEmpresaAberta(empresa.idEmpresa)}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  {empresasAbertas.includes(empresa.idEmpresa) ? (
+                    <ChevronDown size={18} />
+                  ) : (
+                    <ChevronRight size={18} />
+                  )}
+                </button>
+                <span className="font-semibold">{empresa.nome}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-1">
+                  <ToolTip text={empresa.ativo ? "Ativo" : "Inativo"} position="left">
+                    <div
+                      className={`w-3 h-3 rounded-full ${empresa.ativo ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                    />
+                  </ToolTip>
+                </div>
+
+                <button
+                  onClick={() => handleEditar(empresa)}
+                  className="text-blue-600 hover:underline"
+                >
+                  <Pencil size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Subtabela de unidades */}
+            {empresasAbertas.includes(empresa.idEmpresa) && (
+              <div className="px-4 pb-4 pt-2 bg-white text-sm">
+                <div className="mb-1 font-semibold text-gray-600">Unidades</div>
+                <div className="border border-gray-300 rounded overflow-hidden">
+                  <table className="w-full text-center text-sm border-separate border-spacing-0">
+                    <thead className="bg-gray-100 text-gray-700 border-b border-gray-300">
+                      <tr>
+                        <th className="p-2">Unidade</th>
+                        <th className="p-2">Documento</th>
+                        <th className="p-2">Cidade</th>
+                        <th className="p-2">UF</th>
+                        <th className="p-2">Status</th>
+                        <th className="p-2">Retém ISS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {empresa.unidades?.map((unidade, index) => (
+                        <tr
+                          key={unidade.idUnidade}
+                          className={`border-t border-gray-300 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                            }`}
+                        >
+                          <td className="p-2">{unidade.nomeFantasia}</td>
+                          <td className="p-2">{formatarDocumento(unidade.documento, unidade.tipoDocumento)}</td>
+                          <td className="p-2">{unidade.cidade}</td>
+                          <td className="p-2">{unidade.uf}</td>
+                          <td className="p-2">
+                            <ToolTip text={unidade.ativo ? "Ativo" : "Inativo"}>
+                              <div
+                                className={`w-3 h-3 rounded-full ${unidade.ativo ? "bg-green-500" : "bg-gray-300"
+                                  }`}
+                              />
+                            </ToolTip>
+                          </td>
+                          <td className="p-2">
+                            <ToolTip text={unidade.retemIss ? "Sim" : "Não"}>
+                              <div
+                                className={`w-3 h-3 rounded-full ${unidade.retemIss ? "bg-green-500" : "bg-gray-300"
+                                  }`}
+                              />
+                            </ToolTip>
+                          </td>
+                        </tr>
+                      ))}
+                      {empresa.unidades?.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-2 text-center text-gray-500">
+                            Nenhuma unidade cadastrada.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
       <ModalBase
         titulo={empresaSelecionada ? "Editar Empresa" : "Nova Empresa"}
