@@ -65,7 +65,7 @@ export default function EmpresaPage() {
 
 
   return (
-    <div className="p-6 bg-white rounded-md border border-gray-300">
+    <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Empresas</h2>
         <button
@@ -77,9 +77,10 @@ export default function EmpresaPage() {
         </button>
       </div>
 
-      <SearchInput onBusca={setBusca} placeholder="Buscar empresa..." />
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 space-y-2 bg-white p-4 rounded-md border border-gray-200">
+        <SearchInput onBusca={setBusca} placeholder="Buscar empresa..." />
+        
         {empresasFiltradas.map((empresa) => (
           <div
             key={empresa.idEmpresa}

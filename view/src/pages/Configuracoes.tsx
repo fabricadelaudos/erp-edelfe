@@ -27,13 +27,13 @@ export default function EmpresaConfigPage() {
   return (
     <div className="p-6 bg-white rounded-md border border-gray-300">
       {/* Abas */}
-      <div className="flex gap-4 border-b mb-4">
+      <div className="flex gap-4 border-b border-green-400 mb-4">
         {abas.map((aba) => (
           <button
             key={aba.id}
             className={`px-4 py-2 transition-colors duration-200 ${abaSelecionada === aba.id
                 ? "border-b-2 border-orange-500 font-semibold text-orange-600"
-                : "text-gray-600 hover:text-orange-500"
+                : "text-green-500 hover:text-orange-500"
               }`}
             onClick={() => setAbaSelecionada(aba.id as Aba)}
           >
