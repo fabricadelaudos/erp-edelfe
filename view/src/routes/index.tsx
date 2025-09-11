@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import Loading from '../components/Loading';
+import DespesaPage from '../pages/Despesa';
 
 const LoginPage = lazy(() => import('../pages/Auth/LoginPage'));
 const ConfiguracoesPage = lazy(() => import('../pages/Configuracoes'));
@@ -33,6 +34,7 @@ export default function AppRoutes() {
               <Route path="/" element={<HomePage />} />
               <Route path="/cadastro/empresa" element={<EmpresaPage />} />
               <Route path="/faturamento" element={<FaturamentoPage />} />
+              <Route path="/despesas" element={<DespesaPage />} />
               <Route path="/configuracoes" element={<ConfiguracoesPage />} />
             </Route>
           </Route>

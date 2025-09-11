@@ -5,6 +5,7 @@ import TabelaBase, { type Column } from "../components/Tabelas/TabelaBase";
 import ModalEditarFaturamento from "../components/Modais/ModalEditarFaturamento";
 import { formatarDocumento, formatarTelefone } from "../components/Auxiliares/formatter";
 import ToolTip from "../components/Auxiliares/ToolTip";
+import { Input, SelectInput } from "../components/Inputs";
 
 export default function FaturamentoPage() {
   const [competencia, setCompetencia] = useState(() => {
@@ -65,7 +66,6 @@ export default function FaturamentoPage() {
       header: "Contato",
       accessor: "idFaturamento",
       render: (_: any, row: Faturamento) => {
-        console.log(row.contrato?.unidade?.contato);
         const contatos = row.contrato?.unidade?.contato ?? [];
         if (!contatos.length) return "—";
 
@@ -149,13 +149,58 @@ export default function FaturamentoPage() {
     },
   ];
 
+  const [filtros, setFiltros] = useState({
+    status: "",
+    empresa: "",
+  });
+
+  const [totalTitulos, setTotalTitulos] = useState(0);
+  const [totalValorBase, setTotalValorBase] = useState(0);
+  const [totalImposto, setTotalImposto] = useState(0);
+  const [totalValor, setTotalValor] = useState(0);
+
+  const calcularTotais = (lista: Faturamento[]) => {
+    // total de faturas
+    setTotalTitulos(lista.length);
+
+    // somatórios
+    const somaBase = lista.reduce((acc, f) => acc + Number(f.valorBase), 0);
+    const somaImposto = lista.reduce((acc, f) => acc + Number(f.impostoValor), 0);
+    const somaValor = lista.reduce((acc, f) => acc + Number(f.valorTotal), 0);
+
+    setTotalValorBase(somaBase);
+    setTotalImposto(somaImposto);
+    setTotalValor(somaValor);
+  };
+
+  const faturamentosFiltrados = faturamentos.filter(f => {
+    const matchStatus = filtros.status ? f.status === filtros.status : true;
+    const matchEmpresa = filtros.empresa
+      ? f.contrato?.unidade?.empresa?.nome
+        ?.toLowerCase()
+        .includes(filtros.empresa.toLowerCase())
+      : true;
+
+    return matchStatus && matchEmpresa;
+  });
+
+  // recalcula totais já nos filtrados
+  useEffect(() => {
+    calcularTotais(faturamentosFiltrados);
+  }, [faturamentosFiltrados]);
+
   const buscarFaturamento = async () => {
     try {
       const lista = await buscarFaturamentoPorCompetencia(competencia);
       if (lista.length > 0) {
         setFaturamentos(lista);
+        calcularTotais(lista);
       } else {
         setFaturamentos([]);
+        setTotalTitulos(0);
+        setTotalValorBase(0);
+        setTotalImposto(0);
+        setTotalValor(0);
       }
     } catch (error) {
       console.error("Erro ao buscar faturamento:", error);
@@ -168,7 +213,9 @@ export default function FaturamentoPage() {
 
   const gerarFaturamento = async () => {
     const lista = await gerarFaturamentoPorCompetencia(competencia);
+    console.log("Faturamentos gerados:", lista);
     setFaturamentos(lista);
+    calcularTotais(lista);
   };
 
   const abrirModal = (item: Faturamento) => {
@@ -186,8 +233,10 @@ export default function FaturamentoPage() {
     }
   };
 
+  const cardClasses = "flex items-center justify-between gap-3 bg-white shadow-sm rounded-md p-4 col-span-1";
+
   return (
-    <div className="p-5 bg-white rounded border border-gray-300">
+    <div className="p-4">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Faturamento</h1>
         <div className="flex items-center gap-2">
@@ -206,10 +255,63 @@ export default function FaturamentoPage() {
         </div>
       </div>
 
+      {/* Cards */}
+      <div className="grid grid-cols-4 gap-4 mb-4">
+        <div className={cardClasses}>
+          <div className="w-full">
+            <p className="text-sm text-gray-500">Total de Faturas</p>
+            <p className="text-lg font-bold text-gray-800 text-right">{totalTitulos}</p>
+          </div>
+        </div>
+        <div className={cardClasses}>
+          <div className="w-full">
+            <p className="text-sm text-gray-500">Total Valor Base</p>
+            <p className="text-lg font-bold text-blue-600 text-right">R$ {totalValorBase.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
 
-      <div className="w-full overflow-x-auto">
+        <div className={cardClasses}>
+          <div className="w-full">
+            <p className="text-sm text-gray-500">Total Imposto</p>
+            <p className="text-lg font-bold text-red-600 text-right">R$ {totalImposto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
+
+        <div className={cardClasses}>
+          <div className="w-full">
+            <p className="text-sm text-gray-500">Valor Total</p>
+            <p className="text-lg font-bold text-green-600 text-right">R$ {totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full overflow-x-auto bg-white p-4 rounded">
+        <div className="flex justify-end gap-2 mb-2">
+          <SelectInput
+            label="Selecione um Status"
+            name="status"
+            value={filtros.status}
+            onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}
+            options={[
+              { label: "Todos os status", value: "" },
+              { label: "Aberta", value: "ABERTA" },
+              { label: "Paga", value: "PAGA" },
+              { label: "Atrasada", value: "ATRASADA" },
+            ]}
+          />
+
+          <Input
+            label="Filtrar por empresa"
+            name="empresa"
+            placeholder="Filtrar por empresa"
+            value={filtros.empresa}
+            onChange={(e) => setFiltros({ ...filtros, empresa: e.target.value })}
+          />
+        </div>
+
+
         <TabelaBase<Faturamento>
-          data={faturamentos}
+          data={faturamentosFiltrados}
           columns={colunasFaturamento}
           onEdit={abrirModal}
         />

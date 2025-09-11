@@ -6,6 +6,7 @@ import {
   editarContaPagar,
   buscarParcela,
   atualizarParcela,
+  confirmarPagamento,
 } from '../../useCases/despesas/contaPagar';
 
 export const buscarContaPagarController = async (req: Request, res: Response) => {
@@ -64,6 +65,17 @@ export const atualizarParcelaController = async (req: Request, res: Response) =>
     const parcela = await atualizarParcela.execute(parseInt(req.params.id), { ...req.body, idUsuario });
     return res.json(parcela);
   } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const confirmarPagamentoController = async (req: Request, res: Response) => {
+  try {
+    const idUsuario = (req.user as any)?.idUsuario;
+    const parcela = await confirmarPagamento.execute(parseInt(req.params.id), { idUsuario });
+    return res.json(parcela);
+  } catch (err: any) {
+    console.error(err);
     return res.status(500).json({ error: err.message });
   }
 };

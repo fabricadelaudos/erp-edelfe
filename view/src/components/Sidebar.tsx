@@ -8,7 +8,8 @@ import {
   ChevronDown,
   ChevronUp,
   Building2,
-  FileChartColumnIncreasing,
+  BanknoteArrowDown,
+  BanknoteArrowUp,
 } from "lucide-react";
 
 import ToolTip from "./Auxiliares/ToolTip";
@@ -41,8 +42,9 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
 
   const menuItems = [
     { label: "Home", icon: <Home />, path: "/" },
-    { label: "Empresa", icon: <Building2 />, path: "/cadastro/empresa" },
-    { label: "Faturamento", icon: <FileChartColumnIncreasing />, path: "/faturamento"},
+    { label: "Clientes", icon: <Building2 />, path: "/cadastro/empresa" },
+    { label: "Faturamento", icon: <BanknoteArrowUp />, path: "/faturamento"},
+    { label: "Despesas", icon: <BanknoteArrowDown />, path: "/despesas"},
   ];
 
   return (

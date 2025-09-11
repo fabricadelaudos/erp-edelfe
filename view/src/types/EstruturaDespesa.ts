@@ -41,8 +41,8 @@ export interface ContaPagar {
   idContaPagar: number;
   dataEmissao: string;
   numeroDocumento: string;
-  tipoDocumento: 'BOLETO' | 'DEBITO_AUTOMATICO' | 'FATURA' | 'NF' | 'PIX';
-  descricao: string;
+  tipoDocumentoConta: 'BOLETO' | 'DEBITO_AUTOMATICO' | 'FATURA' | 'NF' | 'PIX';
+  descricao?: string;
   valorTotal: string;
   parcelas: number;
   vencimento: string;

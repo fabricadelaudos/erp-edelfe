@@ -4,10 +4,10 @@ export interface Faturamento {
   idFaturamento: number;
   fkContratoId: number;
   contrato?: Contrato;
-  valorBase: string;
-  impostoPorcentagem: string;
-  impostoValor: string;
-  valorTotal: string;
+  valorBase: number;
+  impostoPorcentagem: number;
+  impostoValor: number;
+  valorTotal: number;
   vidas?: number;
   numeroNota?: string;
   status: "ABERTA" | "PAGA" | "ATRASADA";

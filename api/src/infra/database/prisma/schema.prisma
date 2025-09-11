@@ -173,7 +173,7 @@ model contaPagar {
   tipoDocumentoConta          TipoDocumentoConta
   fkPlanoContaSubCategoriaId  Int
   fkBancoId                   Int
-  descricao                   String
+  descricao                   String?
   valorTotal                  Decimal                @db.Decimal(10, 2)
   parcelas                    Int
   vencimento                  DateTime               

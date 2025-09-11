@@ -19,8 +19,8 @@ export const buscarContaPagar = {
 export const buscarContasPagar = {
   async execute() {
     return await prisma.contaPagar.findMany({
-      orderBy: { vencimento: 'desc' },
-      include: { parcelasConta: true }
+      orderBy: [{ vencimento: 'asc' }, { status: 'asc' }],
+      include: { parcelasConta: true, fornecedor: true, planoConta: true, banco: true }
     });
   }
 };
@@ -28,6 +28,9 @@ export const buscarContasPagar = {
 export const criarContaPagar = {
   async execute(data: any) {
     const { idUsuario, idContaPagar, ...dados } = data;
+
+    if (dados.dataEmissao) dados.dataEmissao = new Date(dados.dataEmissao);
+    if (dados.vencimento) dados.vencimento = new Date(dados.vencimento);
 
     const conta = await prisma.contaPagar.create({ data: dados });
 
@@ -124,5 +127,37 @@ export const atualizarParcela = {
     });
 
     return atualizada;
+  }
+};
+
+export const confirmarPagamento = {
+  async execute(id: number, user: any) {
+    const parcelaAntes = await prisma.parcelaContaPagar.findUnique({
+      where: { idParcela: id },
+      include: {
+        contaPagar: {
+          include: {
+            fornecedor: true
+          }
+        }
+      }
+    });
+
+    const parcela = await prisma.parcelaContaPagar.update({
+      where: { idParcela: id },
+      data: { status: 'PAGA', pagoEm: new Date() }
+    });
+
+    await registrarEvento({
+      idUsuario: user.idUsuario,
+      tipo: 'editar',
+      entidade: 'parcelaContaPagar',
+      entidadeId: id,
+      descricao: `Pagamento confirmado para parcela ${id} da conta ${parcelaAntes?.contaPagar?.numeroDocumento ?? ''} (${parcelaAntes?.contaPagar?.fornecedor?.nome ?? ''})`,
+      dadosAntes: parcelaAntes,
+      dadosDepois: parcela
+    });
+
+    return parcela;
   }
 };

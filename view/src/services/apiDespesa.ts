@@ -3,6 +3,7 @@ import type {
   PlanoContaCategoria,
   Fornecedor,
   ContaPagar,
+  ParcelaContaPagar,
 } from "../types/EstruturaDespesa";
 import { apiFetch } from "./apiFetch";
 
@@ -32,6 +33,12 @@ export async function editarContaPagar(id: number, data: any): Promise<ContaPaga
   return await apiFetch(`${baseConta}/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
+  });
+}
+
+export async function confirmarPagamentoParcela(idParcela: number): Promise<ParcelaContaPagar> {
+  return await apiFetch(`${baseConta}/${idParcela}/pagar`, {
+    method: "PUT",
   });
 }
 

@@ -32,32 +32,38 @@ export default function ModalEditarFaturamento({
     setDados((prev) => {
       if (!prev) return prev;
 
-      const atualizado = { ...prev, [campo]: valor };
+      const atualizado: Faturamento = { ...prev, [campo]: valor };
 
-      const porVida = prev.contrato?.porVida;
+      const porVida = prev.contrato?.porVida ?? false;
       const valorPorVida = Number(prev.contrato?.valorBase ?? 0);
+
       const vidas = campo === "vidas" ? Number(valor) : Number(prev.vidas ?? 0);
-      const imposto = campo === "impostoPorcentagem"
-        ? Number(valor)
-        : Number(prev.impostoPorcentagem ?? 0);
+      const impostoPorcentagem =
+        campo === "impostoPorcentagem"
+          ? Number(valor)
+          : Number(prev.impostoPorcentagem ?? 0);
 
-      // ✔ recalcula se for por vida, mesmo com 0 vidas
       if (porVida && !isNaN(vidas) && !isNaN(valorPorVida)) {
-        const valorBase = vidas * valorPorVida;
-        const impostoValor = valorBase * (imposto / 100);
+        const novoValorBase = vidas * valorPorVida;
+        const novoImposto = novoValorBase * (impostoPorcentagem / 100);
+        const novoTotal = novoValorBase - novoImposto;
 
-        atualizado.valorBase = valorBase.toFixed(2);
-        atualizado.impostoValor = impostoValor.toFixed(2);
+        atualizado.valorBase = novoValorBase;
+        atualizado.impostoValor = novoImposto;
+        atualizado.valorTotal = novoTotal;
       }
 
-      // ✔ caso altere só o imposto e não seja por vida
+      // 👉 Se alterar só o imposto e não for por vida
       if (
         campo === "impostoPorcentagem" &&
         !porVida &&
         typeof prev.valorBase === "number"
       ) {
-        const impostoValor = Number(prev.valorBase) * (Number(valor) / 100);
-        atualizado.impostoValor = impostoValor.toFixed(2);
+        const novoImposto = prev.valorBase * (impostoPorcentagem / 100);
+        const novoTotal = prev.valorBase + novoImposto;
+
+        atualizado.impostoValor = novoImposto;
+        atualizado.valorTotal = novoTotal;
       }
 
       return atualizado;
@@ -167,7 +173,7 @@ export default function ModalEditarFaturamento({
           <div>
             <label className="font-medium text-gray-600 mb-1 block">Imposto (%)</label>
             <Copiavel
-              valor={`${dados.impostoPorcentagem.toString() ?? "—"}%`}
+              valor={`${dados.impostoPorcentagem?.toString() ?? "—"}%`}
             />
           </div>
 

@@ -66,13 +66,14 @@ export const editarFaturamento = {
         valorBase: dados.valorBase,
         impostoPorcentagem: dados.impostoPorcentagem,
         impostoValor: dados.impostoValor,
+        valorTotal: dados.valorTotal,
         vidas: dados.vidas ?? null,
         status: dados.status,
       },
     });
 
     await registrarEvento({
-      idUsuario: user?.idUsuario ?? null,
+      idUsuario: user?.idUsuario,
       tipo: "EDICAO",
       descricao: `Editou o faturamento ${id}`,
       entidade: "faturamento",
