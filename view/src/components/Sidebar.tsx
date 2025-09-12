@@ -48,10 +48,10 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   ];
 
   return (
-    <aside className={`min-h-screen transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
-      <nav className="h-full flex flex-col bg-white border-r border-gray-300 shadow-sm">
+    <aside className={`min-h-screen max-h-screen transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
+      <nav className="h-full flex flex-col bg-white">
         {/* Header */}
-        <div className={`flex items-center h-16 px-4 border-b border-gray-300 ${isOpen ? "justify-between" : "justify-center"}`}>
+        <div className={`flex items-center h-16 px-4 ${isOpen ? "justify-between" : "justify-center"}`}>
           {isOpen && (
             <button className="mx-auto" onClick={() => navigate("/")}>
               <img src={logo} alt="logo" className="w-10 h-10" />
@@ -88,7 +88,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         </SidebarContext.Provider>
 
         {/* Footer */}
-        <div className="border-t border-gray-300 p-3">
+        <div className="p-3">
           <div className={`flex ${isOpen ? "items-center gap-3" : "flex-col items-center"}`}>
             {isOpen ? (
               <>

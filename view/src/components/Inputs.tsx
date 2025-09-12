@@ -16,6 +16,7 @@ interface InputProps {
   placeholder?: string
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   step?: number;
+  className?: string;
 }
 
 export const Input = ({
@@ -31,6 +32,7 @@ export const Input = ({
   placeholder = "",
   onBlur,
   step,
+  className,
 }: InputProps) => (
   <div className="w-full">
     <label htmlFor={name} className="block mb-1 text-sm font-medium text-gray-900">
@@ -47,7 +49,7 @@ export const Input = ({
       disabled={disable}
       placeholder={placeholder}
       step={step}
-      className="border border-gray-300 text-gray-900 text-sm rounded-md focus:border-2 focus:border-blue-500 focus:outline-none block w-full p-2.5 bg-white"
+      className={`border border-gray-300 text-gray-900 text-sm rounded-md focus:border-2 focus:border-blue-500 focus:outline-none block w-full p-2.5 bg-white ${className}`}
       onBlur={onBlur}
     />
   </div>

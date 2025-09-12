@@ -17,7 +17,7 @@ export default function Layout() {
       {!esconderSidebar && (
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       )}
-      <main className={`transition-all duration-300 min-h-screen bg-gray-100 w-full max-w-full overflow-x-auto ${!esconderSidebar && "p-4"}`}>
+      <main className={`transition-all duration-300 min-h-screen bg-gray-100 w-full max-w-full overflow-x-auto`}>
         <Outlet />
       </main>
     </div>

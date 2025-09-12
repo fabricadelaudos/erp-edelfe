@@ -6,8 +6,8 @@ import Loading from '../components/Loading';
 import DespesaPage from '../pages/Despesa';
 
 const LoginPage = lazy(() => import('../pages/Auth/LoginPage'));
+const DashboardPage = lazy(() => import('../pages/DashBoard'));
 const ConfiguracoesPage = lazy(() => import('../pages/Configuracoes'));
-const HomePage = lazy(() => import('../pages/Home/HomePage'));
 const EmpresaPage = lazy(() => import('../pages/Empresa'));
 const FaturamentoPage = lazy(() => import('../pages/Faturamento'));
 
@@ -31,7 +31,7 @@ export default function AppRoutes() {
           {/* Rotas privadas com layout */}
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<DashboardPage />} />
               <Route path="/cadastro/empresa" element={<EmpresaPage />} />
               <Route path="/faturamento" element={<FaturamentoPage />} />
               <Route path="/despesas" element={<DespesaPage />} />
