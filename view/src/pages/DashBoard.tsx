@@ -4,17 +4,18 @@ import {
   PieChart, Pie, Cell, Legend, LineChart, Line
 } from "recharts";
 import TabelaBase from "../components/Tabelas/TabelaBase";
-import type { Faturamento } from "../types/EstruturaFaturamento";
-import type { ContaPagar } from "../types/EstruturaDespesa";
-import { Input, ToggleInput } from "../components/Inputs";
+import { Input } from "../components/Inputs";
 
 import {
+  getContratosProximos,
   getDespesasCategoria,
-  getDespesasRecentes,
-  getFaturamentosRecentes,
+  getEvolucaoFaturamento,
   getKpis,
+  getProjecoes,
   getReceitaVsDespesa
 } from "../services/apiDashBoard";
+import { BanknoteArrowDown, BanknoteArrowUp, BarChart2, PieChartIcon } from "lucide-react";
+import DashboardTabs from "../components/Tabs/DashBoardTabs";
 
 export default function DashboardPage() {
   const [periodo, setPeriodo] = useState<"mensal" | "anual">("mensal");
@@ -24,8 +25,6 @@ export default function DashboardPage() {
   const [kpis, setKpis] = useState<any>({});
   const [receitaVsDespesa, setReceitaVsDespesa] = useState<any[]>([]);
   const [despesasCategoria, setDespesasCategoria] = useState<any[]>([]);
-  const [faturamentos, setFaturamentos] = useState<Faturamento[]>([]);
-  const [despesas, setDespesas] = useState<ContaPagar[]>([]);
 
   // novos estados
   const [evolucaoFaturamento, setEvolucaoFaturamento] = useState<any[]>([]);
@@ -44,30 +43,19 @@ export default function DashboardPage() {
     const k = await getKpis(filtros);
     const rvd = await getReceitaVsDespesa(filtros);
     const dc = await getDespesasCategoria(filtros);
-    const fr = await getFaturamentosRecentes();
-    const dr = await getDespesasRecentes();
+    const ef = await getEvolucaoFaturamento(filtros);
+    const pj = await getProjecoes(filtros);
+    const ct = await getContratosProximos();
+
+    console.log(pj)
+    console.log(ct)
 
     setKpis(k);
     setReceitaVsDespesa(Array.isArray(rvd) ? rvd : [rvd]);
     setDespesasCategoria(dc);
-    setFaturamentos(fr);
-    setDespesas(dr);
-
-    // mock até ter endpoint
-    setEvolucaoFaturamento([
-      { mes: "01/2025", valor: 12000 },
-      { mes: "02/2025", valor: 13500 },
-      { mes: "03/2025", valor: 11000 },
-      { mes: "04/2025", valor: 16000 },
-      { mes: "05/2025", valor: 18000 },
-    ]);
-    setProjecoes([
-      { competencia: "2025", previsto: 200000, realizado: 95000, status: "PARCIAL" },
-    ]);
-    setContratosProximos([
-      { contrato: "Contrato X", vencimento: "15/09/2025", valor: 5000 },
-      { contrato: "Contrato Y", vencimento: "20/09/2025", valor: 8000 },
-    ]);
+    setContratosProximos(ct);
+    setEvolucaoFaturamento(ef);
+    setProjecoes(pj);
   };
 
   return (
@@ -132,30 +120,50 @@ export default function DashboardPage() {
       </div>
 
       {/* Conteúdo */}
-      <div className="p-6 space-y-4">
+      <div className="p-6 space-y-4 text-xs">
         {/* 🔹 KPIs */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-green-100 p-4 rounded-lg shadow">
-            <p className="text-sm text-gray-600">Receita Paga</p>
-            <p className="text-2xl font-bold text-green-700">R$ {kpis.receitaPaga ?? 0}</p>
+          <div className="p-4 rounded-lg bg-white">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-medium text-gray-500 uppercase">Receita</p>
+              <BanknoteArrowUp className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-2xl font-bold text-green-600 text-right">
+              R$ {kpis.faturamento ?? 0}
+            </p>
           </div>
-          <div className="bg-red-100 p-4 rounded-lg shadow">
-            <p className="text-sm text-gray-600">Despesa Paga</p>
-            <p className="text-2xl font-bold text-red-700">R$ {kpis.despesaPaga ?? 0}</p>
+
+          <div className="p-4 rounded-lg bg-white">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-medium text-gray-500 uppercase">Despesa</p>
+              <BanknoteArrowDown className="w-5 h-5 text-red-600" />
+            </div>
+            <p className="text-2xl font-bold text-red-600 text-right">
+              R$ {kpis.contasPagar ?? 0}
+            </p>
           </div>
-          <div className="bg-blue-100 p-4 rounded-lg shadow">
-            <p className="text-sm text-gray-600">Resultado Líquido</p>
-            <p className="text-2xl font-bold text-blue-700">R$ {kpis.resultadoLiquido ?? 0}</p>
+
+          <div className="p-4 rounded-lg bg-white">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-medium text-gray-500 uppercase">Imposto</p>
+              <BarChart2 className="w-5 h-5 text-blue-600" />
+            </div>
+            <p className="text-2xl font-bold text-blue-600 text-right">
+              R$ {kpis.imposto ?? 0}
+            </p>
           </div>
-          <div className="bg-yellow-100 p-4 rounded-lg shadow">
-            <p className="text-sm text-gray-600">% Receita Recebida</p>
-            <p className="text-2xl font-bold text-yellow-700">
-              {kpis.receitaPaga && kpis.despesaPaga
-                ? ((kpis.receitaPaga / (kpis.receitaPaga + kpis.despesaPaga)) * 100).toFixed(1) + "%"
-                : "0%"}
+
+          <div className="p-4 rounded-lg bg-white">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-medium text-gray-500 uppercase">Lucro Líquido</p>
+              <PieChartIcon className="w-5 h-5 text-yellow-600" />
+            </div>
+            <p className="text-2xl font-bold text-yellow-600 text-right">
+              R$ {kpis.lucro ?? 0}
             </p>
           </div>
         </div>
+
 
         {/* 🔹 Gráficos */}
         <div className="grid grid-cols-2 gap-6">
@@ -164,10 +172,42 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold mb-2">Receita vs Despesa</h3>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={receitaVsDespesa}>
-                <XAxis dataKey="competencia" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
+                <XAxis
+                  dataKey="competencia"
+                  tickFormatter={(value: string) => {
+                    const [mes, ano] = value.split("/");
+                    const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+                    return `${meses[parseInt(mes, 10) - 1]}/${ano.slice(-2)}`;
+                  }}
+                />
+                <YAxis
+                  tickFormatter={(value) =>
+                    value.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                      maximumFractionDigits: 0,
+                    })
+                  }
+                />
+                <Tooltip
+                  formatter={(value, name) => [
+                    `R$ ${Number(value).toLocaleString("pt-BR")}`,
+                    name === "receita" ? "Receita" : "Despesa",
+                  ]}
+                  cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
+                />
+                <Legend
+                  content={({ payload }) => (
+                    <div className="flex gap-2 justify-center">
+                      {payload?.slice().reverse().map((entry) => (
+                        <span key={entry.value} className="flex items-center gap-1">
+                          <span style={{ backgroundColor: entry.color }} className="w-3 h-3 rounded-full" />
+                          {entry.value === "receita" ? "Receita" : "Despesa"}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                />
                 <Bar dataKey="receita" fill="#22c55e" />
                 <Bar dataKey="despesa" fill="#ef4444" />
               </BarChart>
@@ -181,16 +221,22 @@ export default function DashboardPage() {
               <PieChart>
                 <Pie
                   data={despesasCategoria}
-                  dataKey="valor"
-                  nameKey="categoria"
+                  dataKey="value"
+                  nameKey="name"
                   outerRadius={100}
-                  label
+                  label={({ name, value }) =>
+                    `${name}: R$ ${Number(value).toLocaleString("pt-BR")}`
+                  }
                 >
                   {despesasCategoria.map((_, i) => (
-                    <Cell key={i} fill={["#3b82f6", "#22c55e", "#ef4444", "#f59e0b"][i % 4]} />
+                    <Cell key={i} fill={["#3b82f6", "#22c55e", "#ef4444", "#f59e0b", "#a855f7", "#10b981"][i % 6]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  formatter={(value: number) =>
+                    `R$ ${Number(value).toLocaleString("pt-BR")}`
+                  }
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -201,36 +247,41 @@ export default function DashboardPage() {
           <h3 className="text-lg font-semibold mb-2">Evolução do Faturamento (Anual)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={evolucaoFaturamento}>
-              <XAxis dataKey="mes" />
-              <YAxis />
-              <Tooltip />
+              <XAxis
+                dataKey="mes"
+                tickFormatter={(value: string) => {
+                  const [mes, ano] = value.split("/");
+                  const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+                  return `${meses[parseInt(mes, 10) - 1]}/${ano.slice(-2)}`;
+                }}
+              />
+              <YAxis
+                tickFormatter={(value) =>
+                  value.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                    maximumFractionDigits: 0,
+                  })
+                }
+              />
+              <Tooltip
+                formatter={(value: number) =>
+                  value.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })
+                }
+                labelFormatter={(label) => `Mês: ${label}`}
+              />
               <Legend />
               <Line type="monotone" dataKey="valor" stroke="#3b82f6" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
+
         </div>
 
         {/* 🔹 Tabelas */}
-        <div className="grid grid-cols-2 gap-6">
-          <TabelaBase
-            data={projecoes}
-            columns={[
-              { header: "Competência", accessor: "competencia" },
-              { header: "Previsto", accessor: "previsto" },
-              { header: "Realizado", accessor: "realizado" },
-              { header: "Status", accessor: "status" },
-            ]}
-          />
-
-          <TabelaBase
-            data={contratosProximos}
-            columns={[
-              { header: "Contrato", accessor: "contrato" },
-              { header: "Vencimento", accessor: "vencimento" },
-              { header: "Valor", accessor: "valor" },
-            ]}
-          />
-        </div>
+        <DashboardTabs projecoes={projecoes} contratosProximos={contratosProximos} />
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ export interface Faturamento {
   numeroNota?: string;
   status: "ABERTA" | "PAGA" | "ATRASADA";
   competencia: string;
+  competenciaPagamento?: string;
 }
 
 export interface Projecao {

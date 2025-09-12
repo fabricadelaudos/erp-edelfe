@@ -59,6 +59,18 @@ export const editarFaturamento = {
 
     if (!existente) throw new Error("Faturamento não encontrado");
 
+    let pagoEm: Date | null = existente.pagoEm;
+    let competenciaPagamento: string | null = existente.competenciaPagamento;
+
+    if (dados.status === "PAGA") {
+      const agora = new Date();
+      pagoEm = agora;
+      competenciaPagamento = `${String(agora.getMonth() + 1).padStart(2, "0")}/${agora.getFullYear()}`;
+    } else {
+      pagoEm = null;
+      competenciaPagamento = null;
+    }
+
     const atualizado = await prisma.faturamento.update({
       where: { idFaturamento: id },
       data: {
@@ -69,6 +81,8 @@ export const editarFaturamento = {
         valorTotal: dados.valorTotal,
         vidas: dados.vidas ?? null,
         status: dados.status,
+        pagoEm,
+        competenciaPagamento,
       },
     });
 
@@ -83,7 +97,7 @@ export const editarFaturamento = {
     });
 
     return atualizado;
-  }
+  },
 };
 
 export const buscarFaturamentoCompetencia = {

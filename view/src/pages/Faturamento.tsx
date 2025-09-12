@@ -24,12 +24,19 @@ export default function FaturamentoPage() {
       header: "Status",
       accessor: "status",
       render: (v: string) => {
-        const cores: Record<string, string> = {
-          ABERTA: "text-yellow-600",
-          PAGA: "text-green-700",
-          ATRASADA: "text-red-600",
+        const estilos: Record<string, string> = {
+          ABERTA: "bg-yellow-500 text-white",
+          PAGA: "bg-green-500 text-white",
+          ATRASADA: "bg-red-500 text-white",
         };
-        return <span className={`font-semibold ${cores[v] ?? ""}`}>{v}</span>;
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold cursor-pointer ${estilos[v] ?? "bg-gray-100 text-gray-600"}`}
+          >
+            {v}
+          </span>
+        );
       },
       sortable: true,
     },
@@ -160,10 +167,8 @@ export default function FaturamentoPage() {
   const [totalValor, setTotalValor] = useState(0);
 
   const calcularTotais = (lista: Faturamento[]) => {
-    // total de faturas
     setTotalTitulos(lista.length);
 
-    // somatórios
     const somaBase = lista.reduce((acc, f) => acc + Number(f.valorBase), 0);
     const somaImposto = lista.reduce((acc, f) => acc + Number(f.impostoValor), 0);
     const somaValor = lista.reduce((acc, f) => acc + Number(f.valorTotal), 0);
@@ -184,7 +189,6 @@ export default function FaturamentoPage() {
     return matchStatus && matchEmpresa;
   });
 
-  // recalcula totais já nos filtrados
   useEffect(() => {
     calcularTotais(faturamentosFiltrados);
   }, [faturamentosFiltrados]);
@@ -293,19 +297,20 @@ export default function FaturamentoPage() {
             value={filtros.status}
             onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}
             options={[
-              { label: "Todos os status", value: "" },
               { label: "Aberta", value: "ABERTA" },
               { label: "Paga", value: "PAGA" },
               { label: "Atrasada", value: "ATRASADA" },
             ]}
+            required={false}
           />
 
           <Input
             label="Filtrar por empresa"
             name="empresa"
-            placeholder="Filtrar por empresa"
+            placeholder="Buscar empresa ..."
             value={filtros.empresa}
             onChange={(e) => setFiltros({ ...filtros, empresa: e.target.value })}
+            required={false}
           />
         </div>
 
