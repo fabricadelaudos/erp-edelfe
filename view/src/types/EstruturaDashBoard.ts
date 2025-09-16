@@ -52,6 +52,9 @@ export interface ProjecaoUnidade {
 
 export interface ContratoProximo {
   contrato: string;
-  vencimento: string;
+  diasRestantes: number;
+  empresa: string;
+  unidade: string;
   valor: number;
+  vencimento: string;
 }

@@ -3,7 +3,6 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line
 } from "recharts";
-import TabelaBase from "../components/Tabelas/TabelaBase";
 import { Input } from "../components/Inputs";
 
 import {
@@ -31,6 +30,15 @@ export default function DashboardPage() {
   const [projecoes, setProjecoes] = useState<any[]>([]);
   const [contratosProximos, setContratosProximos] = useState<any[]>([]);
 
+  // Legedas
+  const [hiddenKeys, setHiddenKeys] = useState<string[]>([
+    "faturamentoPorVida",
+    "faturamentoMensal",
+    "faturamentoRecorrente",
+    "imposto",
+  ]);
+
+
   useEffect(() => {
     carregarDados();
   }, [periodo, competencia, ano]);
@@ -47,15 +55,21 @@ export default function DashboardPage() {
     const pj = await getProjecoes(filtros);
     const ct = await getContratosProximos();
 
-    console.log(pj)
-    console.log(ct)
-
     setKpis(k);
     setReceitaVsDespesa(Array.isArray(rvd) ? rvd : [rvd]);
     setDespesasCategoria(dc);
     setContratosProximos(ct);
     setEvolucaoFaturamento(ef);
     setProjecoes(pj);
+  };
+
+  const handleLegendClick = (o: any) => {
+    const { dataKey } = o;
+    if (hiddenKeys.includes(dataKey)) {
+      setHiddenKeys(hiddenKeys.filter((k) => k !== dataKey));
+    } else {
+      setHiddenKeys([...hiddenKeys, dataKey]);
+    }
   };
 
   return (
@@ -249,10 +263,9 @@ export default function DashboardPage() {
             <LineChart data={evolucaoFaturamento}>
               <XAxis
                 dataKey="mes"
-                tickFormatter={(value: string) => {
-                  const [mes, ano] = value.split("/");
+                tickFormatter={(value: number) => {
                   const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-                  return `${meses[parseInt(mes, 10) - 1]}/${ano.slice(-2)}`;
+                  return meses[value - 1];
                 }}
               />
               <YAxis
@@ -265,19 +278,83 @@ export default function DashboardPage() {
                 }
               />
               <Tooltip
-                formatter={(value: number) =>
-                  value.toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })
-                }
-                labelFormatter={(label) => `Mês: ${label}`}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload || label == null) return null;
+
+                  const meses = [
+                    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+                  ];
+
+                  const mesIndex = Number(label) - 1;
+                  const nomeMes = meses[mesIndex] ?? "";
+
+                  const ordem = ["despesas", "imposto", "faturamentoTotal", "faturamentoPorVida", "faturamentoMensal", "faturamentoRecorrente"];
+
+                  const cores: Record<string, string> = {
+                    despesas: "#ef4444",
+                    imposto: "#ef4444",
+                    faturamentoTotal: "#3b82f6",
+                    faturamentoPorVida: "#22c55e",
+                    faturamentoMensal: "#8b5cf6",
+                    faturamentoRecorrente: "#f59e0b",
+                  };
+
+                  const nomes: Record<string, string> = {
+                    despesas: "Despesas",
+                    imposto: "Imposto",
+                    faturamentoTotal: "Faturamento",
+                    faturamentoPorVida: "Por Vida",
+                    faturamentoMensal: "Mensal",
+                    faturamentoRecorrente: "Recorrente",
+                  };
+
+                  return (
+                    <div className="bg-white p-2 rounded border border-gray-300 text-sm">
+                      <p className="font-medium text-gray-600 mb-1">Mês: {nomeMes}</p>
+                      {ordem.map((key) => {
+                        const item = payload.find((p) => p.dataKey === key);
+                        if (!item) return null;
+                        const valor = key === "despesas" || key === "imposto" ? -Number(item.value) : Number(item.value);
+
+                        return (
+                          <div key={key} className="flex gap-1">
+                            <span className="text-gray-600">{nomes[key]}:</span>
+                            <span style={{ color: cores[key] }} className="font-medium">
+                              {valor.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }}
               />
-              <Legend />
-              <Line type="monotone" dataKey="valor" stroke="#3b82f6" strokeWidth={2} />
+              <Legend
+                content={() => (
+                  <div className="flex gap-4 text-sm select-none cursor-pointer pl-4 pb-2 justify-center">
+                    <span style={{ color: "#ef4444", opacity: hiddenKeys.includes("despesas") ? 0.5 : 1, }} onClick={() => handleLegendClick({ dataKey: "despesas" })}>● Despesas</span>
+                    <span style={{ color: "#ef4444", opacity: hiddenKeys.includes("imposto") ? 0.5 : 1, }} onClick={() => handleLegendClick({ dataKey: "imposto" })}>● Imposto</span>
+                    <span style={{ color: "#3b82f6", opacity: hiddenKeys.includes("faturamentoTotal") ? 0.5 : 1, }} onClick={() => handleLegendClick({ dataKey: "faturamentoTotal" })}>● Faturamento</span>
+                    <span style={{ color: "#22c55e", opacity: hiddenKeys.includes("faturamentoPorVida") ? 0.5 : 1, }} onClick={() => handleLegendClick({ dataKey: "faturamentoPorVida" })}>● Por Vida</span>
+                    <span style={{ color: "#8b5cf6", opacity: hiddenKeys.includes("faturamentoMensal") ? 0.5 : 1, }} onClick={() => handleLegendClick({ dataKey: "faturamentoMensal" })}>● Mensal</span>
+                    <span style={{ color: "#f59e0b", opacity: hiddenKeys.includes("faturamentoRecorrente") ? 0.5 : 1, }} onClick={() => handleLegendClick({ dataKey: "faturamentoRecorrente" })}>● Recorrente</span>
+                  </div>
+                )}
+              />
+
+              {/* Linhas para cada dataset */}
+              <Line type="monotone" dataKey="faturamentoRecorrente" name="Recorrente" stroke="#f59e0b" strokeWidth={2}  hide={hiddenKeys.includes("faturamentoRecorrente")} />
+              <Line type="monotone" dataKey="faturamentoMensal" name="Mensal" stroke="#8b5cf6" strokeWidth={2}  hide={hiddenKeys.includes("faturamentoMensal")} />
+              <Line type="monotone" dataKey="faturamentoPorVida" name="Por Vida" stroke="#22c55e" strokeWidth={2}  hide={hiddenKeys.includes("faturamentoPorVida")} />
+              <Line type="monotone" dataKey="faturamentoTotal" name="Total" stroke="#3b82f6" strokeWidth={2}  hide={hiddenKeys.includes("faturamentoTotal")} />
+              <Line type="monotone" dataKey="despesas" name="Despesas" stroke="#ef4444" strokeWidth={2}  hide={hiddenKeys.includes("despesas")} />
+              <Line type="monotone" dataKey="imposto" name="Imposto" stroke="#ef4444" strokeWidth={2} strokeDasharray="4 2"  hide={hiddenKeys.includes("imposto")} />
             </LineChart>
           </ResponsiveContainer>
-
         </div>
 
         {/* 🔹 Tabelas */}

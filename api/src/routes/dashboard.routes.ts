@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authorize } from "../middlewares/authorize";
-import { getContratosProximosController, getDespesasCategoriaController, getDespesasRecentesController, getEvolucaoFaturamentoController, getFaturamentosRecentesController, getKpisController, getProjecoesController, getReceitaVsDespesaController } from "../controllers/dashBoardController";
+import { getContratosProximosController, getDespesasCategoriaController, getDespesasRecentesController, getEvolucaoFaturamentoController, getFaturamentoAnualController, getFaturamentosRecentesController, getKpisController, getProjecoesController, getReceitaVsDespesaController } from "../controllers/dashBoardController";
 
 const router = Router();
 
@@ -20,12 +20,12 @@ router.get("/faturamentos-recentes", authorize(), getFaturamentosRecentesControl
 router.get("/despesas-recentes", authorize(), getDespesasRecentesController);
 
 // Evolução do faturamento
-router.post("/evolucao-faturamento", getEvolucaoFaturamentoController);
+router.post("/evolucao-faturamento", authorize(), getFaturamentoAnualController);
 
 // Projeções
-router.post("/projecoes", getProjecoesController);
+router.post("/projecoes", authorize(), getProjecoesController);
 
 // Contratos próximos do vencimento
-router.post("/contratos-proximos", getContratosProximosController);
+router.post("/contratos-proximos", authorize(), getContratosProximosController);
 
 export default router;

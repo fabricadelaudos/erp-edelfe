@@ -7,6 +7,8 @@ import type { ContaPagar, ParcelaContaPagar } from "../types/EstruturaDespesa";
 import { Input, SearchableSelect } from "../components/Inputs";
 import { BanknoteIcon, ListFilter, Plus } from "lucide-react";
 import ToolTip from "../components/Auxiliares/ToolTip";
+import Swal from "sweetalert2";
+import { formatarData, formatarReais } from "../components/Auxiliares/formatter";
 
 type ParcelaComConta = ParcelaContaPagar & { contaPagar: ContaPagar };
 
@@ -142,6 +144,34 @@ export default function DespesaPage() {
     setFiltroVencimentoInicio("");
     setFiltroVencimentoFim("");
   }
+
+  const confirmarPagamento = async (parcela: ParcelaComConta) => {
+    const html = `
+      <div class="text-left">
+        <p><b>Número:</b> ${parcela.numero}</p>
+        <p><b>Vencimento:</b> ${formatarData(parcela.vencimento)}</p>
+        <p><b>Valor:</b> ${formatarReais(parcela.valor)}</p>
+      </div>
+    `;
+
+    const result = await Swal.fire({
+      title: "Confirmar Pagamento",
+      html: html,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#16a34a",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sim, confirmar",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      await handleConfirmarPagamento(parcela.idParcela);
+      Swal.fire("Confirmado!", "O pagamento foi registrado com sucesso.", "success");
+    }
+  };
+
 
   const cardClasses = "flex items-center gap-3 bg-white shadow-sm rounded-md p-4 col-span-1";
 
@@ -397,18 +427,18 @@ export default function DespesaPage() {
           {
             header: "Ações",
             accessor: "contaPagar",
-            render: (_, row) => (
+            render: (_: any, row: any) => (
               <ToolTip text="Confirmar Pagamento" position="left">
                 <button
                   className="text-green-600 hover:text-green-700"
-                  onClick={() => handleConfirmarPagamento(row.idParcela)}
+                  onClick={() => confirmarPagamento(row)}
                   disabled={row.status === "PAGA"}
                 >
                   <BanknoteIcon />
                 </button>
               </ToolTip>
             )
-          }
+          },
         ]}
       />
 

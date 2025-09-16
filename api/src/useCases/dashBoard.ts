@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma-client";
-import { addDays, format } from "date-fns";
+import { addDays, differenceInDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const getKpis = {
@@ -266,6 +266,73 @@ export const getDespesasRecentes = {
   },
 };
 
+export const getFaturamentoAnual = {
+  async execute({ ano }: { ano?: string | number }) {
+    const anoUsado = ano ? parseInt(String(ano), 10) : new Date().getFullYear();
+
+    // Faturamentos pagos no ano
+    const faturamentos = await prisma.faturamento.findMany({
+      where: {
+        competencia: {
+          contains: anoUsado.toString(),
+        },
+        status: "PAGA",
+      },
+      include: {
+        contrato: true,
+      },
+    });
+
+    // Parcelas do ano (despesas)
+    const parcelas = await prisma.parcelaContaPagar.findMany({
+      where: {
+        vencimento: {
+          gte: new Date(`${anoUsado}-01-01`),
+          lte: new Date(`${anoUsado}-12-31`),
+        },
+      },
+    });
+
+    // Estrutura base (12 meses do ano)
+    const meses = Array.from({ length: 12 }, (_, i) => ({
+      mes: i + 1,
+      faturamentoTotal: 0,
+      faturamentoPorVida: 0,
+      faturamentoRecorrente: 0,
+      faturamentoMensal: 0,
+      despesas: 0,
+      imposto: 0,
+    }));
+
+    // Preenche faturamentos
+    faturamentos.forEach((fat) => {
+      const [, mesStr] = fat.competencia.split("-");
+      const mes = parseInt(mesStr) - 1;
+      const valor = Number(fat.valorTotal);
+      const imposto = Number(fat.impostoValor);
+
+      meses[mes].faturamentoTotal += valor;
+      meses[mes].imposto += imposto;
+
+      if (fat.contrato.porVida) {
+        meses[mes].faturamentoPorVida += valor;
+      } else if (fat.contrato.recorrente) {
+        meses[mes].faturamentoRecorrente += valor;
+      } else {
+        meses[mes].faturamentoMensal += valor;
+      }
+    });
+
+    // Preenche despesas
+    parcelas.forEach((parcela) => {
+      const mes = parcela.vencimento.getMonth();
+      meses[mes].despesas += Number(parcela.valor);
+    });
+
+    return meses;
+  },
+};
+
 export const getEvolucaoFaturamento = {
   async execute({ ano, periodo }: { ano?: string; periodo: "mensal" | "anual" }) {
     // Se não veio ano, assume ano atual
@@ -301,10 +368,9 @@ export const getEvolucaoFaturamento = {
 };
 
 export const getProjecoes = {
-  async execute({ ano }: { ano: string }) {
-    const anoUsado = ano ? parseInt(ano, 10) : new Date().getFullYear();
+  async execute({ ano }: { ano?: string | number }) {
+    const anoUsado = ano ? parseInt(String(ano), 10) : new Date().getFullYear();
 
-    // Busca todas as projeções do ano com vínculo até a unidade
     const projecoes = await prisma.projecao.findMany({
       where: {
         competencia: {
@@ -313,110 +379,102 @@ export const getProjecoes = {
       },
       select: {
         competencia: true,
+        status: true,
         valorPrevisto: true,
-        contrato: {
-          select: {
-            unidade: {
-              select: {
-                idUnidade: true,
-                nomeFantasia: true,
-                empresa: {
-                  select: { idEmpresa: true, nome: true },
-                },
-              },
-            },
-          },
-        },
         faturamentos: {
           select: { valorTotal: true },
         },
       },
     });
 
-    // Agrupa por unidade
-    const porUnidade: Record<string, any> = {};
+    const meses = Array.from({ length: 12 }, (_, i) => ({
+      mes: [
+        "jan", "fev", "mar", "abr", "mai", "jun",
+        "jul", "ago", "set", "out", "nov", "dez"
+      ][i] + "/" + String(anoUsado).slice(-2),
+      recebido: 0,
+      aVencer: 0,
+      atrasado: 0,
+    }));
 
-    for (let p of projecoes) {
-      const unidade = p.contrato.unidade;
-      if (!unidade) continue;
-
-      if (!porUnidade[unidade.idUnidade]) {
-        porUnidade[unidade.idUnidade] = {
-          unidade: unidade.nomeFantasia,
-          empresa: unidade.empresa?.nome ?? "",
-          meses: Array.from({ length: 12 }, (_, i) => ({
-            mes:
-              [
-                "jan",
-                "fev",
-                "mar",
-                "abr",
-                "mai",
-                "jun",
-                "jul",
-                "ago",
-                "set",
-                "out",
-                "nov",
-                "dez",
-              ][i] +
-              "/" +
-              String(anoUsado).slice(-2),
-            recebido: 0,
-            aVencer: 0,
-            atrasado: 0,
-          })),
-        };
-      }
-
+    for (const p of projecoes) {
       const mesIndex = parseInt(p.competencia.split("-")[1], 10) - 1;
-      const realizado = p.faturamentos.reduce((acc, f) => acc + Number(f.valorTotal), 0);
-      const previsto = Number(p.valorPrevisto);
+      const hoje = new Date();
+      const mesRef = new Date(anoUsado, mesIndex, 1);
 
-      if (realizado >= previsto) {
-        porUnidade[unidade.idUnidade].meses[mesIndex].recebido += realizado;
+      if (p.status === "FATURADO") {
+        const realizado = p.faturamentos.reduce((acc, f) => acc + Number(f.valorTotal), 0);
+        meses[mesIndex].recebido += realizado;
       } else {
-        const hoje = new Date();
-        const mesRef = new Date(anoUsado, mesIndex, 1);
-
+        const previsto = Number(p.valorPrevisto);
         if (mesRef < hoje) {
-          porUnidade[unidade.idUnidade].meses[mesIndex].atrasado += previsto - realizado;
-          porUnidade[unidade.idUnidade].meses[mesIndex].recebido += realizado;
+          meses[mesIndex].atrasado += previsto;
         } else {
-          porUnidade[unidade.idUnidade].meses[mesIndex].aVencer += previsto - realizado;
-          porUnidade[unidade.idUnidade].meses[mesIndex].recebido += realizado;
+          meses[mesIndex].aVencer += previsto;
         }
       }
     }
 
-    return Object.values(porUnidade);
+    // Gera linhas para tabela
+    const linhas = [
+      {
+        status: "Recebido",
+        valores: meses.map((m) => ({ mes: m.mes, valor: m.recebido })),
+      },
+      {
+        status: "A Vencer",
+        valores: meses.map((m) => ({ mes: m.mes, valor: m.aVencer })),
+      },
+      {
+        status: "Atrasado",
+        valores: meses.map((m) => ({ mes: m.mes, valor: m.atrasado })),
+      },
+    ];
+
+    return linhas;
   },
 };
 
 export const getContratosProximos = {
   async execute() {
     const hoje = new Date();
-    const limite = addDays(hoje, 30); // próximos 30 dias
-
+    const limite = addDays(hoje, 90); // próximos x dias
 
     const contratos = await prisma.contrato.findMany({
       where: {
         dataFim: {
-          gte: hoje,
-          lte: limite,
+          lte: limite, // apenas data fim menor ou igual ao limite
         },
+        status: "ATIVO",
       },
       select: {
         idContrato: true,
         dataFim: true,
         valorBase: true,
+        unidade: {
+          select: {
+            nomeFantasia: true,
+            empresa: {
+              select: {
+                nome: true,
+              },
+            },
+          },
+        },
       },
     });
 
+    return contratos.map((c) => {
+      const dias = differenceInDays(c.dataFim, hoje);
 
-    return contratos.map(c => ({
-      vencimento: format(c.dataFim, "dd/MM/yyyy"),
-      valor: Number(c.valorBase),
-    }));
+      return {
+        empresa: c.unidade?.empresa?.nome ?? "-",
+        unidade: c.unidade?.nomeFantasia ?? "-",
+        contrato: `#${c.idContrato}`,
+        vencimento: format(c.dataFim, 'dd/MM/yyyy'),
+        diasRestantes: dias >= 0 ? dias : 0,
+        valor: Number(c.valorBase),
+      };
+    });
   },
 };

@@ -62,8 +62,8 @@ export default function TabelaFaturamento({ faturamentos, atualizarCampo }: Prop
                 <td>
                   <input
                     type="text"
-                    value={f.numeroNF ?? ""}
-                    onChange={(e) => atualizarCampo(idx, "numeroNF", e.target.value)}
+                    value={f.numeroNota ?? ""}
+                    onChange={(e) => atualizarCampo(idx, "numeroNota", e.target.value)}
                     className="border p-1 w-full"
                   />
                 </td>

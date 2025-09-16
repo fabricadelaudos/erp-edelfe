@@ -18,7 +18,7 @@ export type EmpresaComRelacionamentos = Prisma.empresaGetPayload<{
 function calcularMesesEntre(inicio: Date, fim: Date): number {
   const anos = fim.getFullYear() - inicio.getFullYear();
   const meses = fim.getMonth() - inicio.getMonth();
-  return anos * 12 + meses;
+  return anos * 12 + meses + 1; // ✅ inclui o mês final
 }
 
 export async function gerarProjecoesParaContrato(contrato: {
@@ -64,17 +64,12 @@ export async function gerarProjecoesParaContrato(contrato: {
     const competencia = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
     let valorPrevisto = 0;
 
-    // ✅ Apenas POR VIDA (com ou sem recorrente)
     if (porVida) {
       valorPrevisto = valor * vidasAtivas;
-    }
-    // ✅ Apenas MENSAL
-    else if (!recorrente && parcelas > 0) {
-      valorPrevisto = parseFloat((valor / parcelas).toFixed(2));
-    }
-    // ✅ Apenas RECORRENTE
-    else if (recorrente && !porVida) {
+    } else if (recorrente) {
       valorPrevisto = valor;
+    } else {
+      valorPrevisto = parseFloat((valor / parcelas).toFixed(2));
     }
 
     projecoes.push({
@@ -144,20 +139,12 @@ export async function sincronizarProjecoesParaContrato(contrato: {
 
     let valorPrevisto = 0;
 
-    if (!porVida && !recorrente) {
-      valorPrevisto = parseFloat((valor / parcelas).toFixed(2));
-    }
-
     if (porVida) {
-      valorPrevisto += valor * vidasAtivas;
-    }
-
-    if (recorrente && !porVida && parcelas === 0) {
-      valorPrevisto = valor;
-    }
-
-    if (porVida && parcelas > 0) {
-      valorPrevisto += parseFloat((valor / parcelas).toFixed(2));
+      valorPrevisto = valor * vidasAtivas; // sempre usa valor * vidas
+    } else if (recorrente) {
+      valorPrevisto = valor; // valor cheio todo mês
+    } else {
+      valorPrevisto = parseFloat((valor / parcelas).toFixed(2)); // mensal parcelado
     }
 
     novasProjecoes[competencia] = parseFloat(valorPrevisto.toFixed(2));
@@ -580,8 +567,8 @@ export const editarEmpresa = {
         if (Array.isArray(unidade.contratos) && unidade.contratos.length > 0) {
           for (const contrato of unidade.contratos) {
             const parcelas = contrato.recorrente
-                ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
-                : contrato.parcelas;
+              ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
+              : contrato.parcelas;
 
             const contratoCriado = await prisma.contrato.create({
               data: {

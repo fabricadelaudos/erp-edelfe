@@ -159,21 +159,7 @@ export const gerarFaturamento = {
     });
 
     if (pendentes.length === 0) {
-      const faturamentosExistentes = await prisma.faturamento.findMany({
-        where: { competencia },
-        include: {
-          contrato: {
-            include: {
-              unidade: {
-                include: { empresa: true },
-              },
-            },
-          },
-          projecao: true,
-          competenciaFinanceira: true,
-        },
-      });
-
+      const faturamentosExistentes = await buscarFaturamentoCompetencia.execute(competencia);
       return faturamentosExistentes;
     }
 

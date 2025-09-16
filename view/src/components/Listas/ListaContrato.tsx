@@ -118,6 +118,7 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
         <table className="w-full bg-white text-sm">
           <thead className="bg-gray-50 text-gray-700">
             <tr>
+              <th className="px-3 py-2">ID</th>
               <th className="px-3 py-2">Modalidade</th>
               <th className="px-3 py-2">Início</th>
               <th className="px-3 py-2">Fim</th>
@@ -140,6 +141,7 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
             ) : (
               list.map((c, i) => (
                 <tr key={i} className={i % 2 ? "bg-gray-50" : "bg-white"}>
+                  <td className="px-3 py-2">{c.idContrato}</td>
                   <td className="px-3 py-2">{c.esocial && "e-Social"} - {c.laudos && "Laudos"}</td>
                   <td className="px-3 py-2">{fmtDate(c.dataInicio)}</td>
                   <td className="px-3 py-2">{fmtDate(c.dataFim)}</td>

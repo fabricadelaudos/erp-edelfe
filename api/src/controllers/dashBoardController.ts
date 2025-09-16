@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getContratosProximos, getDespesasCategoria, getDespesasRecentes, getEvolucaoFaturamento, getFaturamentosRecentes, getKpis, getProjecoes, getReceitaVsDespesa } from "../useCases/dashBoard";
+import { getContratosProximos, getDespesasCategoria, getDespesasRecentes, getEvolucaoFaturamento, getFaturamentoAnual, getFaturamentosRecentes, getKpis, getProjecoes, getReceitaVsDespesa } from "../useCases/dashBoard";
 
 export const getKpisController = async (req: Request, res: Response) => {
   try {
@@ -77,6 +77,16 @@ export const getDespesasRecentesController = async (req: Request, res: Response)
   } catch (err: any) {
     console.error("Erro em getDespesasRecentesController:", err);
     return res.status(500).json({ error: err.message });
+  }
+};
+
+export const getFaturamentoAnualController = async (req: Request, res: Response) => {
+  try {
+    const dados = await getFaturamentoAnual.execute(req.body);
+    return res.json(dados);
+  } catch (error: any) {
+    console.error("Erro ao buscar faturamento anual:", error);
+    return res.status(500).json({ error: "Erro interno do servidor" });
   }
 };
 

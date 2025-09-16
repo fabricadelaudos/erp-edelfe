@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Input, TextArea, SelectInput } from "../Inputs";
 import type { Contrato } from "../../types/EstruturaEmpresa";
 import { formatarDataInput } from "../Auxiliares/formatter";
+import toast from "react-hot-toast";
 
 interface Props {
   contrato: Contrato;
@@ -37,10 +38,16 @@ export default function FormContrato({
   };
 
   const handleSave = () => {
+    console.log(isPorVida, formLocal.vidasAtivas);
+    if (isPorVida && (formLocal.vidasAtivas === 0 || formLocal.vidasAtivas === undefined)) {
+      return toast.error("Informe o nº de vidas ativas.");
+    }
+
     const contratoFinal: Contrato = {
       ...formLocal,
       recorrente: formLocal.porVida ? true : formLocal.recorrente,
     };
+
     onSave?.(contratoFinal);
   };
 
@@ -185,6 +192,7 @@ export default function FormContrato({
               type="number"
               value={formLocal.vidasAtivas ?? ""}
               onChange={(e) => atualizar("vidasAtivas", Number(e.target.value))}
+              required={isPorVida}
             />
           </>
         )}
