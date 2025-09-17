@@ -6,7 +6,6 @@ import { toast } from "react-hot-toast";
 import { Input } from "../../components/Inputs";
 
 import logo from "../../media/logo.png";
-import ilustracao from "../../media/ilustracao.png";
 
 export default function LoginPage() {
 
