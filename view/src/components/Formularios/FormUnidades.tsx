@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import type { Unidade } from "../../types/EstruturaEmpresa";
+import type { Contato, Unidade } from "../../types/EstruturaEmpresa";
 import { Input, SelectInput, TextArea } from "../Inputs";
 import ListaContato from "../Listas/ListaContato";
 import ListaContratos from "../Listas/ListaContrato";
-import { buscarCep } from "../../services/apiEmpresa";
+import { buscarCep, buscarContatos } from "../../services/apiEmpresa";
 import { formatarDocumento, limparFormatacao } from "../Auxiliares/formatter";
 
 interface Props {
@@ -14,17 +14,34 @@ interface Props {
 export default function FormUnidade({ unidade, onChange }: Props) {
   const [aba, setAba] = useState<'dados' | 'contato' | 'contrato'>('dados');
   const [formLocal, setFormLocal] = useState<Unidade>({ ...unidade });
+  const [contatosEmpresa, setContatosEmpresa] = useState<Contato[]>([]);
 
   useEffect(() => {
     setFormLocal({
       ...unidade,
-      contato: Array.isArray(unidade.contato)
-        ? unidade.contato
-        : unidade.contato
-          ? [unidade.contato]
+      contatos: Array.isArray(unidade.contatos)
+        ? unidade.contatos
+        : unidade.contatos
+          ? [unidade.contatos]
           : [],
     });
   }, [unidade]);
+
+  useEffect(() => {
+    if (unidade.fkEmpresaId) {
+      buscarContatos(unidade.fkEmpresaId)
+        .then((contatosApi) => {
+          const contatosUnidade = unidade.contatos || [];
+
+          const novosContatos = contatosUnidade.filter(
+            (c) => !c.idContato || !contatosApi.some((api) => api.idContato === c.idContato)
+          );
+
+          setContatosEmpresa([...contatosApi, ...novosContatos]);
+        })
+        .catch((err) => console.error("Erro ao buscar contatos:", err));
+    }
+  }, [unidade.fkEmpresaId, unidade.contatos]);
 
   const atualizarCampo = (campo: keyof Unidade, valor: any) => {
     setFormLocal((prev) => ({ ...prev, [campo]: valor }));
@@ -137,8 +154,10 @@ export default function FormUnidade({ unidade, onChange }: Props) {
 
         {aba === "contato" && (
           <ListaContato
-            contatos={formLocal.contato ?? []}
-            onChange={(novosContatos) => atualizarCampo("contato", novosContatos)}
+            contatos={formLocal.contatos ?? []}
+            onChange={(novosContatos) => atualizarCampo("contatos", novosContatos)}
+            contatosEmpresa={contatosEmpresa ?? []}
+            unidadeIdAtual={unidade.idUnidade}
           />
         )}
 

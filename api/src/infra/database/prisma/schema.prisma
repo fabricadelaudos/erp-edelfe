@@ -27,7 +27,7 @@ model empresa {
 }
 
 model unidade {
-  idUnidade           Int             @id @default(autoincrement())
+  idUnidade           Int                 @id @default(autoincrement())
   fkEmpresaId         Int
   nomeFantasia        String
   razaoSocial         String
@@ -41,25 +41,35 @@ model unidade {
   cidade              String
   uf                  String
   cep                 String
-  ativo               Boolean         @default(true)
+  ativo               Boolean             @default(true)
   observacao          String?
-  retemIss            Boolean         @default(false)
+  retemIss            Boolean             @default(false)
 
-  empresa             empresa?        @relation(fields: [fkEmpresaId], references: [idEmpresa], onDelete: Cascade)
-  contato             contato[]
+  empresa             empresa?            @relation(fields: [fkEmpresaId], references: [idEmpresa], onDelete: Cascade)
+  contatos            unidadeContato[]
   contratos           contrato[]
 }
 
 model contato {
-  idContato       Int    @id @default(autoincrement())
-  fkUnidadeId     Int    @unique
+  idContato       Int               @id @default(autoincrement())
   nome            String
   email           String?
   emailSecundario String?
   telefoneFixo    String?
   telefoneWpp     String?
 
-  unidade         unidade @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
+  unidades        unidadeContato[]
+}
+
+model unidadeContato {
+  id              Int      @id @default(autoincrement())
+  fkUnidadeId     Int
+  fkContatoId     Int
+
+  unidade         unidade  @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
+  contato         contato  @relation(fields: [fkContatoId], references: [idContato], onDelete: Cascade)
+
+  @@unique([fkUnidadeId, fkContatoId])
 }
 
 model contrato {
@@ -70,6 +80,7 @@ model contrato {
   parcelas         Int
   valorBase        Decimal          @db.Decimal(10, 2)
   porVida          Boolean
+  vidas            Int?
   recorrente       Boolean
   status           StatusContrato
   faturadoPor      FaturadoPor
@@ -96,24 +107,24 @@ model projecao {
 }
 
 model faturamento {
-  idFaturamento             Int                 @id @default(autoincrement())
-  fkContratoId              Int
-  fkProjecaoId              Int?
-  fkCompetenciaFinanceiraId Int
-  competencia               String
-  valorBase                 Decimal             @db.Decimal(10, 2)
-  impostoPorcentagem        Decimal             @db.Decimal(10, 2)
-  impostoValor              Decimal             @db.Decimal(10, 2)
-  valorTotal                Decimal             @db.Decimal(10, 2)
-  status                    StatusFaturamento
-  vidas                     Int?
-  pagoEm                    DateTime?
-  competenciaPagamento      String?
-  numeroNota                String?
+  idFaturamento               Int                 @id @default(autoincrement())
+  fkContratoId                Int
+  fkProjecaoId                Int?
+  fkCompetenciaFinanceiraId?  Int
+  competencia                 String
+  valorBase                   Decimal             @db.Decimal(10, 2)
+  impostoPorcentagem          Decimal             @db.Decimal(10, 2)
+  impostoValor                Decimal             @db.Decimal(10, 2)
+  valorTotal                  Decimal             @db.Decimal(10, 2)
+  status                      StatusFaturamento
+  vidas                       Int?
+  pagoEm                      DateTime?
+  competenciaPagamento        String?
+  numeroNota                  String?
 
-  contrato                  contrato            @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
-  projecao                  projecao?           @relation(fields: [fkProjecaoId], references: [idProjecao])
-  competenciaFinanceira     competenciaFinanceira @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira])
+  contrato                    contrato            @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
+  projecao                    projecao?           @relation(fields: [fkProjecaoId], references: [idProjecao])
+  competenciaFinanceira       competenciaFinanceira @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira])
 }
 
 model competenciaFinanceira {

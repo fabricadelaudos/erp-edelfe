@@ -3,21 +3,7 @@ import type { Contrato } from "../../types/EstruturaEmpresa";
 import ModalBase from "../Modais/ModalBase";
 import FormContrato from "../Formularios/FormContrato";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-
-// utils locais
-const fmtDate = (iso?: string) => {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso; // se vier "YYYY-MM-DD" já mostra cru
-  return new Intl.DateTimeFormat("pt-BR").format(d);
-};
-
-const fmtMoney = (valor?: string | number) => {
-  if (valor == null || valor === "") return "—";
-  const num = typeof valor === "number" ? valor : Number(String(valor).replace(",", "."));
-  if (isNaN(num)) return String(valor);
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(num);
-};
+import { formatarData, formatarReais } from "../Auxiliares/formatter";
 
 interface Props {
   contratos: Contrato[];
@@ -143,9 +129,9 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
                 <tr key={i} className={i % 2 ? "bg-gray-50" : "bg-white"}>
                   <td className="px-3 py-2">{c.idContrato}</td>
                   <td className="px-3 py-2">{c.esocial && "e-Social"} - {c.laudos && "Laudos"}</td>
-                  <td className="px-3 py-2">{fmtDate(c.dataInicio)}</td>
-                  <td className="px-3 py-2">{fmtDate(c.dataFim)}</td>
-                  <td className="px-3 py-2">{fmtMoney(c.valorBase)}</td>
+                  <td className="px-3 py-2">{formatarData(c.dataInicio)}</td>
+                  <td className="px-3 py-2">{formatarData(c.dataFim)}</td>
+                  <td className="px-3 py-2">{formatarReais(c.valorBase)}</td>
                   <td className="px-3 py-2">{c.parcelas ?? "—"}</td>
                   <td className="px-3 py-2">
                     <span

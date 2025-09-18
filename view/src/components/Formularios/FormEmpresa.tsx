@@ -7,12 +7,12 @@ import toast from "react-hot-toast";
 import ListaUnidade from "../Listas/ListaUnidade";
 
 interface Props {
-  aoSalvar: () => void;
+  onSalvar: () => void;
   initialData?: Empresa;
   empresaSelecionada?: Empresa;
 }
 
-export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
+export default function FormEmpresa({ onSalvar, empresaSelecionada }: Props) {
   const [aba, setAba] = useState<"dados" | "unidades">("dados");
   const [form, setForm] = useState<Empresa>(
     empresaSelecionada ?? {
@@ -37,13 +37,14 @@ export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
     }
 
     setSalvando(true);
+
     try {
       if (empresaSelecionada?.idEmpresa) {
         await editarEmpresa(empresaSelecionada.idEmpresa, form);
       } else {
         await salvarEmpresa(form);
       }
-      aoSalvar();
+      onSalvar();
     } catch (e) {
       toast.error("Erro ao salvar empresa.");
       console.error("Erro ao salvar empresa.");
@@ -56,7 +57,7 @@ export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
     const novasUnidades = [...(form.unidades || [])];
     novasUnidades[index] = unidadeAtualizada;
     setForm({ ...form, unidades: novasUnidades });
-    setModoEdicaoUnidade(null); // volta para lista
+    setModoEdicaoUnidade(null);
   };
 
   const removerUnidade = (index: number) => {
@@ -69,7 +70,7 @@ export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
   const adicionarUnidade = () => {
     const novaUnidade: Unidade = {
       idUnidade: 0,
-      fkEmpresaId: form.idEmpresa || 0,
+      fkEmpresaId: form.idEmpresa,
       nomeFantasia: "",
       razaoSocial: "",
       tipoDocumento: "CNPJ",
@@ -84,7 +85,7 @@ export default function FormEmpresa({ aoSalvar, empresaSelecionada }: Props) {
       cep: "",
       ativo: true,
       observacao: "",
-      contato: [],
+      contatos: [],
       contratos: [],
     };
 

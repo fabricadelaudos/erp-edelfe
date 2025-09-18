@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Input } from "../Inputs";
+import { Input, SearchableSelect } from "../Inputs";
 import type { Contato } from "../../types/EstruturaEmpresa";
 import { formatarTelefone, limparFormatacao } from "../Auxiliares/formatter";
 
 interface Props {
   contato: Contato;
+  contatosEmpresa?: Contato[];
   onChange?: (novoContato: Contato) => void;
   onSave?: (novoContato: Contato) => void;
   onCancel?: () => void;
@@ -13,6 +14,7 @@ interface Props {
 
 export default function FormContato({
   contato,
+  contatosEmpresa = [],
   onChange,
   onSave,
   onCancel,
@@ -38,6 +40,30 @@ export default function FormContato({
 
   return (
     <div className="space-y-4 p-4">
+      {contatosEmpresa.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Selecionar Contato Existente
+          </label>
+          <SearchableSelect
+            value={formLocal.idContato?.toString() ?? ""}
+            options={contatosEmpresa.map((c) => ({
+              value: String(c.idContato),
+              label: `${c.nome} (${c.email})`,
+            }))}
+            onChange={(valor) => {
+              const selecionado = contatosEmpresa.find(c => c.idContato === Number(valor));
+              if (selecionado) {
+                setFormLocal(selecionado);
+                onChange?.(selecionado);
+              }
+            }}
+            placeholder="Buscar contato existente..."
+          />
+        </div>
+      )}
+
+
       <Input
         name="nome"
         label="Nome"

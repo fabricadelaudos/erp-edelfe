@@ -38,8 +38,7 @@ export default function FormContrato({
   };
 
   const handleSave = () => {
-    console.log(isPorVida, formLocal.vidasAtivas);
-    if (isPorVida && (formLocal.vidasAtivas === 0 || formLocal.vidasAtivas === undefined)) {
+    if (isPorVida && (formLocal.vidas === 0 || formLocal.vidas === undefined)) {
       return toast.error("Informe o nº de vidas ativas.");
     }
 
@@ -47,6 +46,8 @@ export default function FormContrato({
       ...formLocal,
       recorrente: formLocal.porVida ? true : formLocal.recorrente,
     };
+
+    console.log("Contrato final:", contratoFinal);
 
     onSave?.(contratoFinal);
   };
@@ -152,7 +153,7 @@ export default function FormContrato({
               label="Parcelas"
               type="number"
               min={1}
-              value={formLocal.parcelas || 1}
+              value={formLocal.parcelas || 0}
               onChange={(e) => atualizar("parcelas", Number(e.target.value))}
             />
             <Input
@@ -187,11 +188,11 @@ export default function FormContrato({
               onChange={(e) => atualizar("valorBase", e.target.value)}
             />
             <Input
-              name="vidasAtivasTemp"
-              label="Vidas Ativas (Apenas cálculo)"
+              name="vidasTemp"
+              label="Vidas Ativas"
               type="number"
-              value={formLocal.vidasAtivas ?? ""}
-              onChange={(e) => atualizar("vidasAtivas", Number(e.target.value))}
+              value={formLocal.vidas ?? ""}
+              onChange={(e) => atualizar("vidas", Number(e.target.value))}
               required={isPorVida}
             />
           </>

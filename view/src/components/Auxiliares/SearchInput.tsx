@@ -22,7 +22,7 @@ export default function SearchInput({
 
   return (
     <div
-      className="flex items-center mb-4 h-10 rounded-full border border-gray-300 shadow-sm bg-white overflow-hidden"
+      className="flex items-center mb-4 h-10 rounded-full border border-gray-200 bg-white overflow-hidden"
       style={{ minWidth: larguraMinima }}
     >
       <input

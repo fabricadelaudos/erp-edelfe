@@ -7,16 +7,33 @@ import { formatarTelefone } from "../Auxiliares/formatter";
 
 interface Props {
   contatos: Contato[];
+  contatosEmpresa?: Contato[];
   onChange: (contatos: Contato[]) => void;
+  unidadeIdAtual: number
 }
 
-export default function ListaContato({ contatos = [], onChange }: Props) {
+export default function ListaContato({ contatos = [], contatosEmpresa = [], onChange, unidadeIdAtual }: Props) {
   const [aberto, setAberto] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const contatoEmEdicao = useMemo<Contato | null>(() => {
     if (editIndex === null) return null;
     return contatos[editIndex] ?? null;
   }, [editIndex, contatos]);
+  const contatosExtraidos: Contato[] = useMemo(() => {
+    if (
+      Array.isArray(contatos) &&
+      contatos.length > 0 &&
+      'contato' in contatos[0] &&
+      'fkUnidadeId' in contatos[0]
+    ) {
+      return (contatos as any[])
+        .filter((v) => v.fkUnidadeId === unidadeIdAtual)
+        .map((v) => v.contato);
+    }
+    return contatos;
+  }, [contatos, unidadeIdAtual]);
+
+
 
   const abrirNovo = () => {
     const length = Array.isArray(contatos) ? contatos.length : null;
@@ -52,7 +69,6 @@ export default function ListaContato({ contatos = [], onChange }: Props) {
   };
 
   const isNovoContato = editIndex !== null && Array.isArray(contatos) && editIndex === contatos.length;
-  console.log("Contatos: ", contatos);
 
   return (
     <div className="space-y-3">
@@ -79,8 +95,8 @@ export default function ListaContato({ contatos = [], onChange }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {Array.isArray(contatos) && contatos.length > 0 ? (
-              contatos.map((c, i) => (
+            {Array.isArray(contatosExtraidos) && contatosExtraidos.length > 0 ? (
+              contatosExtraidos.map((c, i) => (
                 <tr key={i} className={i % 2 ? "bg-gray-50" : "bg-white"}>
                   <td className="px-3 py-2">{c.nome || "—"}</td>
                   <td className="px-3 py-2">{c.email || "—"}</td>
@@ -135,6 +151,7 @@ export default function ListaContato({ contatos = [], onChange }: Props) {
                 telefoneWpp: "",
               }
             }
+            contatosEmpresa={contatosEmpresa}
             onSave={salvar}
             onCancel={cancelar}
           />

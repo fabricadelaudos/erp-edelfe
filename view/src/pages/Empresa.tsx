@@ -19,7 +19,17 @@ export default function EmpresaPage() {
   useEffect(() => {
     const carregarEmpresas = async () => {
       const data = await getEmpresas();
-      setEmpresas(data);
+
+      const normalizado = data.map((empresa) => ({
+        ...empresa,
+        unidades: empresa.unidades?.map((unidade) => ({
+          ...unidade,
+          // Normaliza os contatos para ficar como Contato[]
+          contatos: unidade.contatos.map((vinculo: any) => vinculo.contato),
+        })),
+      }));
+
+      setEmpresas(normalizado);
     };
 
     carregarEmpresas();
@@ -80,8 +90,14 @@ export default function EmpresaPage() {
 
       <div className="mt-4 space-y-2 bg-white p-4 rounded-md border border-gray-200">
         <SearchInput onBusca={setBusca} placeholder="Buscar empresa..." />
-        
-        {empresasFiltradas.map((empresa) => (
+
+        {empresasFiltradas.length === 0 ? (
+          <>
+            <div>
+              <p className="text-gray-400 text-center font-medium">Nenhuma empresa encontrada!</p>
+            </div>
+          </>
+        ) : empresasFiltradas.map((empresa) => (
           <div
             key={empresa.idEmpresa}
             className="border border-gray-300 rounded-md overflow-hidden"
@@ -99,7 +115,7 @@ export default function EmpresaPage() {
                     <ChevronRight size={18} />
                   )}
                 </button>
-                <span className="font-semibold">{empresa.nome}</span>
+                <span className="font-medium">#{empresa.idEmpresa} - {empresa.nome}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <div className="flex items-center gap-1">
@@ -188,7 +204,7 @@ export default function EmpresaPage() {
       >
         <FormEmpresa
           empresaSelecionada={empresaSelecionada ?? undefined}
-          aoSalvar={async () => {
+          onSalvar={async () => {
             setModalAberto(false);
             const data = await getEmpresas();
             setEmpresas(data);

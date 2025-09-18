@@ -1,5 +1,5 @@
 import { apiFetch } from './apiFetch';
-import type { Empresa, EnderecoCep } from '../types/EstruturaEmpresa';
+import type { Contato, Empresa, EnderecoCep } from '../types/EstruturaEmpresa';
 
 export const getEmpresas = async (): Promise<Empresa[]> =>
   apiFetch<Empresa[]>('/empresa');
@@ -33,3 +33,5 @@ export async function buscarCep(cep: string): Promise<EnderecoCep | null> {
     return null;
   }
 }
+
+export const buscarContatos = async (idEmpresa: number): Promise<Contato[]> => apiFetch<Contato[]>(`/empresa/${idEmpresa}/contatos`);

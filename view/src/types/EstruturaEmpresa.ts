@@ -23,7 +23,7 @@ export interface Unidade {
   ativo: boolean;
   observacao?: string;
   retemIss?: boolean;
-  contato: Contato[];
+  contatos: Contato[];
   contratos: Contrato[];
   enderecoCep?: EnderecoCep;
   empresa?: Empresa;
@@ -36,7 +36,6 @@ export interface Contato {
   emailSecundario?: string;
   telefoneFixo?: string;
   telefoneWpp?: string;
-  fkUnidadeId?: number;
 }
 
 export interface Contrato {
@@ -54,7 +53,7 @@ export interface Contrato {
   esocial?: boolean;
   laudos?: boolean;
   observacao?: string;
-  vidasAtivas?: number;
+  vidas?: number;
   diaVencimento?: string;
   unidade?: Unidade;
 }

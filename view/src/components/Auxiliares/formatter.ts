@@ -1,7 +1,20 @@
 export function formatarData(data?: string | Date): string {
   if (!data) return "";
-  const date = typeof data === "string" ? new Date(data) : data;
-  return date.toLocaleDateString("pt-BR");
+
+  let ano, mes, dia;
+
+  if (typeof data === "string") {
+    const partes = data.split("T")[0].split("-");
+    ano = partes[0];
+    mes = partes[1];
+    dia = partes[2];
+  } else {
+    ano = data.getFullYear().toString();
+    mes = String(data.getMonth() + 1).padStart(2, "0");
+    dia = String(data.getDate()).padStart(2, "0");
+  }
+
+  return `${dia}/${mes}/${ano}`;
 }
 
 export function formatarDataInput(data?: string | Date): string {

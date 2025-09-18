@@ -1,4 +1,5 @@
 export interface ContatoInput {
+  idContato?: number;
   nome: string;
   email: string;
   emailSecundario?: string;
@@ -13,6 +14,7 @@ export interface ContratoInput {
   parcelas: number;
   valorBase: string;
   porVida: boolean;
+  vidas?: number;
   recorrente: boolean;
   status: string;
   faturadoPor: string;
@@ -40,9 +42,10 @@ export interface UnidadeInput {
   retemIss?: boolean;
   ativo?: boolean;
 
-  contato?: ContatoInput;
+  contatos?: ContatoInput[];
   contratos?: ContratoInput[];
 }
+
 
 export interface EmpresaInput {
   nome: string;

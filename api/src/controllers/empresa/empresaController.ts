@@ -5,6 +5,7 @@ import {
   editarEmpresa,
   buscarEmpresas,
   listarEmpresas,
+  buscarContatos,
 } from '../../useCases/empresa/empresa';
 
 export const buscarEmpresaController = async (req: Request, res: Response) => {
@@ -62,5 +63,21 @@ export const editarEmpresaController = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message });
+  }
+};
+
+export const buscarContatosController = async (req: Request, res: Response) => {
+  const idEmpresa = Number(req.params.id);
+
+  if (isNaN(idEmpresa)) {
+    return res.status(400).json({ error: "ID da empresa inválido" });
+  }
+
+  try {
+    const contatos = await buscarContatos.execute(idEmpresa);
+    return res.json(contatos);
+  } catch (error: any) {
+    console.error("Erro ao buscar contatos da empresa:", error);
+    return res.status(500).json({ error: "Erro ao buscar contatos da empresa" });
   }
 };
