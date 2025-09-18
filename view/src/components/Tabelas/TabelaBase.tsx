@@ -13,23 +13,28 @@ export interface Column<T> {
 interface TabelaBaseProps<T> {
   columns: Column<T>[];
   data: T[];
+  className?: string;
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
   acoesExtras?: (row: T) => React.ReactNode;
   itemsPerPage?: number;
   isLoading?: boolean;
   legenda?: { cor: string; texto: string }[];
+  // ✅ Novo prop
+  onSelect?: (selected: T[]) => void;
 }
 
-export default function TabelaBase<T extends object>({
+export default function TabelaBase<T extends { id?: string | number }>({
   columns,
   data,
+  className,
   onEdit,
   onDelete,
   acoesExtras,
   itemsPerPage = 10,
   isLoading = false,
   legenda = [],
+  onSelect,
 }: TabelaBaseProps<T>) {
   const [sortConfig, setSortConfig] = useState<{ key: keyof T | null; direction: "asc" | "desc" }>({
     key: null,
@@ -37,6 +42,7 @@ export default function TabelaBase<T extends object>({
   });
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
 
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return data;
@@ -67,14 +73,44 @@ export default function TabelaBase<T extends object>({
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
+  const toggleRow = (id: string | number) => {
+    const updated = selectedRows.includes(id)
+      ? selectedRows.filter((r) => r !== id)
+      : [...selectedRows, id];
+    setSelectedRows(updated);
+    if (onSelect) {
+      onSelect(data.filter((d) => updated.includes(d.id!)));
+    }
+  };
+
+  const toggleAll = () => {
+    if (selectedRows.length === currentData.length) {
+      setSelectedRows([]);
+      if (onSelect) onSelect([]);
+    } else {
+      const updated = currentData.map((d) => d.id!);
+      setSelectedRows(updated);
+      if (onSelect) onSelect(data.filter((d) => updated.includes(d.id!)));
+    }
+  };
+
   return (
     <div className="flex flex-col">
       <div className="rounded-md border border-gray-200">
-        {/* Tabela */}
         <div className="overflow-x-auto custom-scrollbar rounded-t-md">
-          <table className="min-w-[1200px] w-full bg-white text-sm text-center rounded-t-md">
+          <table className={`min-w-[1200px] w-full bg-white text-center rounded-t-md ${className}`}>
             <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
               <tr>
+                {/* ✅ Checkbox master */}
+                {onSelect && (
+                  <th className="px-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.length === currentData.length && currentData.length > 0}
+                      onChange={toggleAll}
+                    />
+                  </th>
+                )}
                 {columns.map((col, idx) => (
                   <th key={idx} className="px-4 py-3 font-bold cursor-pointer select-none align-middle">
                     <div className="flex items-center justify-center gap-1">
@@ -105,9 +141,7 @@ export default function TabelaBase<T extends object>({
                 ))}
                 {(onEdit || onDelete) && (
                   <th className="font-bold text-center sticky right-0 z-10 bg-gray-50">
-                    <div className="px-4 py-3 border-l border-gray-300">
-                      Ações
-                    </div>
+                    <div className="px-4 py-3 border-l border-gray-300">Ações</div>
                   </th>
                 )}
               </tr>
@@ -115,19 +149,29 @@ export default function TabelaBase<T extends object>({
             <tbody className="divide-y divide-gray-100 border-b border-t border-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="py-6 text-gray-400 text-center">
+                  <td colSpan={columns.length + 2} className="py-6 text-gray-400 text-center">
                     <Loading />
                   </td>
                 </tr>
               ) : currentData.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="py-6 text-gray-400 text-center">
+                  <td colSpan={columns.length + 2} className="py-6 text-gray-400 text-center">
                     Nenhum item encontrado.
                   </td>
                 </tr>
               ) : (
                 currentData.map((row, idx) => (
-                  <tr key={idx} className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} align-middle`}>
+                  <tr key={row.id ?? idx} className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} align-middle`}>
+                    {/* ✅ Checkbox por linha */}
+                    {onSelect && (
+                      <td className="px-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.includes(row.id!)}
+                          onChange={() => toggleRow(row.id!)}
+                        />
+                      </td>
+                    )}
                     {columns.map((col, i) => (
                       <td key={i} className="px-4 py-3 align-middle">
                         {col.render ? col.render(row[col.accessor], row) : (row[col.accessor] as any) ?? "—"}
@@ -135,7 +179,7 @@ export default function TabelaBase<T extends object>({
                     ))}
                     {(onEdit || onDelete || acoesExtras) && (
                       <td className={`sticky right-0 z-10 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
-                        <div className="px-4 py-3 align-middle inline-flex justify-center items-center gap-2 w-full h-full border-l border-gray-300">
+                        <div className="px-4 py-3 inline-flex justify-center items-center gap-2 w-full h-full border-l border-gray-300">
                           {onEdit && (
                             <ToolTip text="Editar">
                               <button
@@ -156,7 +200,7 @@ export default function TabelaBase<T extends object>({
                               </button>
                             </ToolTip>
                           )}
-                          {acoesExtras && acoesExtras(row)} {/* ✅ Aqui adiciona as ações extras */}
+                          {acoesExtras && acoesExtras(row)}
                         </div>
                       </td>
                     )}
@@ -165,53 +209,53 @@ export default function TabelaBase<T extends object>({
               )}
             </tbody>
           </table>
-        </div>
 
-        {/* Paginação */}
-        <div className="flex justify-between items-center px-4 py-3 bg-gray-50 text-gray-700 rounded-b-md text-sm font-bold">
-          <p>
-            Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} itens
-          </p>
-          <div className="flex items-center gap-1">
-            <button onClick={() => goToPage(1)} disabled={currentPage === 1} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">«</button>
-            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">‹</button>
+          {/* Paginação */}
+          <div className="flex justify-between items-center px-4 py-3 bg-gray-50 text-gray-700 rounded-b-md text-sm font-medium">
+            <p className="text-gray-600">
+              Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} itens
+            </p>
+            <div className="flex items-center gap-1">
+              <button onClick={() => goToPage(1)} disabled={currentPage === 1} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">«</button>
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">‹</button>
 
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum =
-                totalPages <= 5 ? i + 1 :
-                  currentPage <= 3 ? i + 1 :
-                    currentPage >= totalPages - 2 ? totalPages - 4 + i :
-                      currentPage - 2 + i;
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum =
+                  totalPages <= 5 ? i + 1 :
+                    currentPage <= 3 ? i + 1 :
+                      currentPage >= totalPages - 2 ? totalPages - 4 + i :
+                        currentPage - 2 + i;
 
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => goToPage(pageNum)}
-                  className={`px-3 py-1 rounded ${pageNum === currentPage ? "bg-blue-600 text-white" : ""}`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    className={`px-3 py-1 rounded ${pageNum === currentPage ? "bg-blue-600 text-white" : ""}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
 
-            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">›</button>
-            <button onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">»</button>
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">›</button>
+              <button onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">»</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Legenda */}
-      {legenda.length > 0 && (
-        <div className="w-full px-2 mt-2 text-xs text-gray-700 flex flex-wrap justify-end gap-2">
-          <span className="font-medium">Legenda:</span>
-          {legenda.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-1">
-              <span className={`w-2 h-2 rounded-full ${item.cor}`}></span>
-              <span>{item.texto}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+        {/* Legenda */}
+        {legenda.length > 0 && (
+          <div className="w-full px-2 mt-2 text-xs text-gray-500 flex flex-wrap justify-end gap-2">
+            <span className="font-medium">Legenda:</span>
+            {legenda.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${item.cor}`}></span>
+                <span>{item.texto}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div >
   );
 }

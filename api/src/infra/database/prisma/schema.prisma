@@ -107,24 +107,24 @@ model projecao {
 }
 
 model faturamento {
-  idFaturamento               Int                 @id @default(autoincrement())
+  idFaturamento               Int                     @id @default(autoincrement())
   fkContratoId                Int
   fkProjecaoId                Int?
-  fkCompetenciaFinanceiraId?  Int
+  fkCompetenciaFinanceiraId   Int?
   competencia                 String
-  valorBase                   Decimal             @db.Decimal(10, 2)
-  impostoPorcentagem          Decimal             @db.Decimal(10, 2)
-  impostoValor                Decimal             @db.Decimal(10, 2)
-  valorTotal                  Decimal             @db.Decimal(10, 2)
+  valorBase                   Decimal                 @db.Decimal(10, 2)
+  impostoPorcentagem          Decimal                 @db.Decimal(10, 2)
+  impostoValor                Decimal                 @db.Decimal(10, 2)
+  valorTotal                  Decimal                 @db.Decimal(10, 2)
   status                      StatusFaturamento
   vidas                       Int?
   pagoEm                      DateTime?
   competenciaPagamento        String?
   numeroNota                  String?
 
-  contrato                    contrato            @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
-  projecao                    projecao?           @relation(fields: [fkProjecaoId], references: [idProjecao])
-  competenciaFinanceira       competenciaFinanceira @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira])
+  contrato                    contrato                @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
+  projecao                    projecao?               @relation(fields: [fkProjecaoId], references: [idProjecao])
+  competenciaFinanceira       competenciaFinanceira?  @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira], onDelete: SetNull)
 }
 
 model competenciaFinanceira {

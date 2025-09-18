@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buscarFaturamentoCompetencia, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, gerarFaturamento } from "../useCases/faturamento";
+import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, gerarFaturamento } from "../useCases/faturamento";
 
 export const buscarFaturamentosPorContratoController = async (req: Request, res: Response) => {
   try {
@@ -55,17 +55,23 @@ export const buscarFaturamentoPorCompetenciaController = async (req: Request, re
 };
 
 export const gerarFaturamentoController = async (req: Request, res: Response) => {
-  const { competencia } = req.body;
-
-  if (!competencia) {
-    return res.status(400).json({ error: "Competência é obrigatória." });
-  }
+  const id = Number(req.params.id);
 
   try {
-    const faturamentos = await gerarFaturamento.execute(competencia);
-    return res.json(faturamentos);
-  } catch (error: any) {
-    console.error("Erro ao gerar faturamento:", error);
-    return res.status(500).json({ error: error.message || "Erro interno no servidor" });
+    const resultado = await gerarFaturamento.execute(id);
+    res.status(201).json(resultado);
+  } catch (error) {
+    console.error("Erro ao gerar faturamento da projeção:", error);
+    res.status(500).json({ error: "Erro ao gerar faturamento da projeção" });
+  }
+};
+
+export const buscarFaturamentosEProjecoesController = async (req: Request, res: Response) => {
+  try {
+    const lista = await buscarFaturamentosEProjecoes.execute();
+    return res.json(lista);
+  } catch (e) {
+    console.error("Erro ao buscar faturamentos e projeções:", e);
+    return res.status(500).json({ error: "Erro ao buscar faturamentos e projeções." });
   }
 };

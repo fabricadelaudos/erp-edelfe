@@ -1,4 +1,4 @@
-import type { Faturamento } from "../types/EstruturaFaturamento";
+import type { Faturamento, FaturamentoOuProjecao } from "../types/EstruturaFaturamento";
 import { apiFetch } from "./apiFetch";
 
 export interface FaturamentoInput {
@@ -33,9 +33,26 @@ export async function gerarFaturamentoPorCompetencia(competencia: string): Promi
   });
 }
 
-export async function editarFaturamento(faturamento: Faturamento): Promise<Faturamento> {
-  return apiFetch<Faturamento>(`/faturamento/${faturamento.idFaturamento}`, {
+export const editarFaturamento = async (dados: FaturamentoOuProjecao) => {
+  return apiFetch(`/faturamento/${dados.id}`, {
     method: "PUT",
-    body: JSON.stringify(faturamento),
+    body: JSON.stringify(dados),
   });
-}
+};
+
+export const buscarFaturamentoOuProjecao = async (): Promise<FaturamentoOuProjecao[]> => {
+  return apiFetch<FaturamentoOuProjecao[]>("/faturamento/completo");
+};
+
+export const gerarFaturamentoDeProjecao = async (id: number) => {
+  return apiFetch(`/faturamento/gerar/${id}`, {
+    method: "POST",
+  });
+};
+
+export const editarProjecao = async (dados: FaturamentoOuProjecao) => {
+  return apiFetch(`/faturamento/projecao/${dados.id}`, {
+    method: "PUT",
+    body: JSON.stringify(dados),
+  });
+};
