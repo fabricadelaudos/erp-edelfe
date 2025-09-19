@@ -20,7 +20,7 @@ export async function loginUser(idToken: string) {
     throw new Error("Usuário não encontrado!");
   }
 
-  if (usuario.ativo === 0) {
+  if (!usuario.ativo) {
     throw new Error("Usuário inativo!");
   }
 
