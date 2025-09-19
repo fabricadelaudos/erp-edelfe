@@ -2,10 +2,10 @@ import { Router } from "express";
 import { login, logout, verifyToken } from '../controllers/authController';
 import { authorize } from '../middlewares/authorize';
 
-const router = Router();
+const authRoutes = Router();
 
-router.post('/login', login);
-router.post('/logout', authorize(), logout);
-router.get("/auth/verify", authorize(), verifyToken);
+authRoutes.post('/login', login);
+authRoutes.post('/logout', authorize(), logout);
+authRoutes.get("/auth/verify", authorize(), verifyToken);
 
-export default router;
+export default authRoutes;

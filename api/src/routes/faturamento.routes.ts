@@ -2,17 +2,17 @@ import { Router } from "express";
 import { buscarFaturamentoPorCompetenciaController, buscarFaturamentosEProjecoesController, buscarFaturamentosPorContratoController, criarFaturamentoController, editarFaturamentoController, editarFaturamentosEmMassaController, editarProjecaoController, gerarFaturamentoController } from "../controllers/faturamentoController";
 import { authorize } from "../middlewares/authorize";
 
-const router = Router();
+const faturamentoRoutes = Router();
 
-router.get("/contrato/:idContrato", authorize(), buscarFaturamentosPorContratoController);
-router.post("/", authorize(), criarFaturamentoController);
-router.put("/projecao", authorize(), editarProjecaoController);
-router.put("/:id", authorize(), editarFaturamentoController);
-router.put("/", authorize(), editarFaturamentosEmMassaController);
+faturamentoRoutes.get("/contrato/:idContrato", authorize(), buscarFaturamentosPorContratoController);
+faturamentoRoutes.post("/", authorize(), criarFaturamentoController);
+faturamentoRoutes.put("/projecao", authorize(), editarProjecaoController);
+faturamentoRoutes.put("/:id", authorize(), editarFaturamentoController);
+faturamentoRoutes.put("/", authorize(), editarFaturamentosEmMassaController);
 
-router.get("/competencia/:competencia", authorize(), buscarFaturamentoPorCompetenciaController);
-router.post("/gerar", authorize(), gerarFaturamentoController);
+faturamentoRoutes.get("/competencia/:competencia", authorize(), buscarFaturamentoPorCompetenciaController);
+faturamentoRoutes.post("/gerar", authorize(), gerarFaturamentoController);
 
-router.get("/completo", authorize(), buscarFaturamentosEProjecoesController);
+faturamentoRoutes.get("/completo", authorize(), buscarFaturamentosEProjecoesController);
 
-export default router;
+export default faturamentoRoutes;

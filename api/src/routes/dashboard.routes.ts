@@ -2,30 +2,30 @@ import { Router } from "express";
 import { authorize } from "../middlewares/authorize";
 import { getContratosProximosController, getDespesasCategoriaController, getDespesasRecentesController, getEvolucaoFaturamentoController, getFaturamentoAnualController, getFaturamentosRecentesController, getKpisController, getProjecoesController, getReceitaVsDespesaController } from "../controllers/dashBoardController";
 
-const router = Router();
+const dashboardRoutes = Router();
 
 // KPIs do topo (cards)
-router.get("/kpis", authorize(), getKpisController);
+dashboardRoutes.get("/kpis", authorize(), getKpisController);
 
 // Receita vs Despesa (gráfico)
-router.get("/receita-vs-despesa", authorize(), getReceitaVsDespesaController);
+dashboardRoutes.get("/receita-vs-despesa", authorize(), getReceitaVsDespesaController);
 
 // Distribuição de despesas por categoria
-router.get("/despesas-categoria", authorize(), getDespesasCategoriaController);
+dashboardRoutes.get("/despesas-categoria", authorize(), getDespesasCategoriaController);
 
 // Últimos faturamentos
-router.get("/faturamentos-recentes", authorize(), getFaturamentosRecentesController);
+dashboardRoutes.get("/faturamentos-recentes", authorize(), getFaturamentosRecentesController);
 
 // Últimas despesas
-router.get("/despesas-recentes", authorize(), getDespesasRecentesController);
+dashboardRoutes.get("/despesas-recentes", authorize(), getDespesasRecentesController);
 
 // Evolução do faturamento
-router.post("/evolucao-faturamento", authorize(), getFaturamentoAnualController);
+dashboardRoutes.post("/evolucao-faturamento", authorize(), getFaturamentoAnualController);
 
 // Projeções
-router.post("/projecoes", authorize(), getProjecoesController);
+dashboardRoutes.post("/projecoes", authorize(), getProjecoesController);
 
 // Contratos próximos do vencimento
-router.post("/contratos-proximos", authorize(), getContratosProximosController);
+dashboardRoutes.post("/contratos-proximos", authorize(), getContratosProximosController);
 
-export default router;
+export default dashboardRoutes;

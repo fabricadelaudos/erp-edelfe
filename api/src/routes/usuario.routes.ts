@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { authorize } from '../middlewares/authorize';
 import { buscarUsuarioController, buscarUsuariosController, criarUsuarioController, editarUsuarioController, enviarLinkRecuperacaoSenhaController } from '../controllers/usuarioController';
 
-const router = Router();
+const usuarioRoutes = Router();
 
-router.get('/:id', authorize(), buscarUsuarioController);
-router.get('/', authorize(), buscarUsuariosController);
-router.post('/', authorize(), criarUsuarioController);
-router.put('/:id', authorize(), editarUsuarioController);
+usuarioRoutes.get('/:id', authorize(), buscarUsuarioController);
+usuarioRoutes.get('/', authorize(), buscarUsuariosController);
+usuarioRoutes.post('/', authorize(), criarUsuarioController);
+usuarioRoutes.put('/:id', authorize(), editarUsuarioController);
 
-router.post('/recuperarSenha', authorize(), enviarLinkRecuperacaoSenhaController);
+usuarioRoutes.post('/recuperarSenha', authorize(), enviarLinkRecuperacaoSenhaController);
 
-export default router;
+export default usuarioRoutes;

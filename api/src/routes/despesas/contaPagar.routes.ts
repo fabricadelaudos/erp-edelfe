@@ -10,16 +10,16 @@ import {
   confirmarPagamentoController,
 } from '../../controllers/despesas/contaPagarController';
 
-const router = Router();
+const contasPagarRoutes = Router();
 
-router.get('/:id', authorize(), buscarContaPagarController);
-router.get('/', authorize(), buscarContasPagarController);
-router.post('/', authorize(), criarContaPagarController);
-router.put('/:id', authorize(), editarContaPagarController);
+contasPagarRoutes.get('/:id', authorize(), buscarContaPagarController);
+contasPagarRoutes.get('/', authorize(), buscarContasPagarController);
+contasPagarRoutes.post('/', authorize(), criarContaPagarController);
+contasPagarRoutes.put('/:id', authorize(), editarContaPagarController);
 
 // Parcela
-router.get('/:id', authorize(), buscarParcelaController);
-router.put('/:id', authorize(), atualizarParcelaController);
-router.put('/:id/pagar', authorize(), confirmarPagamentoController);
+contasPagarRoutes.get('/:id', authorize(), buscarParcelaController);
+contasPagarRoutes.put('/:id', authorize(), atualizarParcelaController);
+contasPagarRoutes.put('/:id/pagar', authorize(), confirmarPagamentoController);
 
-export default router;
+export default contasPagarRoutes;

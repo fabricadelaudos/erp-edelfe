@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { authorize } from '../../middlewares/authorize';
 import { buscarPlanoContaCategoriaController, buscarPlanoContaCategoriasController, buscarSubcategoriasController, salvarPlanoContaCategoriaController } from '../../controllers/despesas/planoContaController';
 
-const router = Router();
+const planoContasRoutes = Router();
 
 // Categorias
-router.get('/:id', authorize(), buscarPlanoContaCategoriaController);
-router.get('/', authorize(), buscarPlanoContaCategoriasController);
-router.post('/salvar', authorize(), salvarPlanoContaCategoriaController);
+planoContasRoutes.get('/:id', authorize(), buscarPlanoContaCategoriaController);
+planoContasRoutes.get('/', authorize(), buscarPlanoContaCategoriasController);
+planoContasRoutes.post('/salvar', authorize(), salvarPlanoContaCategoriaController);
 // Subcategorias
-router.get('/subcategoria/:idCategoria', authorize(), buscarSubcategoriasController);
+planoContasRoutes.get('/subcategoria/:idCategoria', authorize(), buscarSubcategoriasController);
 
-export default router;
+export default planoContasRoutes;

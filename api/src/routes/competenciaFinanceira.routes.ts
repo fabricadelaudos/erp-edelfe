@@ -2,12 +2,12 @@ import { Router } from "express";
 import { authorize } from "../middlewares/authorize";
 import { buscarCompetenciaAtualController, buscarCompetenciasFinanceiras, criarCompetenciaFinanceira, editarCompetenciaFinanceira, excluirCompetenciaFinanceira } from "../controllers/competenciaFinanceiraController";
 
-const router = Router();
+const competenciaRoutes = Router();
 
-router.get("/", authorize(), buscarCompetenciasFinanceiras);
-router.get("/atual", authorize(), buscarCompetenciaAtualController);
-router.post("/", authorize(), criarCompetenciaFinanceira);
-router.put("/:id", authorize(), editarCompetenciaFinanceira);
-router.delete("/:id", authorize(), excluirCompetenciaFinanceira);
+competenciaRoutes.get("/", authorize(), buscarCompetenciasFinanceiras);
+competenciaRoutes.get("/atual", authorize(), buscarCompetenciaAtualController);
+competenciaRoutes.post("/", authorize(), criarCompetenciaFinanceira);
+competenciaRoutes.put("/:id", authorize(), editarCompetenciaFinanceira);
+competenciaRoutes.delete("/:id", authorize(), excluirCompetenciaFinanceira);
 
-export default router;
+export default competenciaRoutes;

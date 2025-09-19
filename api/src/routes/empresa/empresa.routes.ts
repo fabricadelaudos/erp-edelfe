@@ -2,12 +2,12 @@ import { Router } from 'express';
 import { authorize } from '../../middlewares/authorize';
 import { buscarContatosController, buscarEmpresaController, buscarEmpresasController, criarEmpresaController, editarEmpresaController } from '../../controllers/empresa/empresaController';
 
-const router = Router();
+const empresaRoutes = Router();
 
-router.get('/:id', authorize(), buscarEmpresaController);
-router.get('/', authorize(), buscarEmpresasController);
-router.get('/:id/contatos', authorize(), buscarContatosController);
-router.post('/', authorize(), criarEmpresaController);
-router.put('/:id', authorize(), editarEmpresaController);
+empresaRoutes.get('/:id', authorize(), buscarEmpresaController);
+empresaRoutes.get('/', authorize(), buscarEmpresasController);
+empresaRoutes.get('/:id/contatos', authorize(), buscarContatosController);
+empresaRoutes.post('/', authorize(), criarEmpresaController);
+empresaRoutes.put('/:id', authorize(), editarEmpresaController);
 
-export default router;
+export default empresaRoutes;

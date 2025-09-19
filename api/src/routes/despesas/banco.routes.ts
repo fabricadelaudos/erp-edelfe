@@ -7,11 +7,11 @@ import {
   editarBancoController
 } from '../../controllers/despesas/bancoController';
 
-const router = Router();
+const bancoRoutes = Router();
 
-router.get('/:id', authorize(), buscarBancoController);
-router.get('/', authorize(), buscarBancosController);
-router.post('/', authorize(), criarBancoController);
-router.put('/:id', authorize(), editarBancoController);
+bancoRoutes.get('/:id', authorize(), buscarBancoController);
+bancoRoutes.get('/', authorize(), buscarBancosController);
+bancoRoutes.post('/', authorize(), criarBancoController);
+bancoRoutes.put('/:id', authorize(), editarBancoController);
 
-export default router;
+export default bancoRoutes;
