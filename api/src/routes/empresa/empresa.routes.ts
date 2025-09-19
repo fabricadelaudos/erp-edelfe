@@ -4,9 +4,9 @@ import { buscarContatosController, buscarEmpresaController, buscarEmpresasContro
 
 const empresaRoutes = Router();
 
+empresaRoutes.get('/:id/contatos', authorize(), buscarContatosController);
 empresaRoutes.get('/:id', authorize(), buscarEmpresaController);
 empresaRoutes.get('/', authorize(), buscarEmpresasController);
-empresaRoutes.get('/:id/contatos', authorize(), buscarContatosController);
 empresaRoutes.post('/', authorize(), criarEmpresaController);
 empresaRoutes.put('/:id', authorize(), editarEmpresaController);
 
