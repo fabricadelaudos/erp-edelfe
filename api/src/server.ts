@@ -27,7 +27,10 @@ import dashboardRoutes from './routes/dashboard.routes';
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'https://edelfe.fabricadelaudos.com',
+  ],
   credentials: true,
 }));
 
@@ -37,22 +40,22 @@ app.use("/api", authRoutes);
 app.use("/api/usuario", usuarioRoutes);
 
 // Empresa
-app.use("/api/empresa", empresaRoutes );
+app.use("/api/empresa", empresaRoutes);
 
 // Faturamento
-app.use("/api/faturamento", faturamentoRoutes );
+app.use("/api/faturamento", faturamentoRoutes);
 
 // Competencia Financeira
-app.use("/api/competencia", competenciaRoutes );
+app.use("/api/competencia", competenciaRoutes);
 
 // Despesas
-app.use("/api/banco", bancoRoutes );
-app.use("/api/planoConta", planoContasRoutes );
-app.use("/api/fornecedor", fornecedorRoutes );
-app.use("/api/contaPagar", contasPagarRoutes );
+app.use("/api/banco", bancoRoutes);
+app.use("/api/planoConta", planoContasRoutes);
+app.use("/api/fornecedor", fornecedorRoutes);
+app.use("/api/contaPagar", contasPagarRoutes);
 
 // Dashboard
-app.use("/api/dashboard", dashboardRoutes );
+app.use("/api/dashboard", dashboardRoutes);
 
 app.listen(env.PORT, () => {
   console.log(`Servidor rodando na porta ${env.PORT}`);
