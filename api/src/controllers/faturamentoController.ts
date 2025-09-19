@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, gerarFaturamento } from "../useCases/faturamento";
+import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, editarFaturamentosEmMassa, editarProjecao, gerarFaturamento } from "../useCases/faturamento";
 
 export const buscarFaturamentosPorContratoController = async (req: Request, res: Response) => {
   try {
@@ -35,6 +35,50 @@ export const editarFaturamentoController = async (req: Request, res: Response) =
   }
 };
 
+export const editarFaturamentosEmMassaController = async (req: Request, res: Response) => {
+  const user = req.user;
+
+  try {
+    const lista = req.body; // deve ser [{ id, dados: {...} }]
+    if (!Array.isArray(lista)) {
+      throw new Error("O corpo da requisição deve ser uma lista de faturamentos");
+    }
+
+    const resultado = await editarFaturamentosEmMassa.execute(lista, user);
+    res.json(resultado);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const editarProjecaoController = async (req: Request, res: Response) => {
+  const user = req.user;
+
+  try {
+    let resultado;
+
+    // Caso venha apenas 1 id pela rota (modo antigo)
+    if (req.params.id) {
+      const id = Number(req.params.id);
+      const dados = req.body;
+
+      resultado = await editarProjecao.execute([{ id, dados }], user);
+    } else {
+      // Caso venha lista no body (modo em massa)
+      const lista = req.body; // deve ser [{ id, dados: {...} }, { id, dados: {...} }]
+      if (!Array.isArray(lista)) {
+        throw new Error("O corpo da requisição deve ser uma lista de projeções");
+      }
+
+      resultado = await editarProjecao.execute(lista, user);
+    }
+
+    res.json(resultado);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 export const buscarFaturamentoPorCompetenciaController = async (req: Request, res: Response) => {
   const { competencia } = req.params;
 
@@ -58,7 +102,7 @@ export const gerarFaturamentoController = async (req: Request, res: Response) =>
   const id = Number(req.params.id);
 
   try {
-    const resultado = await gerarFaturamento.execute(id);
+    const resultado = await gerarFaturamento.execute("");
     res.status(201).json(resultado);
   } catch (error) {
     console.error("Erro ao gerar faturamento da projeção:", error);

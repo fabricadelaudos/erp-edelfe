@@ -2,7 +2,7 @@ export interface FaturamentoOuProjecao {
   id: number;
   tipo: "PROJECAO" | "FATURAMENTO";
   competencia: string;
-  valor: number; // valor genérico (usa valorPrevisto ou valorTotal)
+  valorPrevisto: number; // valor genérico (usa valorPrevisto ou valorTotal)
   vidas?: number | null;
   status: string;
   numeroNota?: string;

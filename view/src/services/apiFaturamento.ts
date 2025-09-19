@@ -40,6 +40,15 @@ export const editarFaturamento = async (dados: FaturamentoOuProjecao) => {
   });
 };
 
+export const editarFaturamentosEmMassa = async (
+  lista: { id: number; dados: any }[]
+) => {
+  return apiFetch(`/faturamento`, {
+    method: "PUT",
+    body: JSON.stringify(lista),
+  });
+};
+
 export const buscarFaturamentoOuProjecao = async (): Promise<FaturamentoOuProjecao[]> => {
   return apiFetch<FaturamentoOuProjecao[]>("/faturamento/completo");
 };
@@ -51,8 +60,17 @@ export const gerarFaturamentoDeProjecao = async (id: number) => {
 };
 
 export const editarProjecao = async (dados: FaturamentoOuProjecao) => {
-  return apiFetch(`/faturamento/projecao/${dados.id}`, {
+  return apiFetch(`/faturamento/projecao`, {
     method: "PUT",
-    body: JSON.stringify(dados),
+    body: JSON.stringify([{ id: dados.id, dados }]),
+  });
+};
+
+export const editarProjecoesEmMassa = async (
+  lista: { id: number; dados: any }[]
+) => {
+  return apiFetch(`/faturamento/projecao`, {
+    method: "PUT",
+    body: JSON.stringify(lista),
   });
 };

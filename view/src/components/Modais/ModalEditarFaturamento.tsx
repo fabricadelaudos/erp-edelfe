@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FaturamentoOuProjecao } from "../../types/EstruturaFaturamento";
 import ModalBase from "../Modais/ModalBase";
-import { formatarDocumento, formatarReais } from "../Auxiliares/formatter";
+import { formatarDocumento, formatarReais, formatarTelefone } from "../Auxiliares/formatter";
 import Copiavel from "../Auxiliares/Copiavel";
 import { Input, SelectInput } from "../Inputs";
 
@@ -29,7 +29,7 @@ export default function ModalEditarFaturamento({
     const valorBase = Number(faturamento?.contrato?.valorBase ?? 0);
     const vidas = Number(faturamento.vidas ?? faturamento.vidas ?? 0);
 
-    const valorCalculado = isProjecao ? valorBase * vidas : faturamento.valorPrevisto;
+    const valorCalculado = isProjecao && faturamento.contrato?.porVida ? valorBase * vidas : faturamento.valorPrevisto;
 
     setDados({
       ...faturamento,
@@ -37,7 +37,6 @@ export default function ModalEditarFaturamento({
       vidas: vidas,
     });
   }, [faturamento]);
-
 
   if (!dados) return null;
 
@@ -88,15 +87,28 @@ export default function ModalEditarFaturamento({
       titulo={isProjecao ? "Detalhes da Projeção" : "Detalhes do Faturamento"}
     >
       <div className="flex flex-col gap-6 p-4 text-sm">
-        {/* Linha 1 */}
-        <div className="grid grid-cols-5 gap-4">
-          {isFaturamento && (
-            <>
-              <div className="space-y-1">
-                <label className="font-medium text-gray-600">Faturado por</label>
-                <div>{dados.faturadoPor ?? "—"}</div>
+        {isProjecao && (
+          <>
+            <div className="grid grid-cols-4 gap-4">
+              {/* Empresa */}
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Empresa</label>
+                <Copiavel valor={dados.empresa ?? "—"} />
               </div>
 
+              {/* Unidade */}
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Unidade</label>
+                <Copiavel valor={dados.unidade ?? "—"} />
+              </div>
+
+              {/* CNPJ */}
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">CNPJ</label>
+                <Copiavel valor={formatarDocumento(dados.cnpj ?? "", "CNPJ")} />
+              </div>
+
+              {/* e-Social/Laudos */}
               <div className="space-y-1">
                 <label className="font-medium text-gray-600">eSocial / Laudos</label>
                 <div className="flex flex-wrap gap-2 text-xs">
@@ -105,112 +117,206 @@ export default function ModalEditarFaturamento({
                   {!dados.esocial && !dados.laudos && <span>—</span>}
                 </div>
               </div>
-            </>
-          )}
 
-          <div>
-            <label className="font-medium text-gray-600 mb-1 block">Empresa</label>
-            <Copiavel valor={dados.empresa ?? "—"} />
-          </div>
-
-          <div>
-            <label className="font-medium text-gray-600 mb-1 block">Unidade</label>
-            <Copiavel valor={dados.unidade ?? "—"} />
-          </div>
-
-          <div>
-            <label className="font-medium text-gray-600 mb-1 block">CNPJ</label>
-            <Copiavel valor={formatarDocumento(dados.cnpj ?? "", "CNPJ")} />
-          </div>
-        </div>
-
-        {/* Linha 2 */}
-        <div className="grid grid-cols-4 gap-4">
-          <SelectInput
-            name="status"
-            label="Status"
-            value={dados.status}
-            onChange={(e) => handleChange("status", e.target.value)}
-            options={opcoesStatus}
-            disable={!editavel}
-            className={`border border-gray-300 text-sm rounded-md block w-full p-2.5 focus:border-2 focus:border-blue-500 focus:outline-none bg-white 
+              <SelectInput
+                name="status"
+                label="Status"
+                value={dados.status}
+                onChange={(e) => handleChange("status", e.target.value)}
+                options={opcoesStatus}
+                disable={!editavel}
+                className={`border border-gray-300 text-sm rounded-md block w-full p-2.5 focus:border-2 focus:border-blue-500 focus:outline-none bg-white 
               ${dados.status === "PAGA"
-                ? "text-green-600 font-semibold"
-                : dados.status === "ATRASADA"
-                  ? "text-red-600 font-semibold"
-                  : dados.status === "ABERTA"
-                    ? "text-yellow-600 font-semibold"
-                    : "text-gray-600"
-              }`}
-          />
+                    ? "text-green-600 font-semibold"
+                    : dados.status === "ATRASADA"
+                      ? "text-red-600 font-semibold"
+                      : dados.status === "ABERTA"
+                        ? "text-yellow-600 font-semibold"
+                        : "text-gray-600"
+                  }`}
+              />
 
-          {isFaturamento && (
-            <Input
-              name="numeroNota"
-              label="Número da Nota"
-              value={dados.numeroNota?.toString() ?? ""}
-              onChange={(e) => handleChange("numeroNota", e.target.value)}
-              disable={!editavel}
-            />
-          )}
+              {/* Vidas */}
+              {dados.contrato?.porVida && (
+                <>
+                  <div>
+                    <Input
+                      name="vidas"
+                      label="Vidas Ativas"
+                      type="number"
+                      value={dados.vidas ?? ""}
+                      onChange={(e) =>
+                        handleChange("vidas", Number(e.target.value))
+                      }
+                      disable={!editavel}
+                    />
+                  </div>
+                </>
+              )}
 
-          {isFaturamento && (
-            <>
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Valor Previsto</label>
+                <Copiavel valor={formatarReais(dados.valorPrevisto?.toString()) ?? "—"} />
+              </div>
+
+            </div>
+          </>
+        )}
+
+        {isFaturamento && (
+          <>
+            {/* Linha 1 */}
+            <div className="grid grid-cols-5 gap-4">
+              {/* Fatrurado por */}
+              <div className="space-y-1">
+                <label className="font-medium text-gray-600">Faturado por</label>
+                <div>{dados.faturadoPor ?? "—"}</div>
+              </div>
+
+              {/* Modalidade */}
+              <div className="space-y-1">
+                <label className="font-medium text-gray-600">Modalidade</label>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {!dados.contrato?.porVida && dados.contrato?.recorrente && <span>🔁 Recorrente</span>}
+                  {dados.contrato?.porVida && <span>🧍‍♂️ Por Vida</span>}
+                  {!dados.contrato?.porVida && dados.contrato?.parcelas && <span>📅 {dados.contrato.parcelas} Parcelas</span>}
+                </div>
+              </div>
+
+              {/* Empresa */}
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Empresa</label>
+                <Copiavel valor={dados.empresa ?? "—"} />
+              </div>
+
+              {/* Unidade */}
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Unidade</label>
+                <Copiavel valor={dados.unidade ?? "—"} />
+              </div>
+
+              {/* CNPJ */}
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">CNPJ</label>
+                <Copiavel valor={formatarDocumento(dados.cnpj ?? "", "CNPJ")} />
+              </div>
+            </div>
+
+            {/* Linha 2 */}
+            <div className={`grid gap-4 ${dados.contrato?.porVida ? 'grid-cols-7' : 'grid-cols-6'}`}>
+              <SelectInput
+                name="status"
+                label="Status"
+                value={dados.status}
+                onChange={(e) => handleChange("status", e.target.value)}
+                options={opcoesStatus}
+                disable={!editavel}
+                className={`border border-gray-300 text-sm rounded-md block w-full p-2.5 focus:border-2 focus:border-blue-500 focus:outline-none bg-white 
+              ${dados.status === "PAGA"
+                    ? "text-green-600 font-semibold"
+                    : dados.status === "ATRASADA"
+                      ? "text-red-600 font-semibold"
+                      : dados.status === "ABERTA"
+                        ? "text-yellow-600 font-semibold"
+                        : "text-gray-600"
+                  }`}
+              />
+
+              <Input
+                name="numeroNota"
+                label="Número da Nota"
+                value={dados.numeroNota?.toString() ?? ""}
+                onChange={(e) => handleChange("numeroNota", e.target.value)}
+                disable={!editavel}
+              />
+
+              {dados.contrato?.porVida && (
+                <>
+                  <Input
+                    name="vidas"
+                    label="Vidas"
+                    type="number"
+                    value={dados.vidas?.toString() ?? ""}
+                    onChange={(e) => handleChange("vidas", Number(e.target.value))}
+                    disable={!editavel}
+                  />
+
+                  <div>
+                    <label className="font-medium text-gray-600 mb-1 block">Valor Vida</label>
+                    <p>{formatarReais(dados.contrato?.valorBase?.toString())}</p>
+                  </div>
+                </>
+              )}
+
               <div>
                 <label className="font-medium text-gray-600 mb-1 block">Valor Base</label>
                 <Copiavel valor={formatarReais(dados.valorBase?.toString()) ?? "—"} />
               </div>
 
               <div>
-                <label className="font-medium text-gray-600 mb-1 block">Valor Total</label>
-                <Copiavel valor={formatarReais(dados.valorTotal?.toString()) ?? "—"} />
+                <label className="font-medium text-gray-600 mb-1 block">Imposto (%)</label>
+                <Copiavel
+                  valor={`${dados.impostoPorcentagem?.toString() ?? "—"}%`}
+                />
               </div>
-            </>
-          )}
-
-          {isProjecao && (
-            <>
-              <Input
-                name="vidas"
-                label="Vidas Ativas"
-                type="number"
-                value={dados.vidas ?? ""}
-                onChange={(e) =>
-                  handleChange("vidas", Number(e.target.value))
-                }
-                disable={!editavel}
-              />
 
               <div>
-                <label className="font-medium text-gray-600 mb-1 block">Valor Previsto</label>
-                <Copiavel valor={formatarReais(dados.valorPrevisto?.toString()) ?? "—"} />
+                <label className="font-medium text-gray-600 mb-1 block">Imposto (R$)</label>
+                <Copiavel valor={formatarReais(dados.impostoValor?.toString()) ?? "—"} />
               </div>
-            </>
-          )}
-        </div>
-
-        {/* Linha 3 */}
-        {isFaturamento && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="font-medium text-gray-600 mb-1 block">Imposto (%)</label>
-              <Copiavel valor={`${dados.impostoPorcentagem?.toString() ?? "—"}%`} />
             </div>
 
-            <div>
-              <label className="font-medium text-gray-600 mb-1 block">Imposto (R$)</label>
-              <Copiavel valor={formatarReais(dados.impostoValor?.toString()) ?? "—"} />
-            </div>
-          </div>
-        )}
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Contato</label>
+                <div className="space-y-2">
+                  {(dados.contatos ?? []).map((contato, i) => (
+                    <div key={i} className="border border-orange-300 rounded p-2 bg-orange-50 space-y-1">
+                      {contato.nome && <Copiavel valor={contato.nome} />}
+                      <div className="flex items-center gap-1 justify-between">
+                        {contato.email && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-gray-400 text-xs">Email: </span>
+                            <Copiavel valor={contato.email} />
+                          </div>
+                        )}
+                        {contato.emailSecundario && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-gray-400 text-xs">Email Secundário: </span>
+                            <Copiavel valor={contato.emailSecundario} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 justify-between">
+                        {contato.telefoneWpp && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-gray-400 text-xs">WhatsApp: </span>
+                            <Copiavel valor={formatarTelefone(contato.telefoneWpp, "WPP")} />
+                          </div>
+                        )}
+                        {contato.telefoneFixo && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-gray-400 text-xs">Fixo: </span>
+                            <Copiavel valor={formatarTelefone(contato.telefoneFixo, "FIXO")} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-        {/* Endereço resumido */}
-        {(dados.cidade || dados.uf) && (
-          <div className="bg-green-50 border border-green-400 p-2 rounded-md text-sm">
-            {dados.cidade && dados.uf
-              ? `${dados.cidade}/${dados.uf}`
-              : dados.cidade ?? dados.uf}
-          </div>
+              <div>
+                <label className="font-medium text-gray-600 mb-1 block">Endereço</label>
+                <div className="bg-blue-50 border border-blue-400 p-2 rounded">
+                  <Copiavel
+                    valor={`${dados.endereco}, ${dados.numero} - ${dados.bairro}, ${dados.cidade}/${dados.uf} - CEP: ${dados.cep}`}
+                  />
+                </div>
+              </div>
+
+            </div>
+          </>
         )}
       </div>
 
@@ -229,7 +335,8 @@ export default function ModalEditarFaturamento({
             Salvar
           </button>
         </div>
-      )}
-    </ModalBase>
+      )
+      }
+    </ModalBase >
   );
 }

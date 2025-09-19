@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import {
   buscarFaturamentoOuProjecao,
   editarFaturamento,
+  editarFaturamentosEmMassa,
   editarProjecao,
-  gerarFaturamentoDeProjecao,
+  editarProjecoesEmMassa,
 } from "../services/apiFaturamento";
 import type {
   FaturamentoOuProjecao,
@@ -12,8 +13,10 @@ import TabelaBase, { type Column } from "../components/Tabelas/TabelaBase";
 import ModalEditarFaturamento from "../components/Modais/ModalEditarFaturamento";
 import { formatarDataInput, formatarDocumento } from "../components/Auxiliares/formatter";
 import { Input, SearchableSelect, SelectInput } from "../components/Inputs";
-import { ListFilter } from "lucide-react";
+import { CheckCircle2, ClockAlert, FilePlus2, ListFilter } from "lucide-react";
 import Copiavel from "../components/Auxiliares/Copiavel";
+import toast from "react-hot-toast";
+import ToolTip from "../components/Auxiliares/ToolTip";
 
 export default function FaturamentoPage() {
   const hoje = new Date();
@@ -154,18 +157,15 @@ export default function FaturamentoPage() {
       accessor: "status",
       render: (v: string, row) => {
         const estilos: Record<string, string> = {
-          ABERTA: "bg-yellow-500 text-white",
-          PAGA: "bg-green-500 text-white",
-          ATRASADA: "bg-red-500 text-white",
-          PENDENTE: "bg-orange-500 text-white",
-          FATURADO: "bg-blue-500 text-white",
+          ABERTA: "bg-yellow-100 border border-yellow-300 text-yellow-500",
+          PAGA: "bg-green-100 border border-green-300 text-green-500",
+          ATRASADA: "bg-red-100 border border-red-300 text-red-500",
+          PENDENTE: "bg-orange-100 border border-orange-300 text-orange-500",
+          FATURADO: "bg-blue-100 border border-blue-300 text-blue-500",
         };
         return (
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${estilos[v] ?? "bg-gray-100 text-gray-600"
-              }`}
-          >
-            {row.tipo === "PROJECAO" ? `Projeção (${v})` : v}
+          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${estilos[v] ?? "bg-gray-100 text-gray-600"}`} style={{ fontSize: "10px" }}>
+            {row.tipo === "PROJECAO" ? `PROJEÇÃO` : v}
           </span>
         );
       },
@@ -227,6 +227,7 @@ export default function FaturamentoPage() {
       setFaturamentos(lista);
       carregarOpcoes(lista);
       calcularTotais(lista);
+      handleSelecionar([]);
     } catch (error) {
       console.error("Erro ao buscar faturamentos/projeções:", error);
     }
@@ -248,20 +249,23 @@ export default function FaturamentoPage() {
       }
 
       if (f.tipo === "PROJECAO") {
-        if (f.status === "FATURADO") {
-          await gerarFaturamentoDeProjecao(f.id);
-        } else {
-          await editarProjecao(f);
-        }
+        await editarProjecao(f);
       }
 
       setModalAberto(false);
       await buscarFaturamento();
-    } catch (error) {
+      toast.success("Salvo com sucesso!");
+    } catch (error: any) {
       console.error("Erro ao salvar faturamento/projeção:", error);
+
+      const mensagem =
+        error?.response?.error ||
+        error?.message ||
+        "Erro ao salvar faturamento/projeção.";
+
+      toast.error(mensagem);
     }
   };
-
 
   const carregarOpcoes = (lista: FaturamentoOuProjecao[]) => {
     const empresasUnicas = Array.from(
@@ -287,6 +291,44 @@ export default function FaturamentoPage() {
   const handleSelecionar = (itens: FaturamentoOuProjecao[]) => {
     setSelecionados(itens);
     console.log("Itens selecionados:", itens);
+  };
+
+  const handleFaturarProjecoes = async () => {
+    try {
+      const projecoes = selecionados.filter((i) => i.tipo === "PROJECAO");
+
+      if (projecoes.length === 0) {
+        alert("Nenhuma projeção selecionada.");
+        return;
+      }
+
+      await editarProjecoesEmMassa(
+        projecoes.map((p) => ({ id: p.id, dados: { status: "FATURADO" } }))
+      );
+
+      await buscarFaturamento();
+    } catch (err) {
+      console.error("Erro ao faturar projeções:", err);
+    }
+  };
+
+  const handleAlterarStatus = async (novoStatus: string) => {
+    try {
+      const faturamentos = selecionados.filter((i) => i.tipo === "FATURAMENTO");
+
+      if (faturamentos.length === 0) {
+        alert("Nenhum faturamento selecionado.");
+        return;
+      }
+
+      await editarFaturamentosEmMassa(
+        faturamentos.map((f) => ({ id: f.id, dados: { status: novoStatus } }))
+      );
+
+      await buscarFaturamento();
+    } catch (err) {
+      console.error("Erro ao alterar status:", err);
+    }
   };
 
   const cardClasses =
@@ -459,27 +501,52 @@ export default function FaturamentoPage() {
         </div>
       </div>
 
-      {selecionados.length > 0 && (
-        <div className="mt-4 p-3 bg-gray-100 rounded flex justify-between items-center">
+      <div className="mt-4 bg-white rounded border border-gray-200">
+        <div className="p-3 rounded flex justify-between items-center">
           <p>{selecionados.length} itens selecionados</p>
-          <div className="flex gap-2">
-            <button className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-              Marcar como Pago
-            </button>
-            <button className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-              Excluir
-            </button>
-          </div>
-        </div>
-      )}
+          <div className="flex gap-2 text-xs font-medium">
+            <ToolTip text="Faturar Projeções">
+              <button
+                onClick={handleFaturarProjecoes}
+                disabled={selecionados.length === 0}
+                className={`flex items-center justify-center w-8 h-8 bg-green-500 text-white rounded hover:bg-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-green-500`}
+              >
+                <FilePlus2 size={16} />
+              </button>
+            </ToolTip>
 
-      <TabelaBase<FaturamentoOuProjecao>
-        className="text-xs"
-        data={faturamentosFiltrados}
-        columns={colunasFaturamento}
-        onEdit={abrirModal}
-        onSelect={handleSelecionar}
-      />
+            <ToolTip text="Marcar como Pago">
+              <button
+                onClick={() => handleAlterarStatus("PAGA")}
+                disabled={selecionados.length === 0}
+                className={`flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-blue-500`}
+              >
+                <CheckCircle2 size={16} />
+              </button>
+            </ToolTip>
+
+            <ToolTip text="Marcar como Atrasado" position="left">
+              <button
+                onClick={() => handleAlterarStatus("ATRASADA")}
+                disabled={selecionados.length === 0}
+                className={`flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded hover:bg-red-600 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-red-500`}
+              >
+                <ClockAlert size={16} />
+              </button>
+            </ToolTip>
+          </div>
+
+        </div>
+
+        <TabelaBase<FaturamentoOuProjecao>
+          className="text-xs"
+          data={faturamentosFiltrados}
+          columns={colunasFaturamento}
+          onEdit={abrirModal}
+          onSelect={handleSelecionar}
+          selectedRowsExternal={selecionados.map(i => i.id)}
+        />
+      </div>
 
       <ModalEditarFaturamento
         aberto={modalAberto}

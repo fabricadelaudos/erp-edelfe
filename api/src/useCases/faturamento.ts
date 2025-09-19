@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma-client";
 import { FaturamentoOuProjecao } from "../dto/FaturamentoDto";
 import { registrarEvento } from "../shared/utils/registrarEvento";
@@ -101,6 +102,121 @@ export const editarFaturamento = {
   },
 };
 
+export const editarFaturamentosEmMassa = {
+  async execute(lista: { id: number; dados: any }[], user: any) {
+    if (!Array.isArray(lista) || lista.length === 0) {
+      throw new Error("Nenhum faturamento informado para edição");
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      const resultados: any[] = [];
+
+      for (const item of lista) {
+        const existente = await tx.faturamento.findUnique({
+          where: { idFaturamento: item.id },
+        });
+
+        if (!existente) {
+          throw new Error(`Faturamento ${item.id} não encontrado`);
+        }
+
+        let pagoEm: Date | null = existente.pagoEm;
+        let competenciaPagamento: string | null = existente.competenciaPagamento;
+
+        if (item.dados.status === "PAGA") {
+          const agora = new Date();
+          pagoEm = agora;
+          competenciaPagamento = `${String(agora.getMonth() + 1).padStart(2, "0")}/${agora.getFullYear()}`;
+        } else {
+          pagoEm = null;
+          competenciaPagamento = null;
+        }
+
+        const atualizado = await tx.faturamento.update({
+          where: { idFaturamento: item.id },
+          data: {
+            numeroNota: item.dados.numeroNota ?? existente.numeroNota,
+            valorBase: item.dados.valorBase ?? existente.valorBase,
+            impostoPorcentagem: item.dados.impostoPorcentagem ?? existente.impostoPorcentagem,
+            impostoValor: item.dados.impostoValor ?? existente.impostoValor,
+            valorTotal: item.dados.valorTotal ?? existente.valorTotal,
+            vidas: item.dados.vidas ?? existente.vidas,
+            status: item.dados.status ?? existente.status,
+            pagoEm,
+            competenciaPagamento,
+          },
+        });
+
+        await registrarEvento({
+          idUsuario: user?.idUsuario,
+          tipo: "EDICAO",
+          descricao: `Editou o faturamento ${item.id}`,
+          entidade: "faturamento",
+          entidadeId: item.id,
+          dadosAntes: existente,
+          dadosDepois: atualizado,
+        });
+
+        resultados.push(atualizado);
+      }
+
+      return resultados;
+    });
+  },
+};
+
+export const editarProjecao = {
+  async execute(lista: { id: number; dados: any }[], user: any) {
+    if (!Array.isArray(lista) || lista.length === 0) {
+      throw new Error("Nenhuma projeção informada para edição");
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      const resultados: any[] = [];
+
+      for (const item of lista) {
+        const existente = await tx.projecao.findUnique({
+          where: { idProjecao: item.id },
+        });
+
+        if (!existente) {
+          throw new Error(`Projeção ${item.id} não encontrada`);
+        }
+
+        let resultado;
+
+        if (item.dados.status === "FATURADO") {
+          resultado = await gerarFaturamentoDeProjecao.execute(item.id, user, tx);
+        } else {
+          // 🔹 Apenas edita a projeção
+          resultado = await tx.projecao.update({
+            where: { idProjecao: item.id },
+            data: {
+              valorPrevisto: item.dados.valorPrevisto ?? existente.valorPrevisto,
+              vidas: item.dados.vidas ?? existente.vidas,
+              status: item.dados.status ?? existente.status,
+            },
+          });
+        }
+
+        await registrarEvento({
+          idUsuario: user?.idUsuario,
+          tipo: "EDICAO",
+          descricao: `Editou a projeção ${item.id}`,
+          entidade: "projecao",
+          entidadeId: item.id,
+          dadosAntes: existente,
+          dadosDepois: resultado,
+        });
+
+        resultados.push(resultado);
+      }
+
+      return resultados;
+    });
+  },
+};
+
 export const buscarFaturamentoCompetencia = {
   async execute(competencia: string) {
     const faturamentos = await prisma.faturamento.findMany({
@@ -130,50 +246,99 @@ export const buscarFaturamentoCompetencia = {
 };
 
 export const gerarFaturamento = {
-  async execute(idProjecao: number) {
-    return await prisma.$transaction(async (tx) => {
-      const projecao = await tx.faturamento.findUnique({
-        where: { idFaturamento: idProjecao },
-        include: { contrato: true },
-      });
+  async execute(competencia: string) {
+    const competenciaFinanceira = await prisma.competenciaFinanceira.findUnique({
+      where: { competencia },
+    });
 
-      if (!projecao) throw new Error("Projeção não encontrada");
-      if (!projecao.contrato) throw new Error("Contrato não vinculado à projeção");
+    if (!competenciaFinanceira) {
+      throw new Error("Competência financeira não encontrada.");
+    }
 
-      const { contrato } = projecao;
+    // Busca as projeções da competência que ainda não têm faturamento
+    const pendentes = await prisma.projecao.findMany({
+      where: {
+        competencia,
+        status: "PENDENTE",
+      },
+      include: {
+        contrato: {
+          include: {
+            unidade: {
+              include: {
+                empresa: true,
+                contatos: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-      const valorBase = Number(projecao.valorBase ?? projecao.valor ?? 0); // fallback se precisar
-      const vidas = Number(projecao.vidas ?? 0);
+    if (pendentes.length === 0) {
+      const faturamentosExistentes = await buscarFaturamentoCompetencia.execute(competencia);
+      return faturamentosExistentes;
+    }
 
-      const impostoPorcentagem = 0.2;
-      const impostoValor = valorBase * impostoPorcentagem;
-      const valorTotal = valorBase + impostoValor;
+    const faturamentosData = pendentes.map((p) => {
+      const valorBase = Number(p.valorPrevisto);
+      const retemIss = p.contrato.unidade.retemIss;
 
-      const novoFaturamento = await tx.faturamento.create({
+      const impostoPorcentagem = Number(
+        retemIss ? competenciaFinanceira.iss : competenciaFinanceira.imposto
+      );
+
+      const impostoValor = valorBase * (impostoPorcentagem / 100);
+      const valorTotal = valorBase - impostoValor;
+
+      return prisma.faturamento.create({
         data: {
-          competencia: projecao.competencia,
+          fkContratoId: p.fkContratoId,
+          fkProjecaoId: p.idProjecao,
+          fkCompetenciaFinanceiraId: competenciaFinanceira.idCompetenciaFinanceira,
+          competencia,
           valorBase,
           impostoPorcentagem,
           impostoValor,
           valorTotal,
           status: "ABERTA",
-          vidas: vidas,
-          numeroNota: null,
-          pagoEm: null,
-          fkProjecaoId: projecao.idFaturamento,
-          fkContratoId: contrato.idContrato,
+          vidas: p.vidas ?? 0,
+          numeroNota: "",
         },
       });
-
-      await tx.faturamento.update({
-        where: { idFaturamento: idProjecao },
-        data: {
-          status: "FATURADO",
-        },
-      });
-
-      return novoFaturamento;
     });
+
+    // Atualiza o status das projeções para FATURADA
+    const atualizacoesProjecao = pendentes.map((p) =>
+      prisma.projecao.update({
+        where: { idProjecao: p.idProjecao },
+        data: { status: "FATURADO" },
+      })
+    );
+
+    // Executa tudo em transação
+    await prisma.$transaction([...faturamentosData, ...atualizacoesProjecao]);
+
+    // Busca e retorna os faturamentos gerados
+    const faturamentosCompletos = await prisma.faturamento.findMany({
+      where: { competencia },
+      include: {
+        contrato: {
+          include: {
+            unidade: {
+              include: {
+                empresa: true,
+                contatos: true
+              },
+            },
+          },
+        },
+        projecao: true,
+        competenciaFinanceira: true,
+      },
+    });
+
+    return faturamentosCompletos;
   },
 };
 
@@ -228,7 +393,7 @@ export const buscarFaturamentosEProjecoes = {
             id: fat.idFaturamento,
             tipo: "FATURAMENTO",
             competencia: fat.competencia,
-            valor: Number(fat.valorTotal),
+            valorPrevisto: Number(fat.valorTotal),
             valorBase: Number(fat.valorBase),
             valorTotal: Number(fat.valorTotal),
             impostoPorcentagem: Number(fat.impostoPorcentagem),
@@ -239,14 +404,25 @@ export const buscarFaturamentosEProjecoes = {
             empresa: fat.contrato?.unidade?.empresa?.nome,
             unidade: fat.contrato?.unidade?.nomeFantasia,
             cnpj: fat.contrato?.unidade?.documento,
+            endereco: fat.contrato?.unidade?.endereco,
+            numero: fat.contrato?.unidade?.numero,
+            bairro: fat.contrato?.unidade?.bairro,
             cidade: fat.contrato?.unidade?.cidade,
             uf: fat.contrato?.unidade?.uf,
+            cep: fat.contrato?.unidade?.cep,
             faturadoPor: fat.contrato?.faturadoPor,
             esocial: fat.contrato?.esocial ?? undefined,
             laudos: fat.contrato?.laudos ?? undefined,
             pagoEm: fat.pagoEm?.toISOString() ?? undefined,
-            contatos: fat.contrato?.unidade?.contatos ?? [],
-            // ✅ Aqui adiciona o contrato inteiro (ou só os campos que você precisa)
+            vencimento: p.contrato.diaVencimento ?? undefined,
+            contatos: fat.contrato?.unidade?.contatos.map((uc) => ({
+              id: uc.contato.idContato,
+              nome: uc.contato.nome,
+              email: uc.contato.email,
+              emailSecundario: uc.contato.emailSecundario,
+              telefoneWpp: uc.contato.telefoneWpp,
+              telefoneFixo: uc.contato.telefoneFixo,
+            })) ?? [],
             contrato: {
               id: fat.contrato?.idContrato,
               observacao: fat.contrato?.observacao,
@@ -269,7 +445,7 @@ export const buscarFaturamentosEProjecoes = {
         id: p.idProjecao,
         tipo: "PROJECAO",
         competencia: p.competencia,
-        valor: Number(p.valorPrevisto),
+        valorPrevisto: Number(p.valorPrevisto),
         vidas: p.vidas ?? undefined,
         status: p.status,
         empresa: p.contrato?.unidade?.empresa?.nome,
@@ -307,5 +483,81 @@ export const buscarFaturamentosEProjecoes = {
     });
 
     return resultado;
+  },
+};
+
+export const gerarFaturamentoDeProjecao = {
+  async execute(idProjecao: number, user: any, tx: Prisma.TransactionClient = prisma) {
+    const projecao = await tx.projecao.findUnique({
+      where: { idProjecao },
+      include: {
+        contrato: {
+          include: {
+            unidade: true,
+          },
+        },
+      },
+    });
+
+    if (!projecao) throw new Error("Projeção não encontrada");
+    if (!projecao.contrato) throw new Error("Contrato não vinculado à projeção");
+
+    // 🔹 Verifica se existe competência financeira
+    const competenciaFinanceira = await tx.competenciaFinanceira.findUnique({
+      where: { competencia: projecao.competencia },
+    });
+
+    if (!competenciaFinanceira) {
+      throw new Error(
+        `Nenhuma competência financeira cadastrada!`
+      );
+    }
+
+    // 🔹 Regra de imposto: ISS ou normal
+    const valorBase = Number(projecao.valorPrevisto ?? 0);
+    const retemIss = projecao.contrato.unidade.retemIss;
+
+    const impostoPorcentagem = Number(
+      retemIss ? competenciaFinanceira.iss : competenciaFinanceira.imposto
+    );
+
+    const impostoValor = valorBase * (impostoPorcentagem / 100);
+    const valorTotal = valorBase - impostoValor;
+
+    // 🔹 Cria faturamento
+    const faturamento = await tx.faturamento.create({
+      data: {
+        fkContratoId: projecao.fkContratoId,
+        fkProjecaoId: projecao.idProjecao,
+        fkCompetenciaFinanceiraId: competenciaFinanceira.idCompetenciaFinanceira,
+        competencia: projecao.competencia,
+        valorBase,
+        impostoPorcentagem,
+        impostoValor,
+        valorTotal,
+        status: "ABERTA",
+        vidas: projecao.vidas ?? 0,
+        numeroNota: "",
+      },
+    });
+
+    // 🔹 Marca projeção como faturada
+    await tx.projecao.update({
+      where: { idProjecao },
+      data: { status: "FATURADO" },
+    });
+
+    // 🔹 Evento
+    await registrarEvento({
+      idUsuario: user?.idUsuario,
+      tipo: "GERACAO",
+      descricao: `Gerou faturamento da projeção ${idProjecao}`,
+      entidade: "faturamento",
+      entidadeId: faturamento.idFaturamento,
+      dadosAntes: projecao,
+      dadosDepois: faturamento,
+    });
+
+    return faturamento;
   },
 };

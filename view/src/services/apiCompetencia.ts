@@ -28,3 +28,17 @@ export async function criarCompetencia(
     }),
   });
 }
+
+export async function editarCompetencia(
+  id: number,
+  dados: CompetenciaFinanceiraInput
+): Promise<CompetenciaFinanceira> {
+  return apiFetch<CompetenciaFinanceira>(`/competencia/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...dados,
+      imposto: Number(dados.imposto),
+      ipca: Number(dados.ipca),
+    }),
+  });
+}

@@ -20,14 +20,15 @@ interface TabelaBaseProps<T> {
   itemsPerPage?: number;
   isLoading?: boolean;
   legenda?: { cor: string; texto: string }[];
-  // ✅ Novo prop
   onSelect?: (selected: T[]) => void;
+  selectedRowsExternal?: (string | number)[];
+  rowIdAccessor?: keyof T; // 👈 novo: qual campo usar como ID
 }
 
-export default function TabelaBase<T extends { id?: string | number }>({
+export default function TabelaBase<T extends object>({
   columns,
   data,
-  className,
+  className = "text-sm",
   onEdit,
   onDelete,
   acoesExtras,
@@ -35,6 +36,8 @@ export default function TabelaBase<T extends { id?: string | number }>({
   isLoading = false,
   legenda = [],
   onSelect,
+  selectedRowsExternal,
+  rowIdAccessor,
 }: TabelaBaseProps<T>) {
   const [sortConfig, setSortConfig] = useState<{ key: keyof T | null; direction: "asc" | "desc" }>({
     key: null,
@@ -42,7 +45,16 @@ export default function TabelaBase<T extends { id?: string | number }>({
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRows, setSelectedRows] = useState<(string | number)[]>([]);
+  const [internalSelectedRows, setInternalSelectedRows] = useState<(string | number)[]>([]);
+
+  const selectedRows = selectedRowsExternal ?? internalSelectedRows;
+
+  // 🔑 Helper para identificar a linha
+  const getRowId = (row: T, idx: number): string | number => {
+    if (rowIdAccessor) return row[rowIdAccessor] as any;
+    if ("id" in row) return (row as any).id; // fallback compatível
+    return idx; // último recurso
+  };
 
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return data;
@@ -59,7 +71,9 @@ export default function TabelaBase<T extends { id?: string | number }>({
           : (bVal as string).localeCompare(aVal);
       }
 
-      return sortConfig.direction === "asc" ? Number(aVal) - Number(bVal) : Number(bVal) - Number(aVal);
+      return sortConfig.direction === "asc"
+        ? Number(aVal) - Number(bVal)
+        : Number(bVal) - Number(aVal);
     });
   }, [data, sortConfig]);
 
@@ -73,24 +87,32 @@ export default function TabelaBase<T extends { id?: string | number }>({
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  const toggleRow = (id: string | number) => {
+  const toggleRow = (row: T, idx: number) => {
+    const id = getRowId(row, idx);
+
     const updated = selectedRows.includes(id)
       ? selectedRows.filter((r) => r !== id)
       : [...selectedRows, id];
-    setSelectedRows(updated);
-    if (onSelect) {
-      onSelect(data.filter((d) => updated.includes(d.id!)));
+
+    if (!selectedRowsExternal) {
+      setInternalSelectedRows(updated);
     }
+
+    onSelect?.(data.filter((d, i) => updated.includes(getRowId(d, i))));
   };
 
   const toggleAll = () => {
     if (selectedRows.length === currentData.length) {
-      setSelectedRows([]);
-      if (onSelect) onSelect([]);
+      if (!selectedRowsExternal) {
+        setInternalSelectedRows([]);
+      }
+      onSelect?.([]);
     } else {
-      const updated = currentData.map((d) => d.id!);
-      setSelectedRows(updated);
-      if (onSelect) onSelect(data.filter((d) => updated.includes(d.id!)));
+      const updated = currentData.map((row, idx) => getRowId(row, idx));
+      if (!selectedRowsExternal) {
+        setInternalSelectedRows(updated);
+      }
+      onSelect?.(data.filter((d, i) => updated.includes(getRowId(d, i))));
     }
   };
 
@@ -101,7 +123,6 @@ export default function TabelaBase<T extends { id?: string | number }>({
           <table className={`min-w-[1200px] w-full bg-white text-center rounded-t-md ${className}`}>
             <thead className="bg-gray-50 text-gray-700 sticky top-0 z-10">
               <tr>
-                {/* ✅ Checkbox master */}
                 {onSelect && (
                   <th className="px-2">
                     <input
@@ -126,11 +147,7 @@ export default function TabelaBase<T extends { id?: string | number }>({
                           }
                         >
                           {sortConfig.key === col.accessor ? (
-                            sortConfig.direction === "asc" ? (
-                              <ChevronUp size={14} />
-                            ) : (
-                              <ChevronDown size={14} />
-                            )
+                            sortConfig.direction === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                           ) : (
                             <ChevronsUpDown size={14} />
                           )}
@@ -161,20 +178,24 @@ export default function TabelaBase<T extends { id?: string | number }>({
                 </tr>
               ) : (
                 currentData.map((row, idx) => (
-                  <tr key={row.id ?? idx} className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} align-middle`}>
-                    {/* ✅ Checkbox por linha */}
+                  <tr
+                    key={getRowId(row, idx)}
+                    className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} align-middle`}
+                  >
                     {onSelect && (
                       <td className="px-2">
                         <input
                           type="checkbox"
-                          checked={selectedRows.includes(row.id!)}
-                          onChange={() => toggleRow(row.id!)}
+                          checked={selectedRows.includes(getRowId(row, idx))}
+                          onChange={() => toggleRow(row, idx)}
                         />
                       </td>
                     )}
                     {columns.map((col, i) => (
                       <td key={i} className="px-4 py-3 align-middle">
-                        {col.render ? col.render(row[col.accessor], row) : (row[col.accessor] as any) ?? "—"}
+                        {col.render
+                          ? col.render(row[col.accessor], row)
+                          : (row[col.accessor] as any) ?? "—"}
                       </td>
                     ))}
                     {(onEdit || onDelete || acoesExtras) && (
@@ -222,9 +243,9 @@ export default function TabelaBase<T extends { id?: string | number }>({
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum =
                   totalPages <= 5 ? i + 1 :
-                    currentPage <= 3 ? i + 1 :
-                      currentPage >= totalPages - 2 ? totalPages - 4 + i :
-                        currentPage - 2 + i;
+                  currentPage <= 3 ? i + 1 :
+                  currentPage >= totalPages - 2 ? totalPages - 4 + i :
+                  currentPage - 2 + i;
 
                 return (
                   <button
@@ -243,7 +264,6 @@ export default function TabelaBase<T extends { id?: string | number }>({
           </div>
         </div>
 
-        {/* Legenda */}
         {legenda.length > 0 && (
           <div className="w-full px-2 mt-2 text-xs text-gray-500 flex flex-wrap justify-end gap-2">
             <span className="font-medium">Legenda:</span>
@@ -256,6 +276,6 @@ export default function TabelaBase<T extends { id?: string | number }>({
           </div>
         )}
       </div>
-    </div >
+    </div>
   );
 }

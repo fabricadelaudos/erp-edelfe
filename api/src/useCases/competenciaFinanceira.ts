@@ -57,13 +57,14 @@ export const criarCompetenciaFinanceiraUseCase = {
 export const editarCompetenciaFinanceiraUseCase = {
   async execute(id: number, dados: any, user: any) {
     const antes = await prisma.competenciaFinanceira.findUnique({
-      where: { idCompetenciaFinanceira: id }
+      where: { idCompetenciaFinanceira: id },
     });
 
     if (!antes) throw new Error("Competência não encontrada");
 
     const competenciaNormalizada = normalizarCompetencia(dados.competencia);
 
+    // 1. Atualizar a competência
     const atualizada = await prisma.competenciaFinanceira.update({
       where: { idCompetenciaFinanceira: id },
       data: {
@@ -72,6 +73,55 @@ export const editarCompetenciaFinanceiraUseCase = {
       },
     });
 
+    // 2. Buscar todos os faturamentos dessa competência
+    const faturamentos = await prisma.faturamento.findMany({
+      where: { competencia: competenciaNormalizada },
+      include: {
+        contrato: {
+          include: {
+            unidade: true,
+          },
+        },
+      },
+    });
+
+    // 3. Atualizar os faturamentos em massa
+    if (faturamentos.length > 0) {
+      await prisma.$transaction(async (tx) => {
+        for (const f of faturamentos) {
+          // regra: ou imposto ou iss
+          const percentual = f.contrato?.unidade?.retemIss
+            ? Number(atualizada.iss)
+            : Number(atualizada.imposto);
+
+          const impostoPorcentagem = percentual;
+          const valorBase = Number(f.valorBase);
+          const impostoValor = (valorBase * impostoPorcentagem) / 100;
+          const valorTotal = valorBase - impostoValor;
+
+          const atualizadoFaturamento = await tx.faturamento.update({
+            where: { idFaturamento: f.idFaturamento },
+            data: {
+              impostoPorcentagem,
+              impostoValor,
+              valorTotal,
+            },
+          });
+
+          await registrarEvento({
+            idUsuario: user.idUsuario,
+            tipo: "EDICAO",
+            descricao: `Recalculou faturamento ${atualizadoFaturamento.idFaturamento} após edição da competência ${atualizada.competencia}`,
+            entidade: "faturamento",
+            entidadeId: atualizadoFaturamento.idFaturamento,
+            dadosAntes: f,
+            dadosDepois: atualizadoFaturamento,
+          });
+        }
+      });
+    }
+
+    // 4. Registrar evento da competência
     await registrarEvento({
       idUsuario: user.idUsuario,
       tipo: "EDICAO",
@@ -83,7 +133,7 @@ export const editarCompetenciaFinanceiraUseCase = {
     });
 
     return atualizada;
-  }
+  },
 };
 
 export const excluirCompetenciaFinanceiraUseCase = {
