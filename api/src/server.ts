@@ -13,13 +13,13 @@ import empresaRoutes from './routes/empresa/empresa.routes';
 import faturamentoRoutes from './routes/faturamento.routes';
 
 // Competencia Financeira
-import competenciaFinanceiraRoutes from './routes/competenciaFinanceira.routes';
+import competenciaRoutes from './routes/competenciaFinanceira.routes';
 
 // Despesas
 import fornecedorRoutes from './routes/despesas/fornecedor.routes';
-import planoConta from './routes/despesas/planoConta.routes';
-import banco from './routes/despesas/banco.routes';
-import contasPagar from './routes/despesas/contaPagar.routes';
+import planoContasRoutes from './routes/despesas/planoConta.routes';
+import bancoRoutes from './routes/despesas/banco.routes';
+import contasPagarRoutes from './routes/despesas/contaPagar.routes';
 
 // Dashboard
 import dashboardRoutes from './routes/dashboard.routes';
@@ -43,13 +43,13 @@ app.use("/api/empresa", empresaRoutes );
 app.use("/api/faturamento", faturamentoRoutes );
 
 // Competencia Financeira
-app.use("/api/competencia", competenciaFinanceiraRoutes );
+app.use("/api/competencia", competenciaRoutes );
 
 // Despesas
-app.use("/api/banco", banco );
-app.use("/api/planoConta", planoConta );
+app.use("/api/banco", bancoRoutes );
+app.use("/api/planoConta", planoContasRoutes );
 app.use("/api/fornecedor", fornecedorRoutes );
-app.use("/api/contaPagar", contasPagar );
+app.use("/api/contaPagar", contasPagarRoutes );
 
 // Dashboard
 app.use("/api/dashboard", dashboardRoutes );
