@@ -37,7 +37,7 @@ export async function editarContaPagar(id: number, data: any): Promise<ContaPaga
 }
 
 export async function confirmarPagamentoParcela(idParcela: number): Promise<ParcelaContaPagar> {
-  return await apiFetch(`${baseConta}/${idParcela}/pagar`, {
+  return await apiFetch(`${baseConta}/parcela/${idParcela}/pagar`, {
     method: "PUT",
   });
 }

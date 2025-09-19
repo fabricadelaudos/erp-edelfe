@@ -18,8 +18,8 @@ contasPagarRoutes.post('/', authorize(), criarContaPagarController);
 contasPagarRoutes.put('/:id', authorize(), editarContaPagarController);
 
 // Parcela
-contasPagarRoutes.get('/:id', authorize(), buscarParcelaController);
-contasPagarRoutes.put('/:id', authorize(), atualizarParcelaController);
-contasPagarRoutes.put('/:id/pagar', authorize(), confirmarPagamentoController);
+contasPagarRoutes.get('/parcela/:id', authorize(), buscarParcelaController);
+contasPagarRoutes.put('/parcela/:id', authorize(), atualizarParcelaController);
+contasPagarRoutes.put('/parcela/:id/pagar', authorize(), confirmarPagamentoController);
 
 export default contasPagarRoutes;
