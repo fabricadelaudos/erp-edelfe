@@ -1,16 +1,9 @@
-import admin from "firebase-admin";
+import admin from 'firebase-admin';
 
-if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-  throw new Error("⚠️ FIREBASE_SERVICE_ACCOUNT não configurada no .env");
-}
-
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-// Corrigir a chave: transformar \\n em quebras reais
-serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
+var serviceAccount = require("./edelfe-ea70f-firebase-adminsdk-fbsvc-cfaa9e4e7b.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.credential.cert(serviceAccount)
 });
 
 export async function gerarLinkRedefinicaoSenha(email: string) {
