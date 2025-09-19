@@ -43,7 +43,7 @@ export const editarFaturamento = async (dados: FaturamentoOuProjecao) => {
 export const editarFaturamentosEmMassa = async (
   lista: { id: number; dados: any }[]
 ) => {
-  return apiFetch(`/faturamento`, {
+  return apiFetch(`/faturamento/editarMassa`, {
     method: "PUT",
     body: JSON.stringify(lista),
   });

@@ -8,7 +8,7 @@ faturamentoRoutes.get("/contrato/:idContrato", authorize(), buscarFaturamentosPo
 faturamentoRoutes.post("/", authorize(), criarFaturamentoController);
 faturamentoRoutes.put("/projecao", authorize(), editarProjecaoController);
 faturamentoRoutes.put("/:id", authorize(), editarFaturamentoController);
-faturamentoRoutes.put("/", authorize(), editarFaturamentosEmMassaController);
+faturamentoRoutes.put("/editarMassa", authorize(), editarFaturamentosEmMassaController);
 
 faturamentoRoutes.get("/competencia/:competencia", authorize(), buscarFaturamentoPorCompetenciaController);
 faturamentoRoutes.post("/gerar", authorize(), gerarFaturamentoController);
