@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
-import type { Contato } from "../../types/EstruturaEmpresa";
+import type { Contato, unidadeContato } from "../../types/EstruturaEmpresa";
 import FormContato from "../Formularios/FormContato";
 import ModalBase from "../Modais/ModalBase"; // mesmo ModalBase que você já usa em EmpresaPage
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { formatarTelefone } from "../Auxiliares/formatter";
 
 interface Props {
-  contatos: Contato[];
+  contatos: unidadeContato[];
   contatosEmpresa?: Contato[];
-  onChange: (contatos: Contato[]) => void;
+  onChange: (contatos: unidadeContato[]) => void;
   unidadeIdAtual: number
 }
 
@@ -17,23 +17,13 @@ export default function ListaContato({ contatos = [], contatosEmpresa = [], onCh
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const contatoEmEdicao = useMemo<Contato | null>(() => {
     if (editIndex === null) return null;
-    return contatos[editIndex] ?? null;
+    return contatos[editIndex]?.contato ?? null;
   }, [editIndex, contatos]);
   const contatosExtraidos: Contato[] = useMemo(() => {
-    if (
-      Array.isArray(contatos) &&
-      contatos.length > 0 &&
-      'contato' in contatos[0] &&
-      'fkUnidadeId' in contatos[0]
-    ) {
-      return (contatos as any[])
-        .filter((v) => v.fkUnidadeId === unidadeIdAtual)
-        .map((v) => v.contato);
-    }
-    return contatos;
+    return contatos
+      .filter((v) => v.fkUnidadeId === unidadeIdAtual)
+      .map((v) => v.contato);
   }, [contatos, unidadeIdAtual]);
-
-
 
   const abrirNovo = () => {
     const length = Array.isArray(contatos) ? contatos.length : null;
@@ -53,15 +43,25 @@ export default function ListaContato({ contatos = [], contatosEmpresa = [], onCh
 
   const salvar = (c: Contato) => {
     const novos = [...contatos];
+
+    const novoVinculo: unidadeContato = {
+      fkUnidadeId: unidadeIdAtual,
+      fkContatoId: c.idContato ?? 0,
+      contato: c,
+      idUnidadeContato: Date.now(),
+    };
+
     if (editIndex === contatos.length) {
-      novos.push(c);
+      novos.push(novoVinculo);
     } else if (editIndex !== null && editIndex >= 0) {
-      novos[editIndex] = c;
+      novos[editIndex] = novoVinculo;
     }
+
     onChange(novos);
     setAberto(false);
     setEditIndex(null);
   };
+
 
   const cancelar = () => {
     setAberto(false);

@@ -33,9 +33,13 @@ export default function FormUnidade({ unidade, onChange }: Props) {
         .then((contatosApi) => {
           const contatosUnidade = unidade.contatos || [];
 
-          const novosContatos = contatosUnidade.filter(
-            (c) => !c.idContato || !contatosApi.some((api) => api.idContato === c.idContato)
-          );
+          // pegar apenas o contato de cada unidadeContato
+          const novosContatos = contatosUnidade
+            .map((c) => c.contato) // extrai o Contato
+            .filter(
+              (c) =>
+                !c.idContato || !contatosApi.some((api) => api.idContato === c.idContato)
+            );
 
           setContatosEmpresa([...contatosApi, ...novosContatos]);
         })
@@ -155,7 +159,9 @@ export default function FormUnidade({ unidade, onChange }: Props) {
         {aba === "contato" && (
           <ListaContato
             contatos={formLocal.contatos ?? []}
-            onChange={(novosContatos) => atualizarCampo("contatos", novosContatos)}
+            onChange={(novosContatos) => {
+              atualizarCampo("contatos", novosContatos);
+            }}
             contatosEmpresa={contatosEmpresa ?? []}
             unidadeIdAtual={unidade.idUnidade}
           />

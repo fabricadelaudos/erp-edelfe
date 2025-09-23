@@ -7,6 +7,14 @@ export interface ContatoInput {
   telefoneWpp?: string;
 }
 
+export interface unidadeContato {
+  idUnidadeContato: number;
+  fkUnidadeId: number;
+  fkContatoId: number;
+
+  contato: ContatoInput;
+}
+
 export interface ContratoInput {
   idContrato: number;
   dataInicio: string;
@@ -42,10 +50,9 @@ export interface UnidadeInput {
   retemIss?: boolean;
   ativo?: boolean;
 
-  contatos?: ContatoInput[];
+  contatos?: unidadeContato[];
   contratos?: ContratoInput[];
 }
-
 
 export interface EmpresaInput {
   nome: string;

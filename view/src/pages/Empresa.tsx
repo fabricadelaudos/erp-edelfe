@@ -19,17 +19,9 @@ export default function EmpresaPage() {
   useEffect(() => {
     const carregarEmpresas = async () => {
       const data = await getEmpresas();
+      console.log(data);
 
-      const normalizado = data.map((empresa) => ({
-        ...empresa,
-        unidades: empresa.unidades?.map((unidade) => ({
-          ...unidade,
-          // Normaliza os contatos para ficar como Contato[]
-          contatos: unidade.contatos.map((vinculo: any) => vinculo.contato),
-        })),
-      }));
-
-      setEmpresas(normalizado);
+      setEmpresas(data);
     };
 
     carregarEmpresas();

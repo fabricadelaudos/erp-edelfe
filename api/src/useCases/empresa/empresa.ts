@@ -8,10 +8,14 @@ export type EmpresaComRelacionamentos = Prisma.empresaGetPayload<{
   include: {
     unidades: {
       include: {
-        contatos: true;
-        contratos: true;
-      };
-    };
+        contatos: {
+          include: {
+            contato: true,
+          },
+        },
+        contratos: true,
+      },
+    },
   };
 }>;
 
@@ -357,24 +361,15 @@ export const criarEmpresa = {
 
               // Contatos
               if (Array.isArray(unidade.contatos) && unidade.contatos.length > 0) {
-                for (const contato of unidade.contatos) {
-                  const contatoCriado = await tx.contato.create({
-                    data: {
-                      nome: contato.nome,
-                      email: contato.email,
-                      emailSecundario: contato.emailSecundario,
-                      telefoneFixo: contato.telefoneFixo,
-                      telefoneWpp: contato.telefoneWpp,
-                    },
-                  });
-
-                  await tx.unidadeContato.create({
-                    data: {
-                      fkUnidadeId: unidadeCriada.idUnidade,
-                      fkContatoId: contatoCriado.idContato,
-                    },
-                  });
-                }
+                await tx.contato.createMany({
+                  data: unidade.contatos.map((uc) => ({
+                    nome: uc.contato.nome,
+                    email: uc.contato.email,
+                    emailSecundario: uc.contato.emailSecundario,
+                    telefoneFixo: uc.contato.telefoneFixo,
+                    telefoneWpp: uc.contato.telefoneWpp,
+                  })),
+                });
               }
 
               // Contratos
@@ -477,7 +472,11 @@ export const editarEmpresa = {
       include: {
         unidades: {
           include: {
-            contatos: true,
+            contatos: {
+              include: {
+                contato: true,
+              },
+            },
             contratos: true,
           },
         },
@@ -543,7 +542,10 @@ export const editarEmpresa = {
             // Para evitar duplicação de contato recém-criado na mesma empresa
             const contatosReutilizadosMap = new Map<string, number>(); // chaveHash → idContato
 
-            for (const contato of contatosEnviados) {
+            for (const uc of contatosEnviados) {
+              const contato = uc.contato;
+              // console.log("uc", uc);
+              // console.log("contato", contato);
               const chave = gerarChaveContato(contato);
 
               if (contato.idContato) {
@@ -746,13 +748,12 @@ export const editarEmpresa = {
 
           if (Array.isArray(unidade.contatos) && unidade.contatos.length > 0) {
             await tx.contato.createMany({
-              data: unidade.contatos.map((c) => ({
-                nome: c.nome,
-                email: c.email,
-                emailSecundario: c.emailSecundario,
-                telefoneFixo: c.telefoneFixo,
-                telefoneWpp: c.telefoneWpp,
-                fkUnidadeId: novaUnidade.idUnidade,
+              data: unidade.contatos.map((uc) => ({
+                nome: uc.contato.nome,
+                email: uc.contato.email,
+                emailSecundario: uc.contato.emailSecundario,
+                telefoneFixo: uc.contato.telefoneFixo,
+                telefoneWpp: uc.contato.telefoneWpp,
               })),
             });
           }
@@ -813,9 +814,7 @@ export const editarEmpresa = {
           },
         });
 
-      },
-        { timeout: 20000, maxWait: 20000 }
-      );
+      }, { timeout: 20000, maxWait: 20000 });
 
       // Evento
       await registrarEvento({

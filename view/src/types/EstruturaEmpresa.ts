@@ -23,7 +23,7 @@ export interface Unidade {
   ativo: boolean;
   observacao?: string;
   retemIss?: boolean;
-  contatos: Contato[];
+  contatos: unidadeContato[];
   contratos: Contrato[];
   enderecoCep?: EnderecoCep;
   empresa?: Empresa;
@@ -36,6 +36,13 @@ export interface Contato {
   emailSecundario?: string;
   telefoneFixo?: string;
   telefoneWpp?: string;
+}
+
+export interface unidadeContato {
+  idUnidadeContato: number;
+  fkUnidadeId: number;
+  fkContatoId: number;
+  contato: Contato;
 }
 
 export interface Contrato {
