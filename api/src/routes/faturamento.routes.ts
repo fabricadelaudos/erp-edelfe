@@ -7,8 +7,8 @@ const faturamentoRoutes = Router();
 faturamentoRoutes.get("/contrato/:idContrato", authorize(), buscarFaturamentosPorContratoController);
 faturamentoRoutes.post("/", authorize(), criarFaturamentoController);
 faturamentoRoutes.put("/projecao", authorize(), editarProjecaoController);
-faturamentoRoutes.put("/:id", authorize(), editarFaturamentoController);
 faturamentoRoutes.put("/editarMassa", authorize(), editarFaturamentosEmMassaController);
+faturamentoRoutes.put("/:id", authorize(), editarFaturamentoController);
 
 faturamentoRoutes.get("/competencia/:competencia", authorize(), buscarFaturamentoPorCompetenciaController);
 faturamentoRoutes.post("/gerar", authorize(), gerarFaturamentoController);
