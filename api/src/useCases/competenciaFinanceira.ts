@@ -118,7 +118,7 @@ export const editarCompetenciaFinanceiraUseCase = {
             dadosDepois: atualizadoFaturamento,
           });
         }
-      });
+      }, { timeout: 60000, maxWait: 60000 });
     }
 
     // 4. Registrar evento da competência

@@ -161,7 +161,7 @@ export const editarFaturamentosEmMassa = {
       }
 
       return resultados;
-    });
+    }, { timeout: 60000, maxWait: 60000 });
   },
 };
 
@@ -213,7 +213,7 @@ export const editarProjecao = {
       }
 
       return resultados;
-    });
+    }, { timeout: 60000, maxWait: 60000 });
   },
 };
 
