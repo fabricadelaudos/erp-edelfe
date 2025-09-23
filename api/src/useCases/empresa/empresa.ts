@@ -361,15 +361,26 @@ export const criarEmpresa = {
 
               // Contatos
               if (Array.isArray(unidade.contatos) && unidade.contatos.length > 0) {
-                await tx.contato.createMany({
-                  data: unidade.contatos.map((uc) => ({
-                    nome: uc.contato.nome,
-                    email: uc.contato.email,
-                    emailSecundario: uc.contato.emailSecundario,
-                    telefoneFixo: uc.contato.telefoneFixo,
-                    telefoneWpp: uc.contato.telefoneWpp,
-                  })),
-                });
+                for (const uc of unidade.contatos) {
+                  // 1. Cria o contato
+                  const contatoCriado = await tx.contato.create({
+                    data: {
+                      nome: uc.contato.nome,
+                      email: uc.contato.email,
+                      emailSecundario: uc.contato.emailSecundario,
+                      telefoneFixo: uc.contato.telefoneFixo,
+                      telefoneWpp: uc.contato.telefoneWpp,
+                    },
+                  });
+
+                  // 2. Cria o vínculo unidadeContato
+                  await tx.unidadeContato.create({
+                    data: {
+                      fkUnidadeId: unidadeCriada.idUnidade,
+                      fkContatoId: contatoCriado.idContato,
+                    },
+                  });
+                }
               }
 
               // Contratos
