@@ -472,370 +472,221 @@ export const editarEmpresa = {
   async execute(id: number, data: EmpresaInput) {
     const { idUsuario, unidades, ...dadosEmpresa } = data;
 
+    // 1. Estado antes
     const empresaAntes = await prisma.empresa.findUnique({
       where: { idEmpresa: id },
       include: {
         unidades: {
           include: {
-            contatos: true,
+            contatos: { include: { contato: true } },
             contratos: true,
           },
         },
       },
     });
 
-    try {
-      const empresaDepois = await prisma.$transaction(async (tx) => {
-        // 1. Atualizar empresa
-        await tx.empresa.update({
-          where: { idEmpresa: id },
-          data: {
-            nome: dadosEmpresa.nome,
-            ativo: dadosEmpresa.ativo ?? true,
-          },
-        });
+    if (!empresaAntes) throw new Error("Empresa não encontrada");
 
-        // 2. Mapear unidades
-        const unidadesExistentes = empresaAntes?.unidades || [];
-        const unidadesMap = new Map(unidades?.map((u) => [u.documento, u]));
+    // 2. Pré-processamento: decidir o que criar/atualizar/deletar
+    const unidadesParaCriar: any[] = [];
+    const unidadesParaAtualizar: any[] = [];
+    const unidadesParaDeletar: number[] = [];
+    const contatosParaCriar: any[] = [];
+    const contatosParaAtualizar: any[] = [];
+    const contatosParaDeletar: number[] = [];
+    const vinculosParaCriar: any[] = [];
+    const vinculosParaDeletar: number[] = [];
+    const contratosParaCriar: any[] = [];
+    const contratosParaAtualizar: any[] = [];
+    const contratosParaDeletar: number[] = [];
 
-        for (const unidadeDB of unidadesExistentes) {
-          const unidadeFront = unidadesMap.get(unidadeDB.documento);
+    const unidadesMap = new Map(unidades?.map((u) => [u.documento, u]));
 
-          if (!unidadeFront) {
-            await tx.unidade.delete({ where: { idUnidade: unidadeDB.idUnidade } });
-            continue;
-          }
+    for (const unidadeDB of empresaAntes.unidades) {
+      const unidadeFront = unidadesMap.get(unidadeDB.documento);
 
-          await tx.unidade.update({
-            where: { idUnidade: unidadeDB.idUnidade },
-            data: {
-              nomeFantasia: unidadeFront.nomeFantasia,
-              razaoSocial: unidadeFront.razaoSocial,
-              tipoDocumento: unidadeFront.tipoDocumento as TipoDocumento,
-              documento: unidadeFront.documento,
-              inscricaoEstadual: unidadeFront.inscricaoEstadual,
-              endereco: unidadeFront.endereco,
-              numero: unidadeFront.numero,
-              complemento: unidadeFront.complemento,
-              bairro: unidadeFront.bairro,
-              cidade: unidadeFront.cidade,
-              uf: unidadeFront.uf,
-              cep: unidadeFront.cep,
-              ativo: unidadeFront.ativo ?? true,
-              observacao: unidadeFront.observacao,
-              retemIss: unidadeFront.retemIss ?? false,
-            },
-          });
+      if (!unidadeFront) {
+        unidadesParaDeletar.push(unidadeDB.idUnidade);
+        continue;
+      }
 
-          // 2.1 Contatos
-          if (Array.isArray(unidadeFront.contatos)) {
-            const contatosEnviados = unidadeFront.contatos || [];
-            const contatosExistentes = await tx.unidadeContato.findMany({
-              where: { fkUnidadeId: unidadeDB.idUnidade },
-              include: { contato: true },
+      // Unidade para update
+      unidadesParaAtualizar.push({ id: unidadeDB.idUnidade, data: unidadeFront });
+
+      // Contatos
+      const contatosExistentesMap = new Map(
+        unidadeDB.contatos.map((uc) => [uc.contato.idContato, uc])
+      );
+
+      for (const contato of unidadeFront.contatos || []) {
+        if (contato.idContato) {
+          contatosParaAtualizar.push(contato);
+
+          if (!contatosExistentesMap.has(contato.idContato)) {
+            vinculosParaCriar.push({
+              fkUnidadeId: unidadeDB.idUnidade,
+              fkContatoId: contato.idContato,
             });
-
-            const contatosExistentesMap = new Map(
-              contatosExistentes.map((uc) => [uc.fkContatoId, uc])
-            );
-
-            // Para evitar duplicação de contato recém-criado na mesma empresa
-            const contatosReutilizadosMap = new Map<string, number>(); // chaveHash → idContato
-
-            for (const contato of contatosEnviados) {
-              const chave = gerarChaveContato(contato);
-
-              if (contato.idContato) {
-                // 1. Atualiza contato existente (sempre que tiver ID)
-                await tx.contato.update({
-                  where: { idContato: contato.idContato },
-                  data: {
-                    nome: contato.nome,
-                    email: contato.email,
-                    emailSecundario: contato.emailSecundario,
-                    telefoneFixo: contato.telefoneFixo,
-                    telefoneWpp: contato.telefoneWpp,
-                  },
-                });
-
-                // Vincular se ainda não estiver vinculado
-                if (!contatosExistentesMap.has(contato.idContato)) {
-                  await tx.unidadeContato.create({
-                    data: {
-                      fkUnidadeId: unidadeDB.idUnidade,
-                      fkContatoId: contato.idContato,
-                    },
-                  });
-                }
-
-                contatosExistentesMap.delete(contato.idContato);
-                contatosReutilizadosMap.set(chave, contato.idContato);
-
-              } else if (contatosReutilizadosMap.has(chave)) {
-                // 2. Já foi criado nesta mesma empresa — só vincula
-                const contatoExistenteId = contatosReutilizadosMap.get(chave)!;
-                await tx.unidadeContato.create({
-                  data: {
-                    fkUnidadeId: unidadeDB.idUnidade,
-                    fkContatoId: contatoExistenteId,
-                  },
-                });
-
-              } else {
-                if (!contato.nome || contato.nome.trim() === "") {
-                  throw new Error("Contato inválido: nome é obrigatório.");
-                }
-
-                // 3. Criar novo contato e vincular
-                const novoContato = await tx.contato.create({
-                  data: {
-                    nome: contato.nome,
-                    email: contato.email,
-                    emailSecundario: contato.emailSecundario,
-                    telefoneFixo: contato.telefoneFixo,
-                    telefoneWpp: contato.telefoneWpp,
-                  },
-                });
-
-                await tx.unidadeContato.create({
-                  data: {
-                    fkUnidadeId: unidadeDB.idUnidade,
-                    fkContatoId: novoContato.idContato,
-                  },
-                });
-
-                contatosReutilizadosMap.set(chave, novoContato.idContato);
-              }
-            }
-
-            // Remover vínculos que não estão mais em uso
-            for (const vinculoRestante of contatosExistentesMap.values()) {
-              await tx.unidadeContato.delete({
-                where: { id: vinculoRestante.id },
-              });
-            }
           }
 
-          // 2.2 Contratos
-          if (Array.isArray(unidadeFront.contratos)) {
-            const contratosDB = await tx.contrato.findMany({
-              where: { fkUnidadeId: unidadeDB.idUnidade },
-            });
-
-            const contratosMap = new Map(contratosDB.map((c) => [c.idContrato, c]));
-
-            for (const contrato of unidadeFront.contratos) {
-              if (contrato.idContrato && contratosMap.has(contrato.idContrato)) {
-                // Update
-                const parcelas = contrato.recorrente
-                  ? contrato.dataInicio && contrato.dataFim
-                    ? calcularMesesEntre(
-                      new Date(contrato.dataInicio),
-                      new Date(contrato.dataFim)
-                    )
-                    : 0
-                  : contrato.parcelas ?? 0;
-
-                await tx.contrato.update({
-                  where: { idContrato: contrato.idContrato },
-                  data: {
-                    dataInicio: new Date(contrato.dataInicio),
-                    dataFim: new Date(contrato.dataFim),
-                    parcelas,
-                    valorBase: new Decimal(parseDecimal(contrato.valorBase)),
-                    porVida: contrato.porVida,
-                    vidas: contrato.vidas ?? 0,
-                    recorrente: contrato.recorrente,
-                    status: contrato.status as StatusContrato,
-                    faturadoPor: contrato.faturadoPor as FaturadoPor,
-                    esocial: contrato.esocial ?? false,
-                    laudos: contrato.laudos ?? false,
-                    observacao: contrato.observacao,
-                    diaVencimento: contrato.diaVencimento ?? null,
-                  },
-                });
-
-                if (["CANCELADO", "ENCERRADO"].includes(contrato.status)) {
-                  await excluirProjecoesFuturas(tx, contrato.idContrato);
-                }
-
-                if (contrato.status === "ATIVO") {
-                  await sincronizarProjecoesParaContrato(tx, {
-                    idContrato: contrato.idContrato,
-                    dataInicio: contrato.dataInicio,
-                    dataFim: contrato.dataFim,
-                    parcelas: contrato.parcelas,
-                    valorBase: new Decimal(parseDecimal(contrato.valorBase)),
-                    porVida: contrato.porVida,
-                    vidas: contrato.vidas ?? 0,
-                    recorrente: contrato.recorrente,
-                  });
-                }
-
-                contratosMap.delete(contrato.idContrato);
-              } else {
-                // Novo contrato
-                const parcelas = contrato.recorrente
-                  ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
-                  : contrato.parcelas ?? 0;
-
-                const contratoCriado = await tx.contrato.create({
-                  data: {
-                    fkUnidadeId: unidadeDB.idUnidade,
-                    dataInicio: new Date(contrato.dataInicio),
-                    dataFim: new Date(contrato.dataFim),
-                    parcelas,
-                    valorBase: new Decimal(parseDecimal(contrato.valorBase)),
-                    porVida: contrato.porVida,
-                    vidas: contrato.vidas ?? 0,
-                    recorrente: contrato.recorrente,
-                    status: contrato.status as StatusContrato,
-                    faturadoPor: contrato.faturadoPor as FaturadoPor,
-                    esocial: contrato.esocial ?? false,
-                    laudos: contrato.laudos ?? false,
-                    observacao: contrato.observacao,
-                    diaVencimento: contrato.diaVencimento ?? null,
-                  },
-                });
-
-                await gerarProjecoesParaContrato(tx, {
-                  idContrato: contratoCriado.idContrato,
-                  dataInicio: contratoCriado.dataInicio,
-                  dataFim: contratoCriado.dataFim,
-                  parcelas: contratoCriado.parcelas,
-                  valorBase: new Decimal(parseDecimal(contrato.valorBase)),
-                  porVida: contratoCriado.porVida,
-                  vidas: contratoCriado.vidas ?? 0,
-                  recorrente: contratoCriado.recorrente,
-                });
-              }
-            }
-
-            // Remover contratos obsoletos
-            for (const contratoObsoleto of contratosMap.values()) {
-              await tx.contrato.delete({ where: { idContrato: contratoObsoleto.idContrato } });
-            }
-          }
-
-          unidadesMap.delete(unidadeDB.documento);
+          contatosExistentesMap.delete(contato.idContato);
+        } else {
+          contatosParaCriar.push(contato);
+          // o vínculo será criado depois do insert do contato
         }
+      }
 
-        // 3. Criar novas unidades
-        for (const unidade of unidadesMap.values()) {
-          const novaUnidade = await tx.unidade.create({
+      for (const vinculo of contatosExistentesMap.values()) {
+        vinculosParaDeletar.push(vinculo.id);
+      }
+
+      // Contratos
+      const contratosMap = new Map(unidadeDB.contratos.map((c) => [c.idContrato, c]));
+      for (const contrato of unidadeFront.contratos || []) {
+        if (contrato.idContrato && contratosMap.has(contrato.idContrato)) {
+          contratosParaAtualizar.push({ ...contrato, fkUnidadeId: unidadeDB.idUnidade });
+          contratosMap.delete(contrato.idContrato);
+        } else {
+          contratosParaCriar.push({ ...contrato, fkUnidadeId: unidadeDB.idUnidade });
+        }
+      }
+
+      for (const contrato of contratosMap.values()) {
+        contratosParaDeletar.push(contrato.idContrato);
+      }
+
+      unidadesMap.delete(unidadeDB.documento);
+    }
+
+    // Novas unidades
+    for (const unidade of unidadesMap.values()) {
+      unidadesParaCriar.push(unidade);
+
+      for (const contato of unidade.contatos || []) {
+        contatosParaCriar.push({ ...contato, _novaUnidade: unidade.documento });
+      }
+
+      for (const contrato of unidade.contratos || []) {
+        contratosParaCriar.push({ ...contrato, _novaUnidade: unidade.documento });
+      }
+    }
+
+    // 3. Execução em transação enxuta
+    const empresaDepois = await prisma.$transaction(async (tx) => {
+      await tx.empresa.update({
+        where: { idEmpresa: id },
+        data: { nome: dadosEmpresa.nome, ativo: dadosEmpresa.ativo ?? true },
+      });
+
+      // Unidades
+      await Promise.all([
+        ...unidadesParaCriar.map((u) =>
+          tx.unidade.create({
             data: {
               fkEmpresaId: id,
-              nomeFantasia: unidade.nomeFantasia,
-              razaoSocial: unidade.razaoSocial,
-              tipoDocumento: unidade.tipoDocumento as TipoDocumento,
-              documento: unidade.documento,
-              inscricaoEstadual: unidade.inscricaoEstadual,
-              endereco: unidade.endereco,
-              numero: unidade.numero,
-              complemento: unidade.complemento,
-              bairro: unidade.bairro,
-              cidade: unidade.cidade,
-              uf: unidade.uf,
-              cep: unidade.cep,
-              ativo: unidade.ativo ?? true,
-              observacao: unidade.observacao,
-              retemIss: unidade.retemIss ?? false,
+              ...u,
             },
-          });
+          })
+        ),
+        ...unidadesParaAtualizar.map((u) =>
+          tx.unidade.update({
+            where: { idUnidade: u.id },
+            data: { ...u.data },
+          })
+        ),
+        ...unidadesParaDeletar.map((idU) =>
+          tx.unidade.delete({ where: { idUnidade: idU } })
+        ),
+      ]);
 
-          if (Array.isArray(unidade.contatos) && unidade.contatos.length > 0) {
-            await tx.contato.createMany({
-              data: unidade.contatos.map((c) => ({
-                nome: c.nome,
-                email: c.email,
-                emailSecundario: c.emailSecundario,
-                telefoneFixo: c.telefoneFixo,
-                telefoneWpp: c.telefoneWpp,
-                fkUnidadeId: novaUnidade.idUnidade,
-              })),
-            });
-          }
+      // Contatos
+      await Promise.all([
+        ...contatosParaCriar.map((c) =>
+          tx.contato.create({
+            data: {
+              nome: c.nome,
+              email: c.email,
+              emailSecundario: c.emailSecundario,
+              telefoneFixo: c.telefoneFixo,
+              telefoneWpp: c.telefoneWpp,
+            },
+          })
+        ),
+        ...contatosParaAtualizar.map((c) =>
+          tx.contato.update({
+            where: { idContato: c.idContato },
+            data: {
+              nome: c.nome,
+              email: c.email,
+              emailSecundario: c.emailSecundario,
+              telefoneFixo: c.telefoneFixo,
+              telefoneWpp: c.telefoneWpp,
+            },
+          })
+        ),
+        ...contatosParaDeletar.map((idC) =>
+          tx.contato.delete({ where: { idContato: idC } })
+        ),
+      ]);
 
-          if (Array.isArray(unidade.contratos) && unidade.contratos.length > 0) {
-            for (const contrato of unidade.contratos) {
-              const parcelas = contrato.recorrente
-                ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
-                : contrato.parcelas ?? 0;
+      // Vínculos unidade-contato
+      await Promise.all([
+        ...vinculosParaCriar.map((v) => tx.unidadeContato.create({ data: v })),
+        ...vinculosParaDeletar.map((id) =>
+          tx.unidadeContato.delete({ where: { id } })
+        ),
+      ]);
 
-              const contratoCriado = await tx.contrato.create({
-                data: {
-                  fkUnidadeId: novaUnidade.idUnidade,
-                  dataInicio: new Date(contrato.dataInicio),
-                  dataFim: new Date(contrato.dataFim),
-                  parcelas,
-                  valorBase: new Decimal(parseDecimal(contrato.valorBase)),
-                  porVida: contrato.porVida,
-                  vidas: contrato.vidas ?? 0,
-                  recorrente: contrato.recorrente,
-                  status: contrato.status as StatusContrato,
-                  faturadoPor: contrato.faturadoPor as FaturadoPor,
-                  esocial: contrato.esocial ?? false,
-                  laudos: contrato.laudos ?? false,
-                  observacao: contrato.observacao,
-                  diaVencimento: contrato.diaVencimento ?? null,
-                },
-              });
+      // Contratos
+      await Promise.all([
+        ...contratosParaCriar.map((c) =>
+          tx.contrato.create({ data: { ...c } })
+        ),
+        ...contratosParaAtualizar.map((c) =>
+          tx.contrato.update({
+            where: { idContrato: c.idContrato },
+            data: { ...c },
+          })
+        ),
+        ...contratosParaDeletar.map((idC) =>
+          tx.contrato.delete({ where: { idContrato: idC } })
+        ),
+      ]);
 
-              await gerarProjecoesParaContrato(tx, {
-                idContrato: contratoCriado.idContrato,
-                dataInicio: contratoCriado.dataInicio,
-                dataFim: contratoCriado.dataFim,
-                parcelas: contratoCriado.parcelas,
-                valorBase: new Decimal(parseDecimal(contrato.valorBase)),
-                porVida: contratoCriado.porVida,
-                vidas: contratoCriado.vidas ?? 0,
-                recorrente: contratoCriado.recorrente,
-              });
-            }
-          }
-        }
-
-        // 4. Buscar dados finais
-        return tx.empresa.findUnique({
-          where: { idEmpresa: id },
-          include: {
-            unidades: {
-              include: {
-                contatos: {
-                  include: {
-                    contato: true,
-                  },
-                },
-                contratos: true,
-              },
+      return tx.empresa.findUnique({
+        where: { idEmpresa: id },
+        include: {
+          unidades: {
+            include: {
+              contatos: { include: { contato: true } },
+              contratos: true,
             },
           },
-        });
-
+        },
       });
+    });
 
-      // Evento
-      await registrarEvento({
-        idUsuario,
-        tipo: "editar",
-        entidade: "empresa",
-        entidadeId: id,
-        descricao: `Empresa '${empresaDepois?.nome}' editada com sucesso!`,
-        dadosAntes: empresaAntes,
-        dadosDepois: empresaDepois,
-      });
-
-      return empresaDepois;
-    } catch (e: any) {
-      await registrarEvento({
-        idUsuario,
-        tipo: "erro",
-        entidade: "empresa",
-        entidadeId: id,
-        descricao: `Erro ao editar empresa: ${e.message}`,
-      });
-      throw new Error("Erro ao editar empresa: " + e.message);
+    // 4. Pós-processamento (fora do tx): projeções
+    for (const contrato of contratosParaCriar.concat(contratosParaAtualizar)) {
+      if (["CANCELADO", "ENCERRADO"].includes(contrato.status)) {
+        await excluirProjecoesFuturas(prisma, contrato.idContrato);
+      }
+      if (contrato.status === "ATIVO") {
+        await sincronizarProjecoesParaContrato(prisma, contrato);
+      }
     }
+
+    // 5. Log
+    await registrarEvento({
+      idUsuario,
+      tipo: "editar",
+      entidade: "empresa",
+      entidadeId: id,
+      descricao: `Empresa '${empresaDepois?.nome}' editada com sucesso!`,
+      dadosAntes: empresaAntes,
+      dadosDepois: empresaDepois,
+    });
+
+    return empresaDepois;
   },
 };
