@@ -472,7 +472,7 @@ export const editarEmpresa = {
   async execute(id: number, data: EmpresaInput) {
     const { idUsuario, unidades, ...dadosEmpresa } = data;
 
-    // 1. Estado antes
+    // 1. Buscar estado atual
     const empresaAntes = await prisma.empresa.findUnique({
       where: { idEmpresa: id },
       include: {
@@ -487,15 +487,17 @@ export const editarEmpresa = {
 
     if (!empresaAntes) throw new Error("Empresa não encontrada");
 
-    // 2. Pré-processamento: decidir o que criar/atualizar/deletar
+    // 2. Montar listas de operações
     const unidadesParaCriar: any[] = [];
     const unidadesParaAtualizar: any[] = [];
     const unidadesParaDeletar: number[] = [];
+
     const contatosParaCriar: any[] = [];
     const contatosParaAtualizar: any[] = [];
     const contatosParaDeletar: number[] = [];
     const vinculosParaCriar: any[] = [];
     const vinculosParaDeletar: number[] = [];
+
     const contratosParaCriar: any[] = [];
     const contratosParaAtualizar: any[] = [];
     const contratosParaDeletar: number[] = [];
@@ -510,10 +512,29 @@ export const editarEmpresa = {
         continue;
       }
 
-      // Unidade para update
-      unidadesParaAtualizar.push({ id: unidadeDB.idUnidade, data: unidadeFront });
+      // Unidade para update (apenas campos escalares!)
+      unidadesParaAtualizar.push({
+        id: unidadeDB.idUnidade,
+        data: {
+          nomeFantasia: unidadeFront.nomeFantasia,
+          razaoSocial: unidadeFront.razaoSocial,
+          tipoDocumento: unidadeFront.tipoDocumento as TipoDocumento,
+          documento: unidadeFront.documento,
+          inscricaoEstadual: unidadeFront.inscricaoEstadual,
+          endereco: unidadeFront.endereco,
+          numero: unidadeFront.numero,
+          complemento: unidadeFront.complemento,
+          bairro: unidadeFront.bairro,
+          cidade: unidadeFront.cidade,
+          uf: unidadeFront.uf,
+          cep: unidadeFront.cep,
+          ativo: unidadeFront.ativo ?? true,
+          observacao: unidadeFront.observacao,
+          retemIss: unidadeFront.retemIss ?? false,
+        },
+      });
 
-      // Contatos
+      // ----- Contatos -----
       const contatosExistentesMap = new Map(
         unidadeDB.contatos.map((uc) => [uc.contato.idContato, uc])
       );
@@ -531,8 +552,7 @@ export const editarEmpresa = {
 
           contatosExistentesMap.delete(contato.idContato);
         } else {
-          contatosParaCriar.push(contato);
-          // o vínculo será criado depois do insert do contato
+          contatosParaCriar.push({ ...contato, _novaUnidadeId: unidadeDB.idUnidade });
         }
       }
 
@@ -540,7 +560,7 @@ export const editarEmpresa = {
         vinculosParaDeletar.push(vinculo.id);
       }
 
-      // Contratos
+      // ----- Contratos -----
       const contratosMap = new Map(unidadeDB.contratos.map((c) => [c.idContrato, c]));
       for (const contrato of unidadeFront.contratos || []) {
         if (contrato.idContrato && contratosMap.has(contrato.idContrato)) {
@@ -563,16 +583,17 @@ export const editarEmpresa = {
       unidadesParaCriar.push(unidade);
 
       for (const contato of unidade.contatos || []) {
-        contatosParaCriar.push({ ...contato, _novaUnidade: unidade.documento });
+        contatosParaCriar.push({ ...contato, _novaUnidadeDoc: unidade.documento });
       }
 
       for (const contrato of unidade.contratos || []) {
-        contratosParaCriar.push({ ...contrato, _novaUnidade: unidade.documento });
+        contratosParaCriar.push({ ...contrato, _novaUnidadeDoc: unidade.documento });
       }
     }
 
-    // 3. Execução em transação enxuta
+    // 3. Transação enxuta
     const empresaDepois = await prisma.$transaction(async (tx) => {
+      // Atualiza empresa
       await tx.empresa.update({
         where: { idEmpresa: id },
         data: { nome: dadosEmpresa.nome, ativo: dadosEmpresa.ativo ?? true },
@@ -582,16 +603,13 @@ export const editarEmpresa = {
       await Promise.all([
         ...unidadesParaCriar.map((u) =>
           tx.unidade.create({
-            data: {
-              fkEmpresaId: id,
-              ...u,
-            },
+            data: { fkEmpresaId: id, ...u },
           })
         ),
         ...unidadesParaAtualizar.map((u) =>
           tx.unidade.update({
             where: { idUnidade: u.id },
-            data: { ...u.data },
+            data: u.data,
           })
         ),
         ...unidadesParaDeletar.map((idU) =>
@@ -601,17 +619,6 @@ export const editarEmpresa = {
 
       // Contatos
       await Promise.all([
-        ...contatosParaCriar.map((c) =>
-          tx.contato.create({
-            data: {
-              nome: c.nome,
-              email: c.email,
-              emailSecundario: c.emailSecundario,
-              telefoneFixo: c.telefoneFixo,
-              telefoneWpp: c.telefoneWpp,
-            },
-          })
-        ),
         ...contatosParaAtualizar.map((c) =>
           tx.contato.update({
             where: { idContato: c.idContato },
@@ -629,7 +636,7 @@ export const editarEmpresa = {
         ),
       ]);
 
-      // Vínculos unidade-contato
+      // Vínculos
       await Promise.all([
         ...vinculosParaCriar.map((v) => tx.unidadeContato.create({ data: v })),
         ...vinculosParaDeletar.map((id) =>
@@ -639,13 +646,24 @@ export const editarEmpresa = {
 
       // Contratos
       await Promise.all([
-        ...contratosParaCriar.map((c) =>
-          tx.contrato.create({ data: { ...c } })
-        ),
         ...contratosParaAtualizar.map((c) =>
           tx.contrato.update({
             where: { idContrato: c.idContrato },
-            data: { ...c },
+            data: {
+              dataInicio: new Date(c.dataInicio),
+              dataFim: new Date(c.dataFim),
+              parcelas: c.parcelas,
+              valorBase: new Decimal(parseDecimal(c.valorBase)),
+              porVida: c.porVida,
+              vidas: c.vidas ?? 0,
+              recorrente: c.recorrente,
+              status: c.status as StatusContrato,
+              faturadoPor: c.faturadoPor as FaturadoPor,
+              esocial: c.esocial ?? false,
+              laudos: c.laudos ?? false,
+              observacao: c.observacao,
+              diaVencimento: c.diaVencimento ?? null,
+            },
           })
         ),
         ...contratosParaDeletar.map((idC) =>
@@ -666,7 +684,7 @@ export const editarEmpresa = {
       });
     });
 
-    // 4. Pós-processamento (fora do tx): projeções
+    // 4. Pós-processamento de contratos (fora da transação)
     for (const contrato of contratosParaCriar.concat(contratosParaAtualizar)) {
       if (["CANCELADO", "ENCERRADO"].includes(contrato.status)) {
         await excluirProjecoesFuturas(prisma, contrato.idContrato);
@@ -676,7 +694,7 @@ export const editarEmpresa = {
       }
     }
 
-    // 5. Log
+    // 5. Evento
     await registrarEvento({
       idUsuario,
       tipo: "editar",
