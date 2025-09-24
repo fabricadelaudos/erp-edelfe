@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Select from "react-select";
 import { normalizeStr } from './Auxiliares/utils';
+import Spinner from './Loading';
 
 // Input
 interface InputProps {
@@ -393,7 +394,10 @@ export function SearchableSelect({
 
             <div className="max-h-56 overflow-auto py-1">
               {loading ? (
-                <div className="px-3 py-2 text-sm text-gray-500">Carregando…</div>
+                <div className="px-3 py-1 text-sm text-orange-300 flex items-center">
+                  <Spinner size={16} className="text-orange-500" />
+                  <span className="ml-2">Carregando...</span>
+                </div>
               ) : filtered.length === 0 ? (
                 <div className="px-3 py-2 text-sm text-gray-500">Nenhuma opção</div>
               ) : (
@@ -427,7 +431,6 @@ export function SearchableSelect({
   );
 }
 
-
 // Toggle
 interface ToggleInputProps {
   label: string;
@@ -457,6 +460,201 @@ export function ToggleInput({ label, value, onChange, disabled = false }: Toggle
           `}
         />
       </button>
+    </div>
+  );
+}
+
+
+// GroupedSelect (Select com grupos)
+type SubOption = { label: string; value: string | number };
+type GroupedOption = { label: string; options: SubOption[] };
+
+interface PropsGroupedSelect {
+  label?: string;
+  name?: string;
+  groups: GroupedOption[]; // 🔥 recebe grupos
+  value: string | number | "";
+  onChange: (v: string | number | "") => void;
+  placeholder?: string;
+  disabled?: boolean;
+  loading?: boolean;
+  className?: string;
+  allowClear?: boolean;
+  emptyOptionLabel?: string;
+}
+
+export function GroupedSelect({
+  label,
+  name,
+  groups,
+  value,
+  onChange,
+  placeholder = "Pesquisar...",
+  disabled,
+  loading,
+  className = "",
+  allowClear = true,
+  emptyOptionLabel,
+}: PropsGroupedSelect) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // transforma grupos em lista "achatada", mas com marker de categoria
+  const flatOptions = useMemo(() => {
+    const opts: (SubOption & { isGroup?: boolean })[] = [];
+
+    if (emptyOptionLabel != null) {
+      opts.push({ label: emptyOptionLabel, value: "" });
+    }
+
+    groups.forEach((g) => {
+      opts.push({ label: g.label, value: `__group-${g.label}`, isGroup: true });
+      g.options.forEach((o) => opts.push(o));
+    });
+
+    return opts;
+  }, [groups, emptyOptionLabel]);
+
+  // filtra por label, mas mantém grupos
+  const filtered = useMemo(() => {
+    if (!query.trim()) return flatOptions;
+
+    const q = query.toLowerCase();
+
+    const opts: (SubOption & { isGroup?: boolean })[] = [];
+
+    groups.forEach((g) => {
+      const subsFiltradas = g.options.filter(
+        (o) =>
+          o.label.toLowerCase().includes(q) ||
+          String(o.value).toLowerCase().includes(q)
+      );
+
+      if (subsFiltradas.length > 0) {
+        // só adiciona categoria se tiver pelo menos 1 subcategoria encontrada
+        opts.push({ label: g.label, value: `__group-${g.label}`, isGroup: true });
+        subsFiltradas.forEach((o) => opts.push(o));
+      }
+    });
+
+    return opts;
+  }, [groups, query]);
+
+  const selectedLabel =
+    flatOptions.find((o) => o.value === value)?.label ?? "";
+
+  // clique fora
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  const selectAt = (idx: number) => {
+    const item = filtered[idx];
+    if (!item || item.isGroup) return; // 🔥 não seleciona grupo
+    onChange(item.value);
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div className={`w-full ${className}`} ref={wrapRef}>
+      {label && (
+        <label className="block mb-1 text-sm font-medium text-gray-700">
+          {label}
+        </label>
+      )}
+
+      <div className="relative">
+        <button
+          type="button"
+          name={name}
+          disabled={disabled}
+          onClick={() => setOpen((o) => !o)}
+          className={`w-full text-left bg-white border border-gray-300 rounded-md px-3 py-2 pr-10
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+            disabled:opacity-60`}
+        >
+          <span className={selectedLabel ? "text-gray-900" : "text-gray-400"}>
+            {selectedLabel || "Selecione"}
+          </span>
+        </button>
+
+        {allowClear && value !== "" && !disabled && (
+          <button
+            type="button"
+            className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange("");
+            }}
+          >
+            ×
+          </button>
+        )}
+
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+          ▾
+        </span>
+
+        {open && (
+          <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
+            <div className="p-2">
+              <input
+                ref={inputRef}
+                placeholder={placeholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="max-h-56 overflow-auto py-1">
+              {loading ? (
+                <div className="px-3 py-1 text-sm text-orange-300 flex items-center">
+                  <Spinner size={16} className="text-orange-500" />
+                  <span className="ml-2">Carregando...</span>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-gray-500">Nenhuma opção</div>
+              ) : (
+                filtered.map((o, idx) =>
+                  o.isGroup ? (
+                    <div
+                      key={`g-${o.label}`}
+                      className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-200 select-none cursor-not-allowed"
+                    >
+                      {o.label}
+                    </div>
+                  ) : (
+                    <div
+                      key={`${o.value}`}
+                      role="option"
+                      aria-selected={o.value === value}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        selectAt(idx);
+                      }}
+                      className={`px-3 py-2 cursor-pointer text-xs hover:bg-blue-50
+                        ${o.value === value ? "font-medium text-gray-700 bg-blue-50" : ""}`}
+                    >
+                      {o.label}
+                    </div>
+                  )
+                )
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

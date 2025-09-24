@@ -10,13 +10,17 @@ export default function BancoTab() {
   const [bancos, setBancos] = useState<Banco[]>([]);
   const [form, setForm] = useState<Banco>({ idBanco: 0, nome: "", ativo: true });
   const [modalAberto, setModalAberto] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const carregarBancos = async () => {
     try {
+      setLoading(true);
       const dados = await buscarBancos();
       setBancos(dados);
     } catch (error) {
       console.error("Erro ao carregar bancos", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -26,6 +30,7 @@ export default function BancoTab() {
 
   const handleSalvar = async () => {
     try {
+      setLoading(true);
       if (form.idBanco > 0) {
         console.log("Editando banco:", form);
         await editarBanco(form.idBanco, form);
@@ -38,9 +43,10 @@ export default function BancoTab() {
       carregarBancos();
     } catch (error) {
       console.error("Erro ao salvar banco", error);
+    } finally {
+      setLoading(false);
     }
   };
-
 
   const handleEditar = (banco: Banco) => {
     setForm(banco);
@@ -77,10 +83,11 @@ export default function BancoTab() {
           },
         ]}
         onEdit={handleEditar}
+        isLoading={loading}
       />
 
       <ModalBase titulo="Banco" isOpen={modalAberto} onClose={() => {setModalAberto(false); setForm({ idBanco: 0, nome: "", ativo: true });}}>
-        <FormBanco form={form} setForm={setForm} onSalvar={handleSalvar} />
+        <FormBanco form={form} setForm={setForm} onSalvar={handleSalvar} loading={loading}/>
       </ModalBase>
     </div>
   );

@@ -1,3 +1,5 @@
+import Spinner from "../Loading";
+
 interface MesValor {
   mes: string;
   valor: number;
@@ -10,9 +12,10 @@ interface LinhaStatus {
 
 interface Props {
   dados: LinhaStatus[];
+  loading?: boolean
 }
 
-export default function TabelaProjecao({ dados }: Props) {
+export default function TabelaProjecao({ dados, loading = false }: Props) {
   const formatar = (valor?: number) =>
     (valor ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -23,6 +26,23 @@ export default function TabelaProjecao({ dados }: Props) {
     "A Vencer": "text-yellow-500",
     "Atrasado": "text-red-500",
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40 border border-gray-300 rounded">
+        <Spinner size={20} className="text-orange-500" />
+        <p className="ml-2 text-orange-300 font-bold">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!dados.length) {
+    return (
+      <div className="flex items-center justify-center h-40 border border-gray-300 rounded text-gray-500">
+        Nenhum dado disponível
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto border border-gray-300 rounded">

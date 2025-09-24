@@ -11,17 +11,29 @@ import {
 import { formatarDocumento } from "../Auxiliares/formatter";
 import type { Fornecedor } from "../../types/EstruturaDespesa";
 import FormFornecedor from "../Formularios/FormFornecedor";
+import toast from "react-hot-toast";
 
 export default function FornecedorTab() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [fornecedorEdicao, setFornecedorEdicao] = useState<Fornecedor | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    buscarFornecedores().then(setFornecedores).catch(() => {
-      setFornecedores([]);
-      console.error("Erro ao buscar fornecedores");
-    });
+    const carregarFornecedores = async () => {
+      try {
+        setLoading(true);
+        const res = await buscarFornecedores();
+        setFornecedores(res);
+      } catch (err) {
+        console.error("Erro ao buscar fornecedores:", err);
+        setFornecedores([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarFornecedores();
   }, []);
 
   const abrirModal = (fornecedor?: Fornecedor) => {
@@ -41,6 +53,7 @@ export default function FornecedorTab() {
 
   const salvarFornecedor = async (dados: Fornecedor) => {
     try {
+      setLoading(true);
       let salvo: Fornecedor;
 
       if (dados.idFornecedor > 0) {
@@ -54,8 +67,18 @@ export default function FornecedorTab() {
       }
 
       setModalAberto(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar fornecedor:", error);
+
+      const msg = error?.response?.data?.error;
+
+      if (typeof msg === "string" && msg.includes("Já existe um fornecedor cadastrado")) {
+        toast.error(msg);
+      } else {
+        toast.error("Erro ao salvar fornecedor.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -117,6 +140,7 @@ export default function FornecedorTab() {
           },
         ]}
         data={fornecedores}
+        isLoading={loading}
       />
 
       <ModalBase
@@ -133,6 +157,7 @@ export default function FornecedorTab() {
             dados={fornecedorEdicao}
             onSalvar={salvarFornecedor}
             onCancelar={() => setModalAberto(false)}
+            loading={loading}
           />
         )}
       </ModalBase>

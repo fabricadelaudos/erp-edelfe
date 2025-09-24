@@ -9,6 +9,7 @@ import { BanknoteIcon, ListFilter, Plus } from "lucide-react";
 import ToolTip from "../components/Auxiliares/ToolTip";
 import Swal from "sweetalert2";
 import { formatarData, formatarReais } from "../components/Auxiliares/formatter";
+import Spinner from "../components/Loading";
 
 type ParcelaComConta = ParcelaContaPagar & { contaPagar: ContaPagar };
 
@@ -47,7 +48,10 @@ export default function DespesaPage() {
   const [totalAberto, setTotalAberto] = useState(0);
   const [totalAbertoValor, setTotalAbertoValor] = useState(0);
 
+  const [loading, setLoading] = useState(false);
+
   const carregarContas = async () => {
+    setLoading(true);
     const contas = await buscarContasPagar();
 
     const todasParcelas = contas.flatMap((c) =>
@@ -64,6 +68,8 @@ export default function DespesaPage() {
     setTodosPlanos([
       ...new Set(todasParcelas.map((p) => p.contaPagar.planoConta.nome)),
     ]);
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -71,6 +77,7 @@ export default function DespesaPage() {
   }, []);
 
   const handleConfirmarPagamento = async (idParcela: number) => {
+    setLoading(true);
     await confirmarPagamentoParcela(idParcela);
 
     const contas = await buscarContasPagar();
@@ -81,6 +88,8 @@ export default function DespesaPage() {
       }))
     );
     setParcelas(todasParcelas);
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -110,6 +119,7 @@ export default function DespesaPage() {
 
 
   const handleAplicarFiltrar = async () => {
+    setLoading(true);
     const Filtradas = parcelas.filter((p) => {
       const dentroDoStatus = !filtroStatus || p.status === filtroStatus;
       const dentroFornecedor = !filtroFornecedor || p.contaPagar.fornecedor.nome === filtroFornecedor;
@@ -133,6 +143,7 @@ export default function DespesaPage() {
 
     setParcelasFiltradas(Filtradas);
     await calcularTotais(Filtradas);
+    setLoading(false);
   }
 
   const handleLimparFiltros = () => {
@@ -148,7 +159,7 @@ export default function DespesaPage() {
   const confirmarPagamento = async (parcela: ParcelaComConta) => {
     const html = `
       <div class="text-left">
-        <p><b>Número:</b> ${parcela.numero}</p>
+        <p><b>Parcela:</b> ${parcela.numero}</p>
         <p><b>Vencimento:</b> ${formatarData(parcela.vencimento)}</p>
         <p><b>Valor:</b> ${formatarReais(parcela.valor)}</p>
       </div>
@@ -172,7 +183,6 @@ export default function DespesaPage() {
     }
   };
 
-
   const cardClasses = "flex items-center gap-3 bg-white shadow-sm rounded-md p-4 col-span-1";
 
   return (
@@ -184,10 +194,15 @@ export default function DespesaPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setModalAberto(true)}
-            className="flex items-center gap-2 bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-500"
+            className="flex items-center gap-2 bg-orange-400 text-white px-4 py-2 rounded hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={loading}
           >
-            <Plus size={18} />
-            Despesa
+            {loading ? <Spinner size={16} className="text-white" /> : (
+              <>
+                <Plus size={18} />
+                Despesa
+              </>
+            )}
           </button>
           <button
             onClick={() => setFiltrosVisiveis(!filtrosVisiveis)}
@@ -319,35 +334,69 @@ export default function DespesaPage() {
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Total de Títulos</p>
-            <p className="text-lg font-bold text-gray-800 text-right">{totalTitulos}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-gray-800 text-right">{totalTitulos}</p>
+            )}
           </div>
         </div>
 
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Pagos</p>
-            <p className="text-lg font-bold text-gray-800 text-right">{totalPago}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-gray-800 text-right">{totalPago}</p>
+            )}
           </div>
         </div>
 
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Aberto</p>
-            <p className="text-lg font-bold text-gray-800 text-right">{totalAberto}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-gray-800 text-right">{totalAberto}</p>
+            )}
           </div>
         </div>
 
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Total Pago</p>
-            <p className="text-lg font-bold text-green-600 text-right">R$ {totalPagoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} className="text-green-600" />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-green-600 text-right">
+                R$ {totalPagoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
         </div>
 
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Total em Aberto</p>
-            <p className="text-lg font-bold text-red-600 text-right">R$ {totalAbertoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} className="text-red-600" />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-red-600 text-right">
+                R$ {totalAbertoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -440,6 +489,7 @@ export default function DespesaPage() {
             )
           },
         ]}
+        isLoading={loading}
       />
 
       {/* Modal Cadastro de Despesa */}

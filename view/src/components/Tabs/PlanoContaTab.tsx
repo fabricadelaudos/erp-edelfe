@@ -5,6 +5,7 @@ import ModalBase from "../Modais/ModalBase";
 import FormPlanoConta from "../Formularios/FormPlanoConta";
 import type { PlanoContaCategoria } from "../../types/EstruturaDespesa";
 import { buscarPlanoContas, salvarPlanoConta } from "../../services/apiDespesa";
+import Spinner from "../Loading";
 
 // Tipo estendido com estado interno (não vem da API)
 type CategoriaComEstado = PlanoContaCategoria & { expanded?: boolean };
@@ -13,11 +14,22 @@ export default function PlanoContasTab() {
   const [planos, setPlanos] = useState<CategoriaComEstado[]>([]);
   const [planoEdicao, setPlanoEdicao] = useState<PlanoContaCategoria | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    buscarPlanoContas().then((res) =>
-      setPlanos(res.map((p) => ({ ...p, expanded: false })))
-    );
+    const carregarPlanos = async () => {
+      try {
+        setLoading(true);
+        const res = await buscarPlanoContas();
+        setPlanos(res.map((p) => ({ ...p, expanded: false })));
+      } catch (err) {
+        console.error("Erro ao carregar plano de contas:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarPlanos();
   }, []);
 
   const abrirModal = (plano?: PlanoContaCategoria) => {
@@ -33,32 +45,39 @@ export default function PlanoContasTab() {
   };
 
   const salvar = async (dados: PlanoContaCategoria) => {
-    const salvo = await salvarPlanoConta({
-      idPlanoContaCategoria: dados.idPlanoContaCategoria,
-      nome: dados.nome,
-      ativo: dados.ativo,
-      subcategorias: dados.subcategorias.map((s) => ({
-        idPlanoContaSubCategoria: s.idPlanoContaSubCategoria,
-        nome: s.nome,
-        ativo: s.ativo,
-      })),
-    });
+    try {
+      setLoading(true);
+      const salvo = await salvarPlanoConta({
+        idPlanoContaCategoria: dados.idPlanoContaCategoria,
+        nome: dados.nome,
+        ativo: dados.ativo,
+        subcategorias: dados.subcategorias.map((s) => ({
+          idPlanoContaSubCategoria: s.idPlanoContaSubCategoria,
+          nome: s.nome,
+          ativo: s.ativo,
+        })),
+      });
 
-    setPlanos((prev) => {
-      const existe = prev.find(
-        (p) => p.idPlanoContaCategoria === salvo.idPlanoContaCategoria
-      );
-      if (existe) {
-        return prev.map((p) =>
-          p.idPlanoContaCategoria === salvo.idPlanoContaCategoria
-            ? { ...salvo, expanded: p.expanded ?? false }
-            : p
+      setPlanos((prev) => {
+        const existe = prev.find(
+          (p) => p.idPlanoContaCategoria === salvo.idPlanoContaCategoria
         );
-      }
-      return [...prev, { ...salvo, expanded: true }];
-    });
+        if (existe) {
+          return prev.map((p) =>
+            p.idPlanoContaCategoria === salvo.idPlanoContaCategoria
+              ? { ...salvo, expanded: p.expanded ?? false }
+              : p
+          );
+        }
+        return [...prev, { ...salvo, expanded: true }];
+      });
 
-    setModalAberto(false);
+      setModalAberto(false);
+    } catch (error) {
+      console.error("Erro ao salvar plano de contas:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleExpand = (id: number) => {
@@ -75,7 +94,7 @@ export default function PlanoContasTab() {
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">Planos de Contas</h2>
         <button
-          onClick={() => setModalAberto(true)}
+          onClick={() => abrirModal()}
           className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
         >
           <Plus size={16} /> Adicionar
@@ -90,16 +109,21 @@ export default function PlanoContasTab() {
       )}
 
       {/* Lista de categorias */}
-      {planos.map((categoria) => (
+      {loading ? (
+        <div className="flex justify-center py-6">
+          <Spinner size={24} />
+          <span className="ml-2">Carregando...</span>
+        </div>
+      ) : (planos.map((categoria) => (
         <div
           key={categoria.idPlanoContaCategoria}
-          className="border border-gray-300 rounded mb-2 bg-white shadow-sm"
+          className="border border-gray-300 rounded mb-2 text-sm bg-white shadow-sm"
         >
           {/* Cabeçalho da categoria */}
           <div
             onClick={() => toggleExpand(categoria.idPlanoContaCategoria)}
             role="button"
-            className={`w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer rounded ${categoria.expanded ? "bg-gray-50 border-b border-gray-300" : ""}`}
+            className={`w-full flex items-center justify-between px-4 py-3 cursor-pointer rounded`}
           >
             <div className="flex items-center gap-2">
               <span className="text-lg">
@@ -137,9 +161,9 @@ export default function PlanoContasTab() {
           {/* Subcategorias */}
           {categoria.expanded && categoria.subcategorias.length > 0 && (
             <>
-              <div className="px-4 pb-4 pt-2 bg-gray-50 text-gray-700 rounded">
+              <div className="px-4 pb-4 pt-2 text-gray-700 rounded">
                 <p className="font-medium text-sm">Lista de Subcategorias:</p>
-                <ul className="px-6 pt-1 text-sm text-gray-700 space-y-1">
+                <ul className="px-6 pt-1 text-xs text-gray-700 space-y-1">
                   {categoria.subcategorias.map((sub) => (
                     <li
                       key={sub.idPlanoContaSubCategoria}
@@ -153,7 +177,7 @@ export default function PlanoContasTab() {
             </>
           )}
         </div>
-      ))}
+      )))}
 
       {/* Modal de cadastro/edição */}
       <ModalBase
@@ -184,6 +208,7 @@ export default function PlanoContasTab() {
                 subcategorias: [],
               });
             }}
+            loading={loading}
           />
         )}
       </ModalBase>

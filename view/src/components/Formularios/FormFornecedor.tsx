@@ -3,14 +3,16 @@ import { useState } from "react";
 import { Input, SelectInput, TextArea, ToggleInput } from "../Inputs";
 import type { Fornecedor } from "../../types/EstruturaDespesa";
 import { formatarDocumento, limparFormatacao } from "../Auxiliares/formatter";
+import Spinner from "../Loading";
 
 interface Props {
   dados: Fornecedor;
   onSalvar: (fornecedor: Fornecedor) => void;
   onCancelar: () => void;
+  loading?: boolean;
 }
 
-export default function FormFornecedor({ dados, onSalvar, onCancelar }: Props) {
+export default function FormFornecedor({ dados, onSalvar, onCancelar, loading = false }: Props) {
   const [form, setForm] = useState<Fornecedor>({ ...dados });
 
   const handleChange = (campo: keyof Fornecedor, valor: any) => {
@@ -97,15 +99,22 @@ export default function FormFornecedor({ dados, onSalvar, onCancelar }: Props) {
         <button
           type="button"
           onClick={onCancelar}
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          disabled={loading}
+          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          disabled={loading}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Salvar
+          {loading ? (
+            <div className="flex items-center">
+              <Spinner size={20} className="text-white" />
+              <span className="ml-2">Salvando...</span>
+            </div>
+          ) : "Salvar"}
         </button>
       </div>
     </form>

@@ -2,14 +2,17 @@ import { useState } from "react";
 import { Trash2, Plus } from "lucide-react";
 import { Input, ToggleInput } from "../Inputs";
 import type { PlanoContaCategoria, PlanoContaSubCategoria } from "../../types/EstruturaDespesa";
+import ToolTip from "../Auxiliares/ToolTip";
+import Spinner from "../Loading";
 
 interface Props {
   dados: PlanoContaCategoria;
   onSalvar: (plano: PlanoContaCategoria) => void;
   onCancelar: () => void;
+  loading?: boolean;
 }
 
-export default function FormPlanoConta({ dados, onSalvar, onCancelar }: Props) {
+export default function FormPlanoConta({ dados, onSalvar, onCancelar, loading = false }: Props) {
   const [form, setForm] = useState<PlanoContaCategoria>({ ...dados });
 
   const handleChange = (campo: keyof PlanoContaCategoria, valor: any) => {
@@ -20,13 +23,13 @@ export default function FormPlanoConta({ dados, onSalvar, onCancelar }: Props) {
     setForm({
       ...form,
       subcategorias: [
-        ...form.subcategorias,
         {
           idPlanoContaSubCategoria: 0,
           nome: "",
           ativo: true,
           categoria: form,
         },
+        ...form.subcategorias,
       ],
     });
   };
@@ -95,28 +98,30 @@ export default function FormPlanoConta({ dados, onSalvar, onCancelar }: Props) {
           <p className="text-sm text-gray-500 italic">Nenhuma subcategoria adicionada.</p>
         )}
 
-        <div className="space-y-2">
+        <div className="max-h-72 overflow-y-auto curtom-scrollbar">
           {form.subcategorias.map((sub, i) => (
             <div
               key={i}
-              className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded p-2"
+              className="flex items-center gap-2 rounded p-2"
             >
               <span className="text-sm text-gray-500">{i + 1}.</span>
               <Input
-                label="Nome da Subcategoria"
                 name={`sub-${i}`}
                 value={sub.nome}
                 placeholder="Nome da Subcategoria"
                 onChange={(e) => atualizarSubcategoria(i, "nome", e.target.value)}
+                required={false}
               />
               {!sub.idPlanoContaSubCategoria && (
-                <button
-                  type="button"
-                  onClick={() => removerSubcategoria(i)}
-                  className="p-1 text-red-600 hover:text-red-800"
-                >
-                  <Trash2 size={18} />
-                </button>
+                <ToolTip text="Apagar Subcategoria" position="left" key={sub.idPlanoContaSubCategoria}>
+                  <button
+                    type="button"
+                    onClick={() => removerSubcategoria(i)}
+                    className="p-1 text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </ToolTip>
               )}
             </div>
           ))}
@@ -128,15 +133,22 @@ export default function FormPlanoConta({ dados, onSalvar, onCancelar }: Props) {
         <button
           type="button"
           onClick={onCancelar}
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          disabled={loading}
+          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+          disabled={loading}
+          className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Salvar
+          {loading ? (
+            <div className="flex items-center">
+              <Spinner size={20} className="text-white" />
+              <span className="ml-2">Salvando...</span>
+            </div>
+          ) : "Salvar"}
         </button>
       </div>
     </form>

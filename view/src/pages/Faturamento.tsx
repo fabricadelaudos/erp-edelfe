@@ -17,6 +17,7 @@ import { CheckCircle2, ClockAlert, FilePlus2, ListFilter } from "lucide-react";
 import Copiavel from "../components/Auxiliares/Copiavel";
 import toast from "react-hot-toast";
 import ToolTip from "../components/Auxiliares/ToolTip";
+import Spinner from "../components/Loading";
 
 export default function FaturamentoPage() {
   const hoje = new Date();
@@ -52,6 +53,7 @@ export default function FaturamentoPage() {
   const [totalValorBase, setTotalValorBase] = useState(0);
   const [totalImposto, setTotalImposto] = useState(0);
   const [totalValor, setTotalValor] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const calcularTotais = (lista: FaturamentoOuProjecao[]) => {
     setTotalTitulos(lista.length);
@@ -223,6 +225,7 @@ export default function FaturamentoPage() {
 
   const buscarFaturamento = async () => {
     try {
+      setLoading(true);
       const lista = await buscarFaturamentoOuProjecao();
       setFaturamentos(lista);
       carregarOpcoes(lista);
@@ -230,6 +233,8 @@ export default function FaturamentoPage() {
       handleSelecionar([]);
     } catch (error) {
       console.error("Erro ao buscar faturamentos/projeções:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -244,6 +249,7 @@ export default function FaturamentoPage() {
 
   const salvarEdicao = async (f: FaturamentoOuProjecao) => {
     try {
+      setLoading(true);
       if (f.tipo === "FATURAMENTO") {
         await editarFaturamento(f);
       }
@@ -264,6 +270,8 @@ export default function FaturamentoPage() {
         "Erro ao salvar faturamento/projeção.";
 
       toast.error(mensagem);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -290,15 +298,15 @@ export default function FaturamentoPage() {
 
   const handleSelecionar = (itens: FaturamentoOuProjecao[]) => {
     setSelecionados(itens);
-    console.log("Itens selecionados:", itens);
   };
 
   const handleFaturarProjecoes = async () => {
     try {
+      setLoading(true);
       const projecoes = selecionados.filter((i) => i.tipo === "PROJECAO");
 
       if (projecoes.length === 0) {
-        alert("Nenhuma projeção selecionada.");
+        toast.error("Nenhuma projeção selecionada.");
         return;
       }
 
@@ -309,15 +317,18 @@ export default function FaturamentoPage() {
       await buscarFaturamento();
     } catch (err) {
       console.error("Erro ao faturar projeções:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAlterarStatus = async (novoStatus: string) => {
     try {
+      setLoading(true);
       const faturamentos = selecionados.filter((i) => i.tipo === "FATURAMENTO");
 
       if (faturamentos.length === 0) {
-        alert("Nenhum faturamento selecionado.");
+        toast.error("Nenhum faturamento selecionado.");
         return;
       }
 
@@ -328,6 +339,8 @@ export default function FaturamentoPage() {
       await buscarFaturamento();
     } catch (err) {
       console.error("Erro ao alterar status:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -476,30 +489,64 @@ export default function FaturamentoPage() {
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Total de Faturas</p>
-            <p className="text-lg font-bold text-gray-800 text-right">{totalTitulos}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-gray-800 text-right">
+                {totalTitulos}
+              </p>
+            )}
           </div>
         </div>
+
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Total Valor Base</p>
-            <p className="text-lg font-bold text-blue-600 text-right">R$ {totalValorBase.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} className="text-blue-600" />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-blue-600 text-right">
+                R$ {totalValorBase.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
         </div>
 
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Total Imposto</p>
-            <p className="text-lg font-bold text-red-600 text-right">R$ {totalImposto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} className="text-red-600" />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-red-600 text-right">
+                R$ {totalImposto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
         </div>
 
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Valor Total</p>
-            <p className="text-lg font-bold text-green-600 text-right">R$ {totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} className="text-green-600" />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-green-600 text-right">
+                R$ {totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
         </div>
       </div>
+
 
       <div className="mt-4 bg-white rounded border border-gray-200">
         <div className="p-3 rounded flex justify-between items-center">
@@ -508,30 +555,30 @@ export default function FaturamentoPage() {
             <ToolTip text="Faturar Projeções">
               <button
                 onClick={handleFaturarProjecoes}
-                disabled={selecionados.length === 0}
+                disabled={selecionados.length === 0 || loading}
                 className={`flex items-center justify-center w-8 h-8 bg-green-500 text-white rounded hover:bg-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-green-500`}
               >
-                <FilePlus2 size={16} />
+                {loading ? <Spinner size={16} className="text-white" /> : <FilePlus2 size={16} />}
               </button>
             </ToolTip>
 
             <ToolTip text="Marcar como Pago">
               <button
                 onClick={() => handleAlterarStatus("PAGA")}
-                disabled={selecionados.length === 0}
+                disabled={selecionados.length === 0 || loading}
                 className={`flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-blue-500`}
               >
-                <CheckCircle2 size={16} />
+                {loading ? <Spinner size={16} className="text-white" /> : <CheckCircle2 size={16} />}
               </button>
             </ToolTip>
 
             <ToolTip text="Marcar como Atrasado" position="left">
               <button
                 onClick={() => handleAlterarStatus("ATRASADA")}
-                disabled={selecionados.length === 0}
+                disabled={selecionados.length === 0 || loading}
                 className={`flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded hover:bg-red-600 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-red-500`}
               >
-                <ClockAlert size={16} />
+                {loading ? <Spinner size={16} className="text-white" /> : <ClockAlert size={16} />}
               </button>
             </ToolTip>
           </div>
@@ -545,6 +592,7 @@ export default function FaturamentoPage() {
           onEdit={abrirModal}
           onSelect={handleSelecionar}
           selectedRowsExternal={selecionados.map(i => i.id)}
+          isLoading={loading}
         />
       </div>
 

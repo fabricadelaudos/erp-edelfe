@@ -6,9 +6,10 @@ import TabelaProjecao from "../Tabelas/TabelaProjeção";
 interface DashboardTabsProps {
   projecoes: Projecao[];
   contratosProximos: ContratoProximo[];
+  loading: boolean
 }
 
-export default function DashboardTabs({ projecoes, contratosProximos }: DashboardTabsProps) {
+export default function DashboardTabs({ projecoes, contratosProximos, loading = false }: DashboardTabsProps) {
   const [abaAtiva, setAbaAtiva] = useState<"projecoes" | "contratos">("projecoes");
 
   return (
@@ -37,7 +38,7 @@ export default function DashboardTabs({ projecoes, contratosProximos }: Dashboar
 
       {/* Conteúdo */}
       {abaAtiva === "projecoes" && (
-        <TabelaProjecao dados={projecoes as any} />
+        <TabelaProjecao dados={projecoes as any} loading={loading} />
       )}
 
       {abaAtiva === "contratos" && (
@@ -78,6 +79,7 @@ export default function DashboardTabs({ projecoes, contratosProximos }: Dashboar
             },
           ]}
           itemsPerPage={5}
+          isLoading={loading}
         />
       )}
 

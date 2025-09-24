@@ -13,9 +13,22 @@ export default function CompetenciaFinanceiraTab() {
   const [form, setForm] = useState({ competencia: "", imposto: "", ipca: "", iss: "" });
   const [erro, setErro] = useState("");
   const [editando, setEditando] = useState<CompetenciaFinanceira | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    buscarCompetencias().then(setCompetencias);
+    const carregarCompetencias = async () => {
+      try {
+        setLoading(true);
+        const data = await buscarCompetencias();
+        setCompetencias(data);
+      } catch (err) {
+        console.error("Erro ao carregar competências", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarCompetencias();
   }, []);
 
   const abrirNovo = () => {
@@ -38,6 +51,7 @@ export default function CompetenciaFinanceiraTab() {
   const salvar = async () => {
     setErro("");
     try {
+      setLoading(true);
       if (editando) {
         // editar
         const atualizado = await editarCompetencia(editando.idCompetenciaFinanceira, form);
@@ -47,7 +61,6 @@ export default function CompetenciaFinanceiraTab() {
           )
         );
       } else {
-        // criar
         const nova = await criarCompetencia(form);
         setCompetencias([...competencias, nova]);
       }
@@ -56,6 +69,8 @@ export default function CompetenciaFinanceiraTab() {
       setEditando(null);
     } catch (error: any) {
       setErro(error?.message ?? "Erro ao salvar competência.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,6 +95,7 @@ export default function CompetenciaFinanceiraTab() {
         ]}
         data={competencias}
         onEdit={abrirEdicao}
+        isLoading={loading}
       />
 
       <ModalBase
@@ -95,7 +111,7 @@ export default function CompetenciaFinanceiraTab() {
             {erro}
           </div>
         )}
-        <FormCompetencia form={form} setForm={setForm} onSalvar={salvar} />
+        <FormCompetencia form={form} setForm={setForm} onSalvar={salvar} loading={loading} />
       </ModalBase>
     </div>
   );

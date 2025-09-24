@@ -1,4 +1,5 @@
 import { Input } from "../Inputs";
+import Spinner from "../Loading";
 
 interface Props {
   form: {
@@ -14,17 +15,26 @@ interface Props {
     iss: string;
   }>>;
   onSalvar: () => void;
+  loading?: boolean;
 }
 
-export default function FormCompetencia({ form, setForm, onSalvar }: Props) {
+export default function FormCompetencia({ form, setForm, onSalvar, loading = false }: Props) {
   return (
     <div className="space-y-4">
       <Input
         label="Competência (MM/AAAA)"
+        type="month"
         name="competencia"
-        value={form.competencia}
-        onChange={(e) => setForm({ ...form, competencia: e.target.value })}
-        placeholder="09/2025"
+        value={
+          form.competencia
+            ? `${form.competencia.split("/")[1]}-${form.competencia.split("/")[0]}`
+            : ""
+        }
+        onChange={(e) => {
+          const [ano, mes] = e.target.value.split("-");
+          setForm({ ...form, competencia: `${mes}/${ano}` });
+        }}
+        required
       />
 
       <Input
@@ -57,9 +67,15 @@ export default function FormCompetencia({ form, setForm, onSalvar }: Props) {
       <div className="text-right">
         <button
           onClick={onSalvar}
-          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+          disabled={loading}
+          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Salvar
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Spinner size={16} className="text-white" />
+              <span>Salvando...</span>
+            </div>
+          ) : "Salvar"}
         </button>
       </div>
     </div>

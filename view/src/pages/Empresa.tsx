@@ -8,6 +8,7 @@ import SearchInput from "../components/Auxiliares/SearchInput";
 import { Plus, ChevronDown, ChevronRight, Pencil } from "lucide-react";
 import ToolTip from "../components/Auxiliares/ToolTip";
 import { formatarDocumento } from "../components/Auxiliares/formatter";
+import Spinner from "../components/Loading";
 
 export default function EmpresaPage() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -15,13 +16,20 @@ export default function EmpresaPage() {
   const [busca, setBusca] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
   const [empresasAbertas, setEmpresasAbertas] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const carregarEmpresas = async () => {
-      const data = await getEmpresas();
-      console.log(data);
+      try {
+        setLoading(true);
+        const data = await getEmpresas();
 
-      setEmpresas(data);
+        setEmpresas(data);
+      } catch (error) {
+        console.error("Erro ao carregar empresas:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     carregarEmpresas();
@@ -65,7 +73,6 @@ export default function EmpresaPage() {
     setEmpresasAbertas(idsAbertos);
   }, [busca, empresasFiltradas]);
 
-
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
@@ -83,7 +90,12 @@ export default function EmpresaPage() {
       <div className="mt-4 space-y-2 bg-white p-4 rounded-md border border-gray-200">
         <SearchInput onBusca={setBusca} placeholder="Buscar empresa..." />
 
-        {empresasFiltradas.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-3">
+            <Spinner size={20} className="text-orange-500" />
+            <p className="text-orange-300 ml-2">Carregando empresas...</p>
+          </div>
+        ) : empresasFiltradas.length === 0 ? (
           <>
             <div>
               <p className="text-gray-400 text-center font-medium">Nenhuma empresa encontrada!</p>

@@ -33,19 +33,27 @@ export const listarFornecedores = {
 export const criarFornecedor = {
   async execute(data: any) {
     const { idUsuario, idFornecedor, ...dados } = data;
-    const novo = await prisma.fornecedor.create({ data: dados });
 
-    await registrarEvento({
-      idUsuario,
-      tipo: 'criar',
-      entidade: 'fornecedor',
-      entidadeId: novo.idFornecedor,
-      descricao: `Fornecedor '${novo.nome}' criado com sucesso!`,
-      dadosDepois: novo
-    });
+    try {
+      const novo = await prisma.fornecedor.create({ data: dados });
 
-    return novo;
-  }
+      await registrarEvento({
+        idUsuario,
+        tipo: "criar",
+        entidade: "fornecedor",
+        entidadeId: novo.idFornecedor,
+        descricao: `Fornecedor '${novo.nome}' criado com sucesso!`,
+        dadosDepois: novo,
+      });
+
+      return novo;
+    } catch (err: any) {
+      if (err.code === "P2002" && err.meta?.target?.includes("documento")) {
+        throw new Error("Já existe um fornecedor cadastrado com este CNPJ/CPF.");
+      }
+      throw err;
+    }
+  },
 };
 
 export const editarFornecedor = {

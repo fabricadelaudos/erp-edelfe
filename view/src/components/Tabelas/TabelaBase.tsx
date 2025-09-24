@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2 } from "lucide-react";
-import Loading from "../Loading";
 import ToolTip from "../Auxiliares/ToolTip";
+import Spinner from "../Loading";
 
 export interface Column<T> {
   header: string;
@@ -166,13 +166,22 @@ export default function TabelaBase<T extends object>({
             <tbody className="divide-y divide-gray-100 border-b border-t border-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={columns.length + 2} className="py-6 text-gray-400 text-center">
-                    <Loading />
+                  <td
+                    colSpan={columns.length + (onEdit || onDelete || acoesExtras ? 2 : 0)}
+                    className="py-6 text-gray-400 text-center"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <Spinner size={20} />
+                      <span className="text-sm text-gray-500">Carregando...</span>
+                    </div>
                   </td>
                 </tr>
               ) : currentData.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 2} className="py-6 text-gray-400 text-center">
+                  <td
+                    colSpan={columns.length + (onEdit || onDelete || acoesExtras ? 2 : 0)}
+                    className="py-6 text-gray-400 text-center"
+                  >
                     Nenhum item encontrado.
                   </td>
                 </tr>
@@ -243,9 +252,9 @@ export default function TabelaBase<T extends object>({
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum =
                   totalPages <= 5 ? i + 1 :
-                  currentPage <= 3 ? i + 1 :
-                  currentPage >= totalPages - 2 ? totalPages - 4 + i :
-                  currentPage - 2 + i;
+                    currentPage <= 3 ? i + 1 :
+                      currentPage >= totalPages - 2 ? totalPages - 4 + i :
+                        currentPage - 2 + i;
 
                 return (
                   <button

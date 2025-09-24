@@ -41,7 +41,12 @@ export const criarFornecedorController = async (req: Request, res: Response) => 
     return res.status(201).json(fornecedor);
   } catch (err: any) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+
+    if (err.message?.includes("Já existe um fornecedor cadastrado")) {
+      return res.status(409).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno no servidor." });
   }
 };
 

@@ -141,7 +141,7 @@ model fornecedor {
   idFornecedor  Int           @id @default(autoincrement())
   tipoPessoa    TipoPessoa
   tipoDocumento TipoDocumento 
-  documento     String        @unique
+  documento     String?       @unique
   nome          String
   observacao    String?
   ativo         Boolean       @default(true)

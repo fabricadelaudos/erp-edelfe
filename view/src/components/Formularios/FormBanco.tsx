@@ -1,14 +1,16 @@
 import type { Banco } from "../../types/EstruturaDespesa";
 import { Input } from "../Inputs";
 import CheckboxStatus from "../Inputs";
+import Spinner from "../Loading";
 
 interface Props {
   form: Banco;
   setForm: React.Dispatch<React.SetStateAction<Banco>>;
   onSalvar: () => void;
+  loading?: boolean;
 }
 
-export default function FormBanco({ form, setForm, onSalvar }: Props) {
+export default function FormBanco({ form, setForm, onSalvar, loading = false }: Props) {
   return (
     <div className="flex items-center gap-4">
       <Input
@@ -31,9 +33,17 @@ export default function FormBanco({ form, setForm, onSalvar }: Props) {
 
       <button
         onClick={onSalvar}
-        className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+        disabled={loading}
+        className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Salvar
+        {loading ? (
+          <>
+            <div className="flex items-center gap-2">
+              <Spinner size={20} className="text-white" />
+              <span>Salvando...</span>
+            </div>
+          </>
+        ) : "Salvar"}
       </button>
     </div>
   );

@@ -13,13 +13,17 @@ export default function UsuarioTab() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [usuarioEdicao, setUsuarioEdicao] = useState<Usuario | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const carregarUsuarios = async () => {
     try {
+      setLoading(true);
       const data = await getUsuario();
       setUsuarios(Array.isArray(data) ? data : [data]);
     } catch (err) {
       console.error("Erro ao carregar usuários", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -34,6 +38,7 @@ export default function UsuarioTab() {
 
   const salvarUsuario = async (dados: Partial<Usuario>) => {
     try {
+      setLoading(true);
       if (usuarioEdicao) {
         await editarUsuario({ ...usuarioEdicao, ...dados });
       } else {
@@ -45,32 +50,36 @@ export default function UsuarioTab() {
       console.error("Erro ao salvar usuário", err);
       const msg = err?.response?.data?.error || "Erro ao salvar usuário.";
       toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
-
 
   const deletarUsuario = async (usuario: Usuario) => {
     if (!confirm(`Deseja realmente excluir o usuário ${usuario.nome}?`)) return;
     try {
+      setLoading(true);
       await excluirUsuario();
       carregarUsuarios();
     } catch (err) {
       console.error("Erro ao excluir usuário", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRecuperarSenha = async (email: string) => {
     if (!email) return;
-
     try {
+      setLoading(true);
       const link = await recuperarSenha(email);
-
       await navigator.clipboard.writeText(link);
-
       toast.success("Link de recuperação de senha gerado e copiado!");
     } catch (err: any) {
       console.error("Erro ao gerar link de senha:", err);
       toast.error(err.message || "Erro ao gerar link de senha.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,40 +95,45 @@ export default function UsuarioTab() {
         </button>
       </div>
 
-      <TabelaBase<Usuario>
-        data={usuarios}
-        columns={[
-          { header: "Nome", accessor: "nome" },
-          { header: "Email", accessor: "email" },
-          {
-            header: "Ativo",
-            accessor: "ativo",
-            render: (v) => (v ? "Sim" : "Não"),
-          },
-        ]}
-        onEdit={(row) => abrirModal(row)}
-        onDelete={(row) => deletarUsuario(row)}
-        acoesExtras={(row) => (
-          <ToolTip text="Recuperar Senha">
-            <button
-              onClick={() => handleRecuperarSenha(row.email)}
-              className="text-teal-600 hover:text-teal-800 cursor-pointer text-xs underline"
-            >
-              <RotateCcwKey size={16} />
-            </button>
-          </ToolTip>
-        )}
-      />
+        <TabelaBase<Usuario>
+          data={usuarios}
+          columns={[
+            { header: "Nome", accessor: "nome" },
+            { header: "Email", accessor: "email" },
+            {
+              header: "Ativo",
+              accessor: "ativo",
+              render: (v) => (v ? "Sim" : "Não"),
+            },
+          ]}
+          onEdit={(row) => abrirModal(row)}
+          onDelete={(row) => deletarUsuario(row)}
+          acoesExtras={(row) => (
+            <ToolTip text="Recuperar Senha">
+              <button
+                onClick={() => handleRecuperarSenha(row.email)}
+                className="text-teal-600 hover:text-teal-800 cursor-pointer text-xs underline"
+              >
+                <RotateCcwKey size={16} />
+              </button>
+            </ToolTip>
+          )}
+          isLoading={loading}
+        />
 
       <ModalBase
         isOpen={modalAberto}
-        onClose={() => { setModalAberto(false); setUsuarioEdicao(null); }}
+        onClose={() => {
+          setModalAberto(false);
+          setUsuarioEdicao(null);
+        }}
         titulo={usuarioEdicao ? "Editar Usuário" : "Novo Usuário"}
       >
         <FormUsuario
           usuario={usuarioEdicao}
           onSalvar={salvarUsuario}
           onCancelar={() => setModalAberto(false)}
+          loading={loading}
         />
       </ModalBase>
     </div>
