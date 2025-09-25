@@ -1,21 +1,22 @@
 import { useEffect, useState } from "react";
-import { buscarBancos, buscarFornecedores, buscarPlanoContas, criarContaPagar } from "../../services/apiDespesa";
+import { buscarBancos, buscarFornecedores, buscarPlanoContas, criarContaPagar, editarContaPagar, editarParcelaContaPagar } from "../../services/apiDespesa";
 
 import { GroupedSelect, Input, TextArea } from "../Inputs";
 import { ToggleInput } from "../Inputs";
 import { SearchableSelect } from "../Inputs";
 
-import type { Fornecedor, Banco, PlanoContaCategoria, ContaPagar } from "../../types/EstruturaDespesa";
+import type { Fornecedor, Banco, PlanoContaCategoria, ContaPagar, ParcelaContaPagar, ParcelaComConta } from "../../types/EstruturaDespesa";
 import { formatarDocumento } from "../Auxiliares/formatter";
 import toast from "react-hot-toast";
 
-export default function FormDespesa({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState<Partial<ContaPagar>>({
-    dataEmissao: new Date().toISOString().split("T")[0],
-    parcelas: 1,
-    intervalo: 30,
-    recorrente: false,
-  });
+interface FormDespesaProps {
+  contaPagar?: ContaPagar | null;
+  parcela?: ParcelaComConta | null;
+  onClose: () => void;
+}
+
+export default function FormDespesa({ contaPagar, parcela, onClose }: FormDespesaProps) {
+  const [form, setForm] = useState<Partial<ContaPagar & ParcelaContaPagar>>({});
 
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [planos, setPlanos] = useState<PlanoContaCategoria[]>([]);
@@ -26,9 +27,9 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
     setLoading(true);
 
     Promise.all([
-      buscarFornecedores().then(setFornecedores),
-      buscarBancos().then(setBancos),
-      buscarPlanoContas().then(setPlanos),
+      buscarFornecedores().then((res) => setFornecedores(res.filter(f => f.ativo))),
+      buscarBancos().then((res) => setBancos(res.filter(b => b.ativo))),
+      buscarPlanoContas().then((res) => setPlanos(res.filter(p => p.ativo))),
     ])
       .catch(() => {
         toast.error("Erro ao carregar dados iniciais");
@@ -38,40 +39,71 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
       });
   }, []);
 
+  useEffect(() => {
+    if (contaPagar && parcela) {
+      setForm({
+        ...contaPagar,
+        dataEmissao: contaPagar.dataEmissao.split("T")[0],
+        valor: parcela.valor.toString(),
+        vencimento: parcela.vencimento.split("T")[0],
+      });
+    } else {
+      setForm({
+        dataEmissao: new Date().toISOString().split("T")[0],
+        parcelas: 1,
+        intervalo: 30,
+        recorrente: false,
+      });
+    }
+  }, [contaPagar, parcela]);
+
   const handleChange = (campo: string, valor: any) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setLoading(true);
 
-    const payload = {
-      numeroDocumento: form.numeroDocumento,
-      descricao: form.descricao,
-      tipoDocumentoConta: form.tipoDocumentoConta,
-      valorTotal: Number(form.valorTotal),
-      dataEmissao: new Date(form.dataEmissao ?? new Date().toISOString().split("T")[0]),
-      vencimento: new Date(form.vencimento ?? ""),
-      parcelas: Number(form.parcelas),
-      intervalo: Number(form.intervalo),
-      recorrente: Boolean(form.recorrente),
-      fkFornecedorId: form.fornecedor?.idFornecedor,
-      fkPlanoContaSubCategoriaId: form.planoConta?.idPlanoContaSubCategoria,
-      fkBancoId: form.banco?.idBanco,
-    };
+    try {
+      if (contaPagar && parcela) {
+        await editarContaPagar(contaPagar.idContaPagar, {
+          descricao: form.descricao,
+        });
 
-    if (!form.dataEmissao || !form.numeroDocumento || !form.tipoDocumentoConta || !form.fornecedor || !form.planoConta || !form.banco || !form.valorTotal || !form.vencimento) {
-      toast.error("Preencha todos os campos obrigatórios.");
+        await editarParcelaContaPagar(parcela.idParcela, {
+          valor: parseFloat(form.valor as string),
+          vencimento: new Date(form.vencimento as string),
+        });
+
+        toast.success("Despesa atualizada com sucesso!");
+      } else {
+        const payload = {
+          numeroDocumento: form.numeroDocumento,
+          descricao: form.descricao,
+          tipoDocumentoConta: form.tipoDocumentoConta,
+          valorTotal: Number(form.valorTotal),
+          dataEmissao: new Date(form.dataEmissao ?? new Date().toISOString().split("T")[0]),
+          vencimento: new Date(form.vencimento ?? ""),
+          parcelas: Number(form.parcelas),
+          intervalo: Number(form.intervalo),
+          recorrente: Boolean(form.recorrente),
+          fkFornecedorId: form.fornecedor?.idFornecedor,
+          fkPlanoContaSubCategoriaId: form.planoConta?.idPlanoContaSubCategoria,
+          fkBancoId: form.banco?.idBanco,
+        };
+
+        await criarContaPagar(payload);
+        toast.success("Despesa criada com sucesso!");
+      }
+      onClose();
+    } catch (error) {
+      toast.error("Erro ao salvar despesa");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-    await criarContaPagar(payload);
-    setLoading(false);
-
-    onClose();
   };
-
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -84,6 +116,7 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
           type="date"
           value={form.dataEmissao}
           onChange={(e) => handleChange("dataEmissao", e.target.value)}
+          disable={!!parcela}
         />
 
         <Input
@@ -91,6 +124,7 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
           label="Número do Documento"
           value={form.numeroDocumento}
           onChange={(e) => handleChange("numeroDocumento", e.target.value)}
+          disable={!!parcela}
         />
 
         <SearchableSelect
@@ -105,6 +139,7 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
             value: f.idFornecedor,
           }))}
           loading={loading}
+          disabled={!!parcela}
         />
       </div>
 
@@ -121,6 +156,7 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
             { label: "NOTA FISCAL", value: "NF" },
             { label: "PIX", value: "PIX" },
           ]}
+          disabled={!!parcela}
         />
 
         <GroupedSelect
@@ -142,6 +178,7 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
             })),
           }))}
           loading={loading}
+          disabled={!!parcela}
         />
 
         <SearchableSelect
@@ -156,6 +193,7 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
             value: b.idBanco,
           }))}
           loading={loading}
+          disabled={!!parcela}
         />
       </div>
 
@@ -172,14 +210,45 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
 
       {/* Grupo 4 */}
       <div className="grid grid-cols-5 gap-4">
-        <Input
-          name="valorTotal"
-          label="Valor Total"
-          type="number"
-          value={form.valorTotal}
-          onChange={(e) => handleChange("valorTotal", e.target.value)}
-          step={0.01}
-        />
+        {parcela ? (
+          <>
+            <Input
+              name="valor"
+              label="Valor da Parcela"
+              type="number"
+              value={form.valor ?? ""}
+              onChange={(e) => handleChange("valor", e.target.value)}
+              step={0.01}
+            />
+
+            <Input
+              name="vencimento"
+              label="Vencimento da Parcela"
+              type="date"
+              value={form.vencimento ?? ""}
+              onChange={(e) => handleChange("vencimento", e.target.value)}
+            />
+          </>
+        ) : (
+          <>
+            <Input
+              name="valorTotal"
+              label="Valor Total"
+              type="number"
+              value={form.valorTotal ?? ""}
+              onChange={(e) => handleChange("valorTotal", e.target.value)}
+              step={0.01}
+            />
+
+            <Input
+              name="vencimento"
+              label="Vencimento"
+              type="date"
+              value={form.vencimento ?? ""}
+              onChange={(e) => handleChange("vencimento", e.target.value)}
+            />
+          </>
+        )}
 
         <Input
           name="parcelas"
@@ -187,14 +256,7 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
           type="number"
           value={form.parcelas}
           onChange={(e) => handleChange("parcelas", e.target.value)}
-        />
-
-        <Input
-          name="vencimento"
-          label="Vencimento"
-          type="date"
-          value={form.vencimento}
-          onChange={(e) => handleChange("vencimento", e.target.value)}
+          disable={!!parcela}
         />
 
         <Input
@@ -203,12 +265,14 @@ export default function FormDespesa({ onClose }: { onClose: () => void }) {
           type="number"
           value={form.intervalo}
           onChange={(e) => handleChange("intervalo", e.target.value)}
+          disable={!!parcela}
         />
 
         <ToggleInput
           label="Recorrente"
           value={form.recorrente ?? false}
           onChange={(val) => handleChange("recorrente", val)}
+          disabled={!!parcela}
         />
       </div>
 

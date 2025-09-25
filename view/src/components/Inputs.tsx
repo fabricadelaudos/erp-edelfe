@@ -50,7 +50,7 @@ export const Input = ({
       disabled={disable}
       placeholder={placeholder}
       step={step}
-      className={`border border-gray-300 text-gray-900 text-sm rounded-md focus:border-2 focus:border-blue-500 focus:outline-none block w-full p-2.5 bg-white ${className}`}
+      className={`border border-gray-300 text-gray-900 text-sm rounded-md focus:border-2 focus:border-blue-500 focus:outline-none block w-full p-2.5 bg-white ${className} disabled:opacity-40 disabled:cursor-not-allowed`}
       onBlur={onBlur}
     />
   </div>
@@ -98,7 +98,7 @@ export const SelectInput = ({
       onChange={onChange}
       required={required}
       disabled={disable}
-      className={className}>
+      className={`${className} disabled:opacity-40 disabled:cursor-not-allowed`}>
       <option value="">{placeholder}</option>
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>
@@ -344,7 +344,7 @@ export function SearchableSelect({
           onKeyDown={onKeyDown}
           className={`w-full text-left bg-white border border-gray-300 rounded-md px-3 py-2 pr-10
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            disabled:opacity-60`}
+            disabled:opacity-40 disabled:cursor-not-allowed`}
           aria-haspopup="listbox"
           aria-expanded={open}
         >
@@ -450,7 +450,7 @@ export function ToggleInput({ label, value, onChange, disabled = false }: Toggle
         className={`
           relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200
           ${value ? "bg-orange-500" : "bg-gray-300"}
-          ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+          ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
         `}
       >
         <span
@@ -472,7 +472,7 @@ type GroupedOption = { label: string; options: SubOption[] };
 interface PropsGroupedSelect {
   label?: string;
   name?: string;
-  groups: GroupedOption[]; // 🔥 recebe grupos
+  groups: GroupedOption[];
   value: string | number | "";
   onChange: (v: string | number | "") => void;
   placeholder?: string;
@@ -581,7 +581,7 @@ export function GroupedSelect({
           onClick={() => setOpen((o) => !o)}
           className={`w-full text-left bg-white border border-gray-300 rounded-md px-3 py-2 pr-10
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            disabled:opacity-60`}
+            disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           <span className={selectedLabel ? "text-gray-900" : "text-gray-400"}>
             {selectedLabel || "Selecione"}

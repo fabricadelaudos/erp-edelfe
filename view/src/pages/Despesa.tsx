@@ -3,15 +3,13 @@ import TabelaBase from "../components/Tabelas/TabelaBase";
 import ModalBase from "../components/Modais/ModalBase";
 import FormDespesa from "../components/Formularios/FormDespesa";
 import { buscarContasPagar, confirmarPagamentoParcela } from "../services/apiDespesa";
-import type { ContaPagar, ParcelaContaPagar } from "../types/EstruturaDespesa";
+import type { ParcelaComConta } from "../types/EstruturaDespesa";
 import { Input, SearchableSelect } from "../components/Inputs";
 import { BanknoteIcon, ListFilter, Plus } from "lucide-react";
 import ToolTip from "../components/Auxiliares/ToolTip";
 import Swal from "sweetalert2";
 import { formatarData, formatarReais } from "../components/Auxiliares/formatter";
 import Spinner from "../components/Loading";
-
-type ParcelaComConta = ParcelaContaPagar & { contaPagar: ContaPagar };
 
 export default function DespesaPage() {
 
@@ -38,6 +36,7 @@ export default function DespesaPage() {
     formatarDataInput(ultimoDiaMes)
   );
   const [modalAberto, setModalAberto] = useState(false);
+  const [parcelaEdicao, setParcelaEdicao] = useState<ParcelaComConta | null>(null);
 
   const [todosFornecedores, setTodosFornecedores] = useState<string[]>([]);
   const [todosPlanos, setTodosPlanos] = useState<string[]>([]);
@@ -117,7 +116,6 @@ export default function DespesaPage() {
     setTotalAbertoValor(totalAbertoValor);
   };
 
-
   const handleAplicarFiltrar = async () => {
     setLoading(true);
     const Filtradas = parcelas.filter((p) => {
@@ -181,6 +179,11 @@ export default function DespesaPage() {
       await handleConfirmarPagamento(parcela.idParcela);
       Swal.fire("Confirmado!", "O pagamento foi registrado com sucesso.", "success");
     }
+  };
+
+  const handleEditarParcela = (parcela: ParcelaComConta) => {
+    setParcelaEdicao(parcela);
+    setModalAberto(true);
   };
 
   const cardClasses = "flex items-center gap-3 bg-white shadow-sm rounded-md p-4 col-span-1";
@@ -426,7 +429,7 @@ export default function DespesaPage() {
             sortable: true
           },
           {
-            header: "Pago em",
+            header: "Pagamento",
             accessor: "pagoEm",
             render: (v: string | null) => {
               if (!v) return "—";
@@ -438,20 +441,52 @@ export default function DespesaPage() {
           {
             header: "Documento",
             accessor: "contaPagar",
-            render: (_, row) => row.contaPagar.numeroDocumento,
-            sortable: true
+            render: (_, row) => {
+              const { numeroDocumento, descricao } = row.contaPagar;
+              return (
+                <div className="max-w-[200px] break-words">
+                  <div className="font-medium">{numeroDocumento}</div>
+                  {descricao && (
+                    <div className="text-xs text-gray-500 italic whitespace-normal">
+                      {descricao}
+                    </div>
+                  )}
+                </div>
+              );
+            },
+            sortable: true,
           },
           {
-            header: "Fornecedor",
+            header: "Fornecedor/Cliente",
             accessor: "contaPagar",
-            render: (_, row) => row.contaPagar.fornecedor.nome,
-            sortable: true
+            render: (_, row) => {
+              const { nome, observacao } = row.contaPagar.fornecedor;
+              return (
+                <div className="max-w-[200px] break-words">
+                  <div className="font-medium">{nome}</div>
+                  {observacao && (
+                    <div className="text-xs text-gray-500 italic whitespace-normal">
+                      {observacao}
+                    </div>
+                  )}
+                </div>
+              );
+            },
+            sortable: true,
           },
           {
             header: "Plano de Contas",
             accessor: "contaPagar",
-            render: (_, row) => row.contaPagar.planoConta.nome,
-            sortable: true
+            render: (_, row) => {
+              const idCategoria = row.contaPagar.planoConta.categoria?.idPlanoContaCategoria ?? "";
+              const categoria = row.contaPagar.planoConta.categoria?.nome ?? "";
+              const idSubCategoria = row.contaPagar.planoConta.idPlanoContaSubCategoria ?? "";
+              const subcategoria = row.contaPagar.planoConta.nome;
+              return (
+                <div className="text-xs italic text-gray-700">{`${idCategoria} - ${categoria} - ${idSubCategoria} - ${subcategoria}`}</div>
+              );
+            },
+            sortable: true,
           },
           {
             header: "Status",
@@ -473,37 +508,43 @@ export default function DespesaPage() {
               );
             },
           },
-          {
-            header: "Ações",
-            accessor: "contaPagar",
-            render: (_: any, row: any) => (
-              <ToolTip text="Confirmar Pagamento" position="left">
-                <button
-                  className="text-green-600 hover:text-green-700"
-                  onClick={() => confirmarPagamento(row)}
-                  disabled={row.status === "PAGA"}
-                >
-                  <BanknoteIcon />
-                </button>
-              </ToolTip>
-            )
-          },
         ]}
+        acoesExtras={(row) => (
+          <ToolTip text="Confirmar Pagamento" position="left">
+            <button
+              className="text-green-600 hover:text-green-700"
+              onClick={() => confirmarPagamento(row)}
+              disabled={row.status === "PAGA"}
+            >
+              <BanknoteIcon />
+            </button>
+          </ToolTip>
+        )}
+        onEdit={handleEditarParcela}
         isLoading={loading}
       />
 
       {/* Modal Cadastro de Despesa */}
-      {
-        modalAberto && (
-          <ModalBase
-            isOpen={modalAberto}
-            onClose={() => setModalAberto(false)}
-            titulo="Cadastrar Despesa"
-          >
-            <FormDespesa onClose={() => { setModalAberto(false); carregarContas(); }} />
-          </ModalBase>
-        )
-      }
+      {modalAberto && (
+        <ModalBase
+          isOpen={modalAberto}
+          onClose={() => {
+            setModalAberto(false);
+            setParcelaEdicao(null);
+          }}
+          titulo={parcelaEdicao ? "Editar Despesa" : "Cadastrar Despesa"}
+        >
+          <FormDespesa
+            contaPagar={parcelaEdicao?.contaPagar}
+            parcela={parcelaEdicao}
+            onClose={() => {
+              setModalAberto(false);
+              setParcelaEdicao(null);
+              carregarContas();
+            }}
+          />
+        </ModalBase>
+      )}
     </div >
   );
 }

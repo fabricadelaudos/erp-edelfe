@@ -120,9 +120,12 @@ export default function FaturamentoPage() {
         const primeiro = row.contatos[0];
         const nome = primeiro.nome ?? "";
         const email = primeiro.email ?? primeiro.emailSecundario ?? "";
+        const wpp = primeiro.telefoneWpp ?? "";
+
+        const valorCopiar = email || wpp;
 
         return (
-          <Copiavel valor={email} texto={nome} />
+          <Copiavel valor={valorCopiar} texto={nome} />
         );
       },
     },
@@ -139,8 +142,9 @@ export default function FaturamentoPage() {
       render: (_, row) => {
         const valorMostrar =
           row.tipo === "FATURAMENTO"
-            ? row.valorTotal ?? row.valorBase ?? 0
-            : row.valorPrevisto;
+            ? row.valorBase ?? 0
+            : row.valorPrevisto ?? 0;
+
         return Number(valorMostrar).toLocaleString("pt-BR", {
           style: "currency",
           currency: "BRL",

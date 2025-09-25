@@ -20,7 +20,7 @@ export const buscarContasPagar = {
   async execute() {
     return await prisma.contaPagar.findMany({
       orderBy: [{ vencimento: 'asc' }, { status: 'asc' }],
-      include: { parcelasConta: true, fornecedor: true, planoConta: true, banco: true }
+      include: { parcelasConta: true, fornecedor: true, planoConta: { include: { categoria: true } }, banco: true }
     });
   }
 };
@@ -71,21 +71,27 @@ export const criarContaPagar = {
 };
 
 export const editarContaPagar = {
-  async execute(id: number, data: any) {
-    const { idUsuario, ...dados } = data;
-    const contaAntes = await prisma.contaPagar.findUnique({ where: { idContaPagar: id }, include: { parcelasConta: true } });
+  async execute(id: number, data: { idUsuario: number; descricao?: string }) {
+    const { idUsuario, descricao } = data;
+
+    const contaAntes = await prisma.contaPagar.findUnique({
+      where: { idContaPagar: id },
+      include: { parcelasConta: true }
+    });
 
     const conta = await prisma.contaPagar.update({
       where: { idContaPagar: id },
-      data: dados
+      data: {
+        ...(descricao !== undefined && { descricao })
+      }
     });
 
     await registrarEvento({
       idUsuario,
-      tipo: 'editar',
-      entidade: 'contaPagar',
+      tipo: "editar",
+      entidade: "contaPagar",
       entidadeId: id,
-      descricao: `Conta a pagar editada.`,
+      descricao: `Conta a pagar editada (descricao).`,
       dadosAntes: contaAntes,
       dadosDepois: conta
     });
@@ -107,21 +113,27 @@ export const buscarParcela = {
 };
 
 export const atualizarParcela = {
-  async execute(id: number, data: any) {
-    const { idUsuario, ...dados } = data;
-    const antes = await prisma.parcelaContaPagar.findUnique({ where: { idParcela: id } });
+  async execute(id: number, data: { idUsuario: number; valor?: number; vencimento?: Date }) {
+    const { idUsuario, valor, vencimento } = data;
+
+    const antes = await prisma.parcelaContaPagar.findUnique({
+      where: { idParcela: id }
+    });
 
     const atualizada = await prisma.parcelaContaPagar.update({
       where: { idParcela: id },
-      data: dados
+      data: {
+        ...(valor !== undefined && { valor }),
+        ...(vencimento !== undefined && { vencimento })
+      }
     });
 
     await registrarEvento({
       idUsuario,
-      tipo: 'editar',
-      entidade: 'parcelaContaPagar',
+      tipo: "editar",
+      entidade: "parcelaContaPagar",
       entidadeId: id,
-      descricao: `Parcela ${atualizada.numero} atualizada com status '${atualizada.status}'`,
+      descricao: `Parcela ${atualizada.numero} atualizada. Valor: ${atualizada.valor}, Vencimento: ${atualizada.vencimento.toISOString().split("T")[0]}`,
       dadosAntes: antes,
       dadosDepois: atualizada
     });

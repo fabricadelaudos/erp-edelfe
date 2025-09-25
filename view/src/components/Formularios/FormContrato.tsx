@@ -37,17 +37,25 @@ export default function FormContrato({
     onChange?.(atualizado);
   };
 
-  const handleSave = () => {
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (isPorVida && (formLocal.vidas === 0 || formLocal.vidas === undefined)) {
       return toast.error("Informe o nº de vidas ativas.");
+    }
+
+    if (!formLocal.esocial && !formLocal.laudos) {
+      return toast.error("Informe se possui e-Social e/ou Laudos.");
+    }
+
+    if (!formLocal.diaVencimento) {
+      return toast.error("Informe o dia do vencimento.");
     }
 
     const contratoFinal: Contrato = {
       ...formLocal,
       recorrente: formLocal.porVida ? true : formLocal.recorrente,
     };
-
-    console.log("Contrato final:", contratoFinal);
 
     onSave?.(contratoFinal);
   };
@@ -62,7 +70,7 @@ export default function FormContrato({
   const isPorVida = formLocal.porVida;
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSave} className="space-y-4">
       {/* Toggle Por Vida / Recorrente / e-Social / Laudos */}
       <div className="flex items-center justify-end gap-4">
         <div className="flex items-center gap-1">
@@ -248,14 +256,13 @@ export default function FormContrato({
             Cancelar
           </button>
           <button
-            type="button"
-            onClick={handleSave}
+            type="submit"
             className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
           >
             Salvar
           </button>
         </div>
       )}
-    </div>
+    </form>
   );
 }

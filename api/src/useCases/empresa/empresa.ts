@@ -3,6 +3,7 @@ import { prisma } from "../../config/prisma-client";
 import { ContatoInput, EmpresaInput } from "../../dto/EmpresaDto";
 import { registrarEvento } from "../../shared/utils/registrarEvento";
 import { Decimal } from "@prisma/client/runtime/library";
+import { stat } from "node:fs/promises";
 
 export type EmpresaComRelacionamentos = Prisma.empresaGetPayload<{
   include: {
@@ -112,14 +113,11 @@ export async function excluirProjecoesFuturas(
   fkContratoId: number
 ) {
   const hoje = new Date();
-  const competenciaAtual = `${hoje.getFullYear()}-${String(
-    hoje.getMonth() + 1
-  ).padStart(2, "0")}`;
 
   await tx.projecao.deleteMany({
     where: {
       fkContratoId,
-      competencia: { gt: competenciaAtual },
+      status: "PENDENTE",
     },
   });
 }
@@ -497,11 +495,13 @@ export const editarEmpresa = {
     try {
       const empresaDepois = await prisma.$transaction(async (tx) => {
         // 1. Atualizar empresa
+        const empresaAtiva = dadosEmpresa.ativo ?? true;
+
         await tx.empresa.update({
           where: { idEmpresa: id },
           data: {
             nome: dadosEmpresa.nome,
-            ativo: dadosEmpresa.ativo ?? true,
+            ativo: empresaAtiva,
           },
         });
 
@@ -516,6 +516,8 @@ export const editarEmpresa = {
             await tx.unidade.delete({ where: { idUnidade: unidadeDB.idUnidade } });
             continue;
           }
+
+          const unidadeAtiva = empresaAtiva ? (unidadeFront.ativo ?? true) : false;
 
           await tx.unidade.update({
             where: { idUnidade: unidadeDB.idUnidade },
@@ -532,9 +534,9 @@ export const editarEmpresa = {
               cidade: unidadeFront.cidade,
               uf: unidadeFront.uf,
               cep: unidadeFront.cep,
-              ativo: unidadeFront.ativo ?? true,
               observacao: unidadeFront.observacao,
               retemIss: unidadeFront.retemIss ?? false,
+              ativo: unidadeAtiva,
             },
           });
 
@@ -555,8 +557,6 @@ export const editarEmpresa = {
 
             for (const uc of contatosEnviados) {
               const contato = uc.contato;
-              // console.log("uc", uc);
-              // console.log("contato", contato);
               const chave = gerarChaveContato(contato);
 
               if (contato.idContato) {
@@ -619,6 +619,7 @@ export const editarEmpresa = {
                 });
 
                 contatosReutilizadosMap.set(chave, novoContato.idContato);
+                contatosExistentesMap.delete(novoContato.idContato);
               }
             }
 
@@ -641,6 +642,10 @@ export const editarEmpresa = {
             for (const contrato of unidadeFront.contratos) {
               if (contrato.idContrato && contratosMap.has(contrato.idContrato)) {
                 // Update
+                const statusContrato = unidadeAtiva
+                  ? (contrato.status as StatusContrato)
+                  : "CANCELADO";
+
                 const parcelas = contrato.recorrente
                   ? contrato.dataInicio && contrato.dataFim
                     ? calcularMesesEntre(
@@ -660,7 +665,7 @@ export const editarEmpresa = {
                     porVida: contrato.porVida,
                     vidas: contrato.vidas ?? 0,
                     recorrente: contrato.recorrente,
-                    status: contrato.status as StatusContrato,
+                    status: statusContrato,
                     faturadoPor: contrato.faturadoPor as FaturadoPor,
                     esocial: contrato.esocial ?? false,
                     laudos: contrato.laudos ?? false,
@@ -688,6 +693,10 @@ export const editarEmpresa = {
 
                 contratosMap.delete(contrato.idContrato);
               } else {
+                const statusContrato = unidadeAtiva
+                  ? (contrato.status as StatusContrato)
+                  : "CANCELADO";
+
                 // Novo contrato
                 const parcelas = contrato.recorrente
                   ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
@@ -703,7 +712,7 @@ export const editarEmpresa = {
                     porVida: contrato.porVida,
                     vidas: contrato.vidas ?? 0,
                     recorrente: contrato.recorrente,
-                    status: contrato.status as StatusContrato,
+                    status: statusContrato,
                     faturadoPor: contrato.faturadoPor as FaturadoPor,
                     esocial: contrato.esocial ?? false,
                     laudos: contrato.laudos ?? false,
@@ -736,6 +745,8 @@ export const editarEmpresa = {
 
         // 3. Criar novas unidades
         for (const unidade of unidadesMap.values()) {
+          const unidadeAtiva = empresaAtiva ? (unidade.ativo ?? true) : false;
+
           const novaUnidade = await tx.unidade.create({
             data: {
               fkEmpresaId: id,
@@ -751,7 +762,7 @@ export const editarEmpresa = {
               cidade: unidade.cidade,
               uf: unidade.uf,
               cep: unidade.cep,
-              ativo: unidade.ativo ?? true,
+              ativo: unidadeAtiva,
               observacao: unidade.observacao,
               retemIss: unidade.retemIss ?? false,
             },
@@ -771,6 +782,10 @@ export const editarEmpresa = {
 
           if (Array.isArray(unidade.contratos) && unidade.contratos.length > 0) {
             for (const contrato of unidade.contratos) {
+              const statusContrato = unidadeAtiva
+                ? (contrato.status as StatusContrato)
+                : "CANCELADO";
+
               const parcelas = contrato.recorrente
                 ? calcularMesesEntre(new Date(contrato.dataInicio), new Date(contrato.dataFim))
                 : contrato.parcelas ?? 0;
@@ -785,7 +800,7 @@ export const editarEmpresa = {
                   porVida: contrato.porVida,
                   vidas: contrato.vidas ?? 0,
                   recorrente: contrato.recorrente,
-                  status: contrato.status as StatusContrato,
+                  status: statusContrato,
                   faturadoPor: contrato.faturadoPor as FaturadoPor,
                   esocial: contrato.esocial ?? false,
                   laudos: contrato.laudos ?? false,

@@ -68,7 +68,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         </div>
 
         <SidebarContext.Provider value={{ isOpen }}>
-          <ul className="flex-1 space-y-1 px-2 py-4">
+          <ul className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
             {menuItems
               .map(item => {
                 return (
@@ -88,7 +88,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         </SidebarContext.Provider>
 
         {/* Footer */}
-        <div className="p-3">
+        <div className="p-3 mt-auto">
           <div className={`flex ${isOpen ? "items-center gap-3" : "flex-col items-center"}`}>
             {isOpen ? (
               <>

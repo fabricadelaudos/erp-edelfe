@@ -113,7 +113,9 @@ export default function FornecedorTab() {
             header: "Documento",
             accessor: "documento",
             render: (_: any, row: Fornecedor) =>
-              formatarDocumento(row.documento, row.tipoDocumento),
+              row.documento
+                ? formatarDocumento(row.documento, row.tipoDocumento)
+                : "-",
           },
           {
             header: "Status",

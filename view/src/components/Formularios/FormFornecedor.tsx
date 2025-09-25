@@ -83,7 +83,7 @@ export default function FormFornecedor({ dados, onSalvar, onCancelar, loading = 
           name="documento"
           value={formatarDocumento(form.documento, form.tipoDocumento)}
           onChange={(e) => handleChange("documento", limparFormatacao(e.target.value))}
-          required
+          required={false}
         />
       </div>
 

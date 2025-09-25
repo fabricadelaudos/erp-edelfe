@@ -4,6 +4,7 @@ import ModalBase from "../Modais/ModalBase";
 import FormContrato from "../Formularios/FormContrato";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { formatarData, formatarReais } from "../Auxiliares/formatter";
+import Swal from "sweetalert2";
 
 interface Props {
   contratos: Contrato[];
@@ -67,12 +68,28 @@ export default function ListaContratos({ contratos = [], onChange }: Props) {
     const row = list[originalIndex];
     const idxInOriginal = contratos.findIndex((c) => c === row);
     if (idxInOriginal === -1) return;
-    if (confirm("Deseja remover este contrato?")) {
-      const novos = contratos.filter((_, i) => i !== idxInOriginal);
-      onChange(novos);
-      // Se estava editando esse mesmo item no modal, fecha
-      if (aberto && editIndex === idxInOriginal) closeModal();
-    }
+
+    Swal.fire({
+      title: "Tem certeza?",
+      text: "Você deseja remover este contrato?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sim, remover",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const novos = contratos.filter((_, i) => i !== idxInOriginal);
+        onChange(novos);
+
+        // Se estava editando esse mesmo item no modal, fecha
+        if (aberto && editIndex === idxInOriginal) closeModal();
+
+        Swal.fire("Removido!", "O contrato foi removido com sucesso.", "success");
+      }
+    });
   };
 
   const statusBadge = (s: Contrato["status"]) => {

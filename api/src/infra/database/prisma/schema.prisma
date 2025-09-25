@@ -8,210 +8,171 @@ datasource db {
 }
 
 model usuario {
-  idUsuario   Int      @id @default(autoincrement())
-  nome        String   @db.VarChar(45)
-  email       String   @unique(map: "email_UNIQUE") @db.VarChar(45)
-  ativo       Boolean  @default(true)
-  firebaseId  String   @unique
-  criado_em   DateTime @default(now()) @db.DateTime(0)
-  editado_em  DateTime @updatedAt @db.DateTime(0)
-
-  logEvento   logEvento[]   @relation("logUsuario")
+  idUsuario  Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(45)
+  email      String      @unique(map: "email_UNIQUE") @db.VarChar(45)
+  ativo      Boolean     @default(true)
+  firebaseId String      @unique
+  criado_em  DateTime    @default(now()) @db.DateTime(0)
+  editado_em DateTime    @updatedAt @db.DateTime(0)
+  logevento  logevento[]
 }
 
 model empresa {
-  idEmpresa  Int      @id @default(autoincrement())
-  nome       String
-  ativo      Boolean  @default(true)
-  unidades   unidade[]
+  idEmpresa Int       @id @default(autoincrement())
+  nome      String
+  ativo     Boolean   @default(true)
+  unidades  unidade[]
 }
 
 model unidade {
-  idUnidade           Int                 @id @default(autoincrement())
-  fkEmpresaId         Int
-  nomeFantasia        String
-  razaoSocial         String
-  tipoDocumento       TipoDocumento
-  documento           String
-  inscricaoEstadual   String?
-  endereco            String
-  numero              String
-  complemento         String?
-  bairro              String
-  cidade              String
-  uf                  String
-  cep                 String
-  ativo               Boolean             @default(true)
-  observacao          String?
-  retemIss            Boolean             @default(false)
+  idUnidade         Int              @id @default(autoincrement())
+  fkEmpresaId       Int
+  nomeFantasia      String
+  razaoSocial       String
+  tipoDocumento     TipoDocumento
+  inscricaoEstadual String?
+  endereco          String
+  numero            String
+  complemento       String?
+  bairro            String
+  cidade            String
+  cep               String
+  ativo             Boolean          @default(true)
+  observacao        String?
+  uf                String
+  documento         String
+  retemIss          Boolean          @default(false)
+  contratos         contrato[]
+  empresa           empresa          @relation(fields: [fkEmpresaId], references: [idEmpresa], onDelete: Cascade)
+  unidadecontato    unidadecontato[]
 
-  empresa             empresa?            @relation(fields: [fkEmpresaId], references: [idEmpresa], onDelete: Cascade)
-  contatos            unidadeContato[]
-  contratos           contrato[]
+  @@index([fkEmpresaId], map: "unidade_fkEmpresaId_fkey")
 }
 
 model contato {
-  idContato       Int               @id @default(autoincrement())
+  idContato       Int              @id @default(autoincrement())
   nome            String
   email           String?
   emailSecundario String?
   telefoneFixo    String?
   telefoneWpp     String?
-
-  unidades        unidadeContato[]
-}
-
-model unidadeContato {
-  id              Int      @id @default(autoincrement())
-  fkUnidadeId     Int
-  fkContatoId     Int
-
-  unidade         unidade  @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
-  contato         contato  @relation(fields: [fkContatoId], references: [idContato], onDelete: Cascade)
-
-  @@unique([fkUnidadeId, fkContatoId])
+  unidadecontato  unidadecontato[]
 }
 
 model contrato {
-  idContrato       Int              @id @default(autoincrement())
-  fkUnidadeId      Int
-  dataInicio       DateTime
-  dataFim          DateTime
-  parcelas         Int
-  valorBase        Decimal          @db.Decimal(10, 2)
-  porVida          Boolean
-  vidas            Int?
-  recorrente       Boolean
-  status           StatusContrato
-  faturadoPor      FaturadoPor
-  esocial          Boolean?
-  laudos           Boolean?
-  observacao       String?
-  diaVencimento    String?
+  idContrato    Int            @id @default(autoincrement())
+  fkUnidadeId   Int
+  dataInicio    DateTime
+  dataFim       DateTime
+  parcelas      Int
+  valorBase     Decimal        @db.Decimal(10, 2)
+  porVida       Boolean
+  recorrente    Boolean
+  status        StatusContrato
+  faturadoPor   FaturadoPor
+  observacao    String?
+  esocial       Boolean?
+  laudos        Boolean?
+  diaVencimento String?
+  vidas         Int?
+  unidade       unidade        @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
+  faturamentos  faturamento[]
+  projecoes     projecao[]
 
-  unidade          unidade          @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade)
-  projecoes        projecao[]
-  faturamentos     faturamento[]
+  @@index([fkUnidadeId], map: "contrato_fkUnidadeId_fkey")
 }
 
 model projecao {
-  idProjecao       Int             @id @default(autoincrement())
-  fkContratoId     Int
-  competencia      String
-  valorPrevisto    Decimal         @db.Decimal(10, 2)
-  status           StatusProjecao
-  vidas            Int?
+  idProjecao    Int            @id @default(autoincrement())
+  fkContratoId  Int
+  competencia   String
+  valorPrevisto Decimal        @db.Decimal(10, 2)
+  status        StatusProjecao
+  vidas         Int?
+  faturamentos  faturamento[]
+  contrato      contrato       @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
 
-  contrato         contrato        @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
-  faturamentos     faturamento[]
+  @@index([fkContratoId], map: "projecao_fkContratoId_fkey")
 }
 
 model faturamento {
-  idFaturamento               Int                     @id @default(autoincrement())
-  fkContratoId                Int
-  fkProjecaoId                Int?
-  fkCompetenciaFinanceiraId   Int?
-  competencia                 String
-  valorBase                   Decimal                 @db.Decimal(10, 2)
-  impostoPorcentagem          Decimal                 @db.Decimal(10, 2)
-  impostoValor                Decimal                 @db.Decimal(10, 2)
-  valorTotal                  Decimal                 @db.Decimal(10, 2)
-  status                      StatusFaturamento
-  vidas                       Int?
-  pagoEm                      DateTime?
-  competenciaPagamento        String?
-  numeroNota                  String?
+  idFaturamento             Int                    @id @default(autoincrement())
+  fkContratoId              Int
+  fkProjecaoId              Int?
+  fkCompetenciaFinanceiraId Int?
+  competencia               String
+  valorBase                 Decimal                @db.Decimal(10, 2)
+  impostoPorcentagem        Decimal                @db.Decimal(10, 2)
+  impostoValor              Decimal                @db.Decimal(10, 2)
+  valorTotal                Decimal                @db.Decimal(10, 2)
+  status                    StatusFaturamento
+  vidas                     Int?
+  pagoEm                    DateTime?
+  competenciaPagamento      String?
+  numeroNota                String?
+  competenciaFinanceira     competenciafinanceira? @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira])
+  contrato                  contrato               @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
+  projecao                  projecao?              @relation(fields: [fkProjecaoId], references: [idProjecao])
 
-  contrato                    contrato                @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
-  projecao                    projecao?               @relation(fields: [fkProjecaoId], references: [idProjecao])
-  competenciaFinanceira       competenciaFinanceira?  @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira], onDelete: SetNull)
-}
-
-model competenciaFinanceira {
-  idCompetenciaFinanceira  Int            @id @default(autoincrement())
-  competencia              String         @unique
-  imposto                  Decimal        @db.Decimal(10, 2)
-  ipca                     Decimal        @db.Decimal(10, 2)
-  iss                      Decimal        @db.Decimal(10, 2)
-
-  faturamentos             faturamento[]
+  @@index([fkCompetenciaFinanceiraId], map: "faturamento_fkCompetenciaFinanceiraId_fkey")
+  @@index([fkContratoId], map: "faturamento_fkContratoId_fkey")
+  @@index([fkProjecaoId], map: "faturamento_fkProjecaoId_fkey")
 }
 
 model fornecedor {
-  idFornecedor  Int           @id @default(autoincrement())
+  idFornecedor  Int            @id @default(autoincrement())
   tipoPessoa    TipoPessoa
-  tipoDocumento TipoDocumento 
-  documento     String?       @unique
   nome          String
   observacao    String?
-  ativo         Boolean       @default(true)
-
-  contasPagar   contaPagar[]
-}
-
-model planoContaCategoria {
-  idPlanoContaCategoria    Int                      @id @default(autoincrement())
-  nome                     String
-  ativo                    Boolean                  @default(true)
-
-  subcategorias  planoContaSubcategoria[]
-}
-
-model planoContaSubcategoria {
-  idPlanoContaSubCategoria   Int                 @id @default(autoincrement())
-  nome                       String
-  fkPlanoContaCategoria      Int
-  ativo                      Boolean             @default(true)
-
-  contasPagar                contaPagar[]
-
-  categoria                  planoContaCategoria @relation(fields: [fkPlanoContaCategoria], references: [idPlanoContaCategoria])
+  ativo         Boolean        @default(true)
+  documento     String?        @unique
+  tipoDocumento TipoDocumento?
+  contapagar    contapagar[]
 }
 
 model banco {
-  idBanco       Int           @id @default(autoincrement())
-  nome          String
-  ativo         Boolean       @default(true)
-
-  contasPagar   contaPagar[]
+  idBanco    Int          @id @default(autoincrement())
+  nome       String
+  ativo      Boolean      @default(true)
+  contapagar contapagar[]
 }
 
-model contaPagar {
-  idContaPagar                Int                    @id @default(autoincrement())
-  dataEmissao                 DateTime
-  numeroDocumento             String
-  fkFornecedorId              Int
-  tipoDocumentoConta          TipoDocumentoConta
-  fkPlanoContaSubCategoriaId  Int
-  fkBancoId                   Int
-  descricao                   String?
-  valorTotal                  Decimal                @db.Decimal(10, 2)
-  parcelas                    Int
-  vencimento                  DateTime               
-  intervalo                   Int                    
-  recorrente                  Boolean                @default(false)
-  status                      StatusParcela          @default(ABERTA)
-
-  fornecedor                  fornecedor             @relation(fields: [fkFornecedorId], references: [idFornecedor])
-  planoConta                  planoContaSubcategoria @relation(fields: [fkPlanoContaSubCategoriaId], references: [idPlanoContaSubCategoria])
-  banco                       banco                  @relation(fields: [fkBancoId], references: [idBanco])
-
-  parcelasConta               parcelaContaPagar[]
+model competenciafinanceira {
+  idCompetenciaFinanceira Int           @id @default(autoincrement())
+  competencia             String        @unique(map: "competenciaFinanceira_competencia_key")
+  imposto                 Decimal       @db.Decimal(10, 2)
+  ipca                    Decimal       @db.Decimal(10, 2)
+  iss                     Decimal       @db.Decimal(10, 2)
+  faturamentos            faturamento[]
 }
 
-model parcelaContaPagar {
-  idParcela        Int           @id @default(autoincrement())
-  fkContaPagarId   Int
-  numero           Int
-  vencimento       DateTime
-  valor            Decimal       @db.Decimal(10, 2)
-  status           StatusParcela @default(ABERTA)
-  pagoEm           DateTime?
+model contapagar {
+  idContaPagar               Int                           @id @default(autoincrement())
+  dataEmissao                DateTime
+  numeroDocumento            String
+  fkFornecedorId             Int
+  tipoDocumentoConta         contapagar_tipoDocumentoConta
+  fkPlanoContaSubCategoriaId Int
+  fkBancoId                  Int
+  descricao                  String?
+  valorTotal                 Decimal                       @db.Decimal(10, 2)
+  parcelas                   Int
+  vencimento                 DateTime
+  intervalo                  Int
+  recorrente                 Boolean                       @default(false)
+  status                     contapagar_status             @default(ABERTA)
+  banco                      banco                         @relation(fields: [fkBancoId], references: [idBanco], map: "contaPagar_fkBancoId_fkey")
+  fornecedor                 fornecedor                    @relation(fields: [fkFornecedorId], references: [idFornecedor], map: "contaPagar_fkFornecedorId_fkey")
+  planocontasubcategoria     planocontasubcategoria        @relation(fields: [fkPlanoContaSubCategoriaId], references: [idPlanoContaSubCategoria], map: "contaPagar_fkPlanoContaSubCategoriaId_fkey")
+  parcelacontapagar          parcelacontapagar[]
 
-  contaPagar       contaPagar    @relation(fields: [fkContaPagarId], references: [idContaPagar])
+  @@index([fkBancoId], map: "contaPagar_fkBancoId_fkey")
+  @@index([fkFornecedorId], map: "contaPagar_fkFornecedorId_fkey")
+  @@index([fkPlanoContaSubCategoriaId], map: "contaPagar_fkPlanoContaSubCategoriaId_fkey")
 }
 
-model logEvento {
+model logevento {
   idLogEvento  Int      @id @default(autoincrement())
   fkUsuarioId  Int
   tipo         String
@@ -221,8 +182,51 @@ model logEvento {
   dados_antes  Json?
   dados_depois Json?
   criado_em    DateTime @default(now()) @db.DateTime(0)
+  usuario      usuario  @relation(fields: [fkUsuarioId], references: [idUsuario], map: "fk_logEvento_fkUsuarioId")
 
-  usuario usuario @relation("logUsuario", fields: [fkUsuarioId], references: [idUsuario], map: "fk_logEvento_fkUsuarioId")
+  @@index([fkUsuarioId], map: "fk_logEvento_fkUsuarioId")
+}
+
+model parcelacontapagar {
+  idParcela      Int                      @id @default(autoincrement())
+  fkContaPagarId Int
+  numero         Int
+  vencimento     DateTime
+  valor          Decimal                  @db.Decimal(10, 2)
+  status         parcelacontapagar_status @default(ABERTA)
+  pagoEm         DateTime?
+  contapagar     contapagar               @relation(fields: [fkContaPagarId], references: [idContaPagar], map: "parcelaContaPagar_fkContaPagarId_fkey")
+
+  @@index([fkContaPagarId], map: "parcelaContaPagar_fkContaPagarId_fkey")
+}
+
+model planocontacategoria {
+  idPlanoContaCategoria  Int                      @id @default(autoincrement())
+  nome                   String
+  ativo                  Boolean                  @default(true)
+  planocontasubcategoria planocontasubcategoria[]
+}
+
+model planocontasubcategoria {
+  idPlanoContaSubCategoria Int                 @id @default(autoincrement())
+  nome                     String
+  fkPlanoContaCategoria    Int
+  ativo                    Boolean             @default(true)
+  contapagar               contapagar[]
+  planocontacategoria      planocontacategoria @relation(fields: [fkPlanoContaCategoria], references: [idPlanoContaCategoria], map: "planoContaSubcategoria_fkPlanoContaCategoria_fkey")
+
+  @@index([fkPlanoContaCategoria], map: "planoContaSubcategoria_fkPlanoContaCategoria_fkey")
+}
+
+model unidadecontato {
+  id          Int     @id @default(autoincrement())
+  fkContatoId Int
+  fkUnidadeId Int
+  contato     contato @relation(fields: [fkContatoId], references: [idContato], onDelete: Cascade, map: "unidadeContato_fkContatoId_fkey")
+  unidade     unidade @relation(fields: [fkUnidadeId], references: [idUnidade], onDelete: Cascade, map: "unidadeContato_fkUnidadeId_fkey")
+
+  @@unique([fkUnidadeId, fkContatoId], map: "unidadeContato_fkUnidadeId_fkContatoId_key")
+  @@index([fkContatoId], map: "unidadeContato_fkContatoId_fkey")
 }
 
 enum TipoDocumento {
@@ -253,7 +257,13 @@ enum StatusFaturamento {
   ATRASADA
 }
 
-enum TipoDocumentoConta {
+enum TipoPessoa {
+  CLIENTE
+  FORNECEDOR
+  CLIENTE_FORNECEDOR
+}
+
+enum contapagar_tipoDocumentoConta {
   BOLETO
   DEBITO_AUTOMATICO
   FATURA
@@ -261,14 +271,14 @@ enum TipoDocumentoConta {
   PIX
 }
 
-enum StatusParcela {
+enum parcelacontapagar_status {
   ABERTA
   PAGA
   ATRASADA
 }
 
-enum TipoPessoa {
-  CLIENTE
-  FORNECEDOR
-  CLIENTE_FORNECEDOR
+enum contapagar_status {
+  ABERTA
+  PAGA
+  ATRASADA
 }

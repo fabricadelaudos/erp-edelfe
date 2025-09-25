@@ -5,6 +5,7 @@ import FormUnidade from "./FormUnidades";
 import { Input, SelectInput } from "../Inputs";
 import toast from "react-hot-toast";
 import ListaUnidade from "../Listas/ListaUnidade";
+import Swal from "sweetalert2";
 
 interface Props {
   onSalvar: () => void;
@@ -61,10 +62,26 @@ export default function FormEmpresa({ onSalvar, empresaSelecionada }: Props) {
   };
 
   const removerUnidade = (index: number) => {
-    const novasUnidades = [...(form.unidades || [])];
-    novasUnidades.splice(index, 1);
-    setForm({ ...form, unidades: novasUnidades });
-    setModoEdicaoUnidade(null);
+    Swal.fire({
+      title: "Tem certeza?",
+      text: "Você deseja remover esta unidade?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Remover",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const novasUnidades = [...(form.unidades || [])];
+        novasUnidades.splice(index, 1);
+        setForm({ ...form, unidades: novasUnidades });
+        setModoEdicaoUnidade(null);
+
+        Swal.fire("Removido!", "A unidade foi removida com sucesso.", "success");
+      }
+    });
   };
 
   const adicionarUnidade = () => {

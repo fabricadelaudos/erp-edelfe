@@ -56,6 +56,8 @@ export interface ContaPagar {
   parcelasConta: ParcelaContaPagar[];
 }
 
+export type ParcelaComConta = ParcelaContaPagar & { contaPagar: ContaPagar };
+
 export interface FiltroDespesa {
   status?: string;
   dataEmissaoInicio?: string;

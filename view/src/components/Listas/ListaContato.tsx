@@ -4,6 +4,7 @@ import FormContato from "../Formularios/FormContato";
 import ModalBase from "../Modais/ModalBase"; // mesmo ModalBase que você já usa em EmpresaPage
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { formatarTelefone } from "../Auxiliares/formatter";
+import Swal from "sweetalert2";
 
 interface Props {
   contatos: unidadeContato[];
@@ -37,8 +38,24 @@ export default function ListaContato({ contatos = [], contatosEmpresa = [], onCh
   };
 
   const remover = (index: number) => {
-    const novos = contatos.filter((_, i) => i !== index);
-    onChange(novos);
+    Swal.fire({
+      title: "Tem certeza?",
+      text: "Você deseja remover este contato?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sim, remover",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const novos = contatos.filter((_, i) => i !== index);
+        onChange(novos);
+
+        Swal.fire("Removido!", "O contato foi removido com sucesso.", "success");
+      }
+    });
   };
 
   const salvar = (c: Contato) => {
