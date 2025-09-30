@@ -9,18 +9,18 @@ function adicionarDias(data: Date, dias: number) {
 
 export const buscarContaPagar = {
   async execute(id: number) {
-    return await prisma.contaPagar.findUnique({
+    return await prisma.contapagar.findUnique({
       where: { idContaPagar: id },
-      include: { parcelasConta: true }
+      include: { parcelasconta: true }
     });
   }
 };
 
 export const buscarContasPagar = {
   async execute() {
-    return await prisma.contaPagar.findMany({
+    return await prisma.contapagar.findMany({
       orderBy: [{ vencimento: 'asc' }, { status: 'asc' }],
-      include: { parcelasConta: true, fornecedor: true, planoConta: { include: { categoria: true } }, banco: true }
+      include: { parcelasconta: true, fornecedor: true, planoConta: { include: { categoria: true } }, banco: true }
     });
   }
 };
@@ -32,7 +32,7 @@ export const criarContaPagar = {
     if (dados.dataEmissao) dados.dataEmissao = new Date(dados.dataEmissao);
     if (dados.vencimento) dados.vencimento = new Date(dados.vencimento);
 
-    const conta = await prisma.contaPagar.create({ data: dados });
+    const conta = await prisma.contapagar.create({ data: dados });
 
     const parcelas = [];
     const valorTotal = parseFloat(dados.valorTotal);
@@ -52,7 +52,7 @@ export const criarContaPagar = {
       });
     }
 
-    await prisma.parcelaContaPagar.createMany({ data: parcelas });
+    await prisma.parcelacontapagar.createMany({ data: parcelas });
 
     await registrarEvento({
       idUsuario,
@@ -63,9 +63,9 @@ export const criarContaPagar = {
       dadosDepois: conta
     });
 
-    return await prisma.contaPagar.findUnique({
+    return await prisma.contapagar.findUnique({
       where: { idContaPagar: conta.idContaPagar },
-      include: { parcelasConta: true }
+      include: { parcelasconta: true }
     });
   }
 };
@@ -74,12 +74,12 @@ export const editarContaPagar = {
   async execute(id: number, data: { idUsuario: number; descricao?: string }) {
     const { idUsuario, descricao } = data;
 
-    const contaAntes = await prisma.contaPagar.findUnique({
+    const contaAntes = await prisma.contapagar.findUnique({
       where: { idContaPagar: id },
-      include: { parcelasConta: true }
+      include: { parcelasconta: true }
     });
 
-    const conta = await prisma.contaPagar.update({
+    const conta = await prisma.contapagar.update({
       where: { idContaPagar: id },
       data: {
         ...(descricao !== undefined && { descricao })
@@ -96,9 +96,9 @@ export const editarContaPagar = {
       dadosDepois: conta
     });
 
-    return await prisma.contaPagar.findUnique({
+    return await prisma.contapagar.findUnique({
       where: { idContaPagar: id },
-      include: { parcelasConta: true }
+      include: { parcelasconta: true }
     });
   }
 };
@@ -106,7 +106,7 @@ export const editarContaPagar = {
 // Parcelas
 export const buscarParcela = {
   async execute(id: number) {
-    return await prisma.parcelaContaPagar.findUnique({
+    return await prisma.parcelacontapagar.findUnique({
       where: { idParcela: id },
     });
   }
@@ -116,11 +116,11 @@ export const atualizarParcela = {
   async execute(id: number, data: { idUsuario: number; valor?: number; vencimento?: Date }) {
     const { idUsuario, valor, vencimento } = data;
 
-    const antes = await prisma.parcelaContaPagar.findUnique({
+    const antes = await prisma.parcelacontapagar.findUnique({
       where: { idParcela: id }
     });
 
-    const atualizada = await prisma.parcelaContaPagar.update({
+    const atualizada = await prisma.parcelacontapagar.update({
       where: { idParcela: id },
       data: {
         ...(valor !== undefined && { valor }),
@@ -144,10 +144,10 @@ export const atualizarParcela = {
 
 export const confirmarPagamento = {
   async execute(id: number, user: any) {
-    const parcelaAntes = await prisma.parcelaContaPagar.findUnique({
+    const parcelaAntes = await prisma.parcelacontapagar.findUnique({
       where: { idParcela: id },
       include: {
-        contaPagar: {
+        contapagar: {
           include: {
             fornecedor: true
           }
@@ -155,7 +155,7 @@ export const confirmarPagamento = {
       }
     });
 
-    const parcela = await prisma.parcelaContaPagar.update({
+    const parcela = await prisma.parcelacontapagar.update({
       where: { idParcela: id },
       data: { status: 'PAGA', pagoEm: new Date() }
     });
@@ -165,7 +165,7 @@ export const confirmarPagamento = {
       tipo: 'editar',
       entidade: 'parcelaContaPagar',
       entidadeId: id,
-      descricao: `Pagamento confirmado para parcela ${id} da conta ${parcelaAntes?.contaPagar?.numeroDocumento ?? ''} (${parcelaAntes?.contaPagar?.fornecedor?.nome ?? ''})`,
+      descricao: `Pagamento confirmado para parcela ${id} da conta ${parcelaAntes?.contapagar?.numeroDocumento ?? ''} (${parcelaAntes?.contapagar?.fornecedor?.nome ?? ''})`,
       dadosAntes: parcelaAntes,
       dadosDepois: parcela
     });

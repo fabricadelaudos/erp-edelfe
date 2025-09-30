@@ -4,7 +4,7 @@ import { registrarEvento } from '../../shared/utils/registrarEvento';
 
 export const buscarPlanoContaCategoria = {
   async execute(id: number) {
-    return await prisma.planoContaCategoria.findUnique({
+    return await prisma.planocontacategoria.findUnique({
       where: { idPlanoContaCategoria: id },
       include: { subcategorias: true }
     });
@@ -13,7 +13,7 @@ export const buscarPlanoContaCategoria = {
 
 export const buscarPlanoContaCategorias = {
   async execute() {
-    return await prisma.planoContaCategoria.findMany({
+    return await prisma.planocontacategoria.findMany({
       include: { subcategorias: true },
       orderBy: { nome: 'asc' }
     });
@@ -28,12 +28,12 @@ export const salvarPlanoContaCategoria = {
 
     if (idPlanoContaCategoria) {
       // === EDIÇÃO ===
-      const categoriaAntes = await prisma.planoContaCategoria.findUnique({
+      const categoriaAntes = await prisma.planocontacategoria.findUnique({
         where: { idPlanoContaCategoria },
         include: { subcategorias: true }
       });
 
-      await prisma.planoContaCategoria.update({
+      await prisma.planocontacategoria.update({
         where: { idPlanoContaCategoria },
         data: { nome }
       });
@@ -43,7 +43,7 @@ export const salvarPlanoContaCategoria = {
         .map((s: any) => s.idPlanoContaSubCategoria);
 
       // Remover subcategorias não mais presentes
-      await prisma.planoContaSubcategoria.deleteMany({
+      await prisma.planocontasubcategoria.deleteMany({
         where: {
           fkPlanoContaCategoria: idPlanoContaCategoria,
           idPlanoContaSubCategoria: { notIn: idsRecebidos }
@@ -53,12 +53,12 @@ export const salvarPlanoContaCategoria = {
       // Atualizar ou criar
       for (const sub of subcategorias) {
         if (sub.idPlanoContaSubCategoria) {
-          await prisma.planoContaSubcategoria.update({
+          await prisma.planocontasubcategoria.update({
             where: { idPlanoContaSubCategoria: sub.idPlanoContaSubCategoria },
             data: { nome: sub.nome }
           });
         } else {
-          await prisma.planoContaSubcategoria.create({
+          await prisma.planocontasubcategoria.create({
             data: {
               nome: sub.nome,
               fkPlanoContaCategoria: idPlanoContaCategoria
@@ -67,7 +67,7 @@ export const salvarPlanoContaCategoria = {
         }
       }
 
-      const atualizado = await prisma.planoContaCategoria.findUnique({
+      const atualizado = await prisma.planocontacategoria.findUnique({
         where: { idPlanoContaCategoria },
         include: { subcategorias: true }
       });
@@ -85,12 +85,12 @@ export const salvarPlanoContaCategoria = {
       return atualizado;
     } else {
       // === CRIAÇÃO ===
-      const novaCategoria = await prisma.planoContaCategoria.create({
+      const novaCategoria = await prisma.planocontacategoria.create({
         data: { nome }
       });
 
       for (const sub of subcategorias) {
-        await prisma.planoContaSubcategoria.create({
+        await prisma.planocontasubcategoria.create({
           data: {
             nome: sub.nome,
             fkPlanoContaCategoria: novaCategoria.idPlanoContaCategoria
@@ -98,7 +98,7 @@ export const salvarPlanoContaCategoria = {
         });
       }
 
-      const criado = await prisma.planoContaCategoria.findUnique({
+      const criado = await prisma.planocontacategoria.findUnique({
         where: { idPlanoContaCategoria: novaCategoria.idPlanoContaCategoria },
         include: { subcategorias: true }
       });
@@ -119,7 +119,7 @@ export const salvarPlanoContaCategoria = {
 
 export const buscarSubcategorias = {
   async execute(idCategoria: number) {
-    return await prisma.planoContaSubcategoria.findMany({
+    return await prisma.planocontasubcategoria.findMany({
       where: { fkPlanoContaCategoria: idCategoria },
       orderBy: { nome: 'asc' }
     });

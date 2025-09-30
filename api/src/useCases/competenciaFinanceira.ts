@@ -9,7 +9,7 @@ export const buscarCompetenciaAtual = {
     const ano = dataAtual.getFullYear();
     const competenciaAtual = `${ano}-${mes}`;
 
-    const competencia = await prisma.competenciaFinanceira.findFirst({
+    const competencia = await prisma.competenciafinanceira.findFirst({
       where: {
         competencia: competenciaAtual,
       },
@@ -21,7 +21,7 @@ export const buscarCompetenciaAtual = {
 
 export const buscarCompetenciasFinanceirasUseCase = {
   async execute() {
-    return await prisma.competenciaFinanceira.findMany({
+    return await prisma.competenciafinanceira.findMany({
       orderBy: { competencia: "desc" }
     });
   }
@@ -31,13 +31,13 @@ export const criarCompetenciaFinanceiraUseCase = {
   async execute(dados: any, user: any) {
     const competenciaNormalizada = normalizarCompetencia(dados.competencia);
 
-    const existente = await prisma.competenciaFinanceira.findUnique({
+    const existente = await prisma.competenciafinanceira.findUnique({
       where: { competencia: competenciaNormalizada }
     });
 
     if (existente) throw new Error("Competência já existe");
 
-    const nova = await prisma.competenciaFinanceira.create({
+    const nova = await prisma.competenciafinanceira.create({
       data: { ...dados, competencia: competenciaNormalizada },
     });
 
@@ -56,7 +56,7 @@ export const criarCompetenciaFinanceiraUseCase = {
 
 export const editarCompetenciaFinanceiraUseCase = {
   async execute(id: number, dados: any, user: any) {
-    const antes = await prisma.competenciaFinanceira.findUnique({
+    const antes = await prisma.competenciafinanceira.findUnique({
       where: { idCompetenciaFinanceira: id },
     });
 
@@ -65,7 +65,7 @@ export const editarCompetenciaFinanceiraUseCase = {
     const competenciaNormalizada = normalizarCompetencia(dados.competencia);
 
     // 1. Atualizar a competência
-    const atualizada = await prisma.competenciaFinanceira.update({
+    const atualizada = await prisma.competenciafinanceira.update({
       where: { idCompetenciaFinanceira: id },
       data: {
         ...dados,
@@ -138,13 +138,13 @@ export const editarCompetenciaFinanceiraUseCase = {
 
 export const excluirCompetenciaFinanceiraUseCase = {
   async execute(id: number, user: any) {
-    const existente = await prisma.competenciaFinanceira.findUnique({
+    const existente = await prisma.competenciafinanceira.findUnique({
       where: { idCompetenciaFinanceira: id }
     });
 
     if (!existente) throw new Error("Competência não encontrada");
 
-    await prisma.competenciaFinanceira.delete({
+    await prisma.competenciafinanceira.delete({
       where: { idCompetenciaFinanceira: id }
     });
 

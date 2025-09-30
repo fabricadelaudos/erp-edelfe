@@ -181,7 +181,7 @@ model contapagar {
   banco                      banco                         @relation(fields: [fkBancoId], references: [idBanco], map: "contaPagar_fkBancoId_fkey")
   fornecedor                 fornecedor                    @relation(fields: [fkFornecedorId], references: [idFornecedor], map: "contaPagar_fkFornecedorId_fkey")
   planocontasubcategoria     planocontasubcategoria        @relation(fields: [fkPlanoContaSubCategoriaId], references: [idPlanoContaSubCategoria], map: "contaPagar_fkPlanoContaSubCategoriaId_fkey")
-  parcelacontapagar          parcelacontapagar[]
+  parcelasconta              parcelacontapagar[]
 
   @@index([fkBancoId], map: "contaPagar_fkBancoId_fkey")
   @@index([fkFornecedorId], map: "contaPagar_fkFornecedorId_fkey")
@@ -224,7 +224,7 @@ model planocontacategoria {
   idPlanoContaCategoria  Int                      @id @default(autoincrement())
   nome                   String
   ativo                  Boolean                  @default(true)
-  planocontasubcategoria planocontasubcategoria[]
+  subcategorias          planocontasubcategoria[]
   @@map("planocontacategoria")
 }
 
