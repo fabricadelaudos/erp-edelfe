@@ -16,6 +16,8 @@ model usuario {
   criado_em  DateTime    @default(now()) @db.DateTime(0)
   editado_em DateTime    @updatedAt @db.DateTime(0)
   logevento  logevento[]
+
+  @@map("usuario")
 }
 
 model empresa {
@@ -23,6 +25,8 @@ model empresa {
   nome      String
   ativo     Boolean   @default(true)
   unidades  unidade[]
+
+  @@map("empresa")
 }
 
 model unidade {
@@ -48,6 +52,7 @@ model unidade {
   unidadecontato    unidadecontato[]
 
   @@index([fkEmpresaId], map: "unidade_fkEmpresaId_fkey")
+  @@map("unidade")
 }
 
 model contato {
@@ -58,6 +63,8 @@ model contato {
   telefoneFixo    String?
   telefoneWpp     String?
   unidadecontato  unidadecontato[]
+  
+  @@map("contato")
 }
 
 model contrato {
@@ -81,6 +88,7 @@ model contrato {
   projecoes     projecao[]
 
   @@index([fkUnidadeId], map: "contrato_fkUnidadeId_fkey")
+  @@map("contrato")
 }
 
 model projecao {
@@ -94,6 +102,7 @@ model projecao {
   contrato      contrato       @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
 
   @@index([fkContratoId], map: "projecao_fkContratoId_fkey")
+  @@map("projecao")
 }
 
 model faturamento {
@@ -118,6 +127,7 @@ model faturamento {
   @@index([fkCompetenciaFinanceiraId], map: "faturamento_fkCompetenciaFinanceiraId_fkey")
   @@index([fkContratoId], map: "faturamento_fkContratoId_fkey")
   @@index([fkProjecaoId], map: "faturamento_fkProjecaoId_fkey")
+  @@map("faturamento")
 }
 
 model fornecedor {
@@ -129,6 +139,8 @@ model fornecedor {
   documento     String?        @unique
   tipoDocumento TipoDocumento?
   contapagar    contapagar[]
+  
+  @@map("fornecedor")
 }
 
 model banco {
@@ -136,6 +148,8 @@ model banco {
   nome       String
   ativo      Boolean      @default(true)
   contapagar contapagar[]
+  
+  @@map("banco")
 }
 
 model competenciafinanceira {
@@ -145,6 +159,8 @@ model competenciafinanceira {
   ipca                    Decimal       @db.Decimal(10, 2)
   iss                     Decimal       @db.Decimal(10, 2)
   faturamentos            faturamento[]
+  
+  @@map("competenciafinanceira")
 }
 
 model contapagar {
@@ -170,6 +186,8 @@ model contapagar {
   @@index([fkBancoId], map: "contaPagar_fkBancoId_fkey")
   @@index([fkFornecedorId], map: "contaPagar_fkFornecedorId_fkey")
   @@index([fkPlanoContaSubCategoriaId], map: "contaPagar_fkPlanoContaSubCategoriaId_fkey")
+  
+  @@map("contaspagar")
 }
 
 model logevento {
@@ -185,6 +203,7 @@ model logevento {
   usuario      usuario  @relation(fields: [fkUsuarioId], references: [idUsuario], map: "fk_logEvento_fkUsuarioId")
 
   @@index([fkUsuarioId], map: "fk_logEvento_fkUsuarioId")
+  @@map("logevento")
 }
 
 model parcelacontapagar {
@@ -198,6 +217,7 @@ model parcelacontapagar {
   contapagar     contapagar               @relation(fields: [fkContaPagarId], references: [idContaPagar], map: "parcelaContaPagar_fkContaPagarId_fkey")
 
   @@index([fkContaPagarId], map: "parcelaContaPagar_fkContaPagarId_fkey")
+  @@map("parcelacontapagar")
 }
 
 model planocontacategoria {
@@ -205,6 +225,7 @@ model planocontacategoria {
   nome                   String
   ativo                  Boolean                  @default(true)
   planocontasubcategoria planocontasubcategoria[]
+  @@map("planocontacategoria")
 }
 
 model planocontasubcategoria {
@@ -216,6 +237,7 @@ model planocontasubcategoria {
   planocontacategoria      planocontacategoria @relation(fields: [fkPlanoContaCategoria], references: [idPlanoContaCategoria], map: "planoContaSubcategoria_fkPlanoContaCategoria_fkey")
 
   @@index([fkPlanoContaCategoria], map: "planoContaSubcategoria_fkPlanoContaCategoria_fkey")
+  @@map("planocontasubcategoria")
 }
 
 model unidadecontato {
@@ -227,6 +249,7 @@ model unidadecontato {
 
   @@unique([fkUnidadeId, fkContatoId], map: "unidadeContato_fkUnidadeId_fkContatoId_key")
   @@index([fkContatoId], map: "unidadeContato_fkContatoId_fkey")
+  @@map("unidadecontato")
 }
 
 enum TipoDocumento {
