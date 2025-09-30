@@ -231,7 +231,7 @@ export const buscarFaturamentoCompetencia = {
             unidade: {
               include: {
                 empresa: true,
-                contatos: true,
+                unidadecontato: true,
               },
             },
           },
@@ -247,7 +247,7 @@ export const buscarFaturamentoCompetencia = {
 
 export const gerarFaturamento = {
   async execute(competencia: string) {
-    const competenciaFinanceira = await prisma.competenciaFinanceira.findUnique({
+    const competenciaFinanceira = await prisma.competenciafinanceira.findUnique({
       where: { competencia },
     });
 
@@ -267,7 +267,7 @@ export const gerarFaturamento = {
             unidade: {
               include: {
                 empresa: true,
-                contatos: true,
+                unidadecontato: true,
               },
             },
           },
@@ -328,7 +328,7 @@ export const gerarFaturamento = {
             unidade: {
               include: {
                 empresa: true,
-                contatos: true
+                unidadecontato: true
               },
             },
           },
@@ -352,7 +352,7 @@ export const buscarFaturamentosEProjecoes = {
             unidade: {
               include: {
                 empresa: true,
-                contatos: {
+                unidadecontato: {
                   include: {
                     contato: true,
                   },
@@ -371,7 +371,7 @@ export const buscarFaturamentosEProjecoes = {
             unidade: {
               include: {
                 empresa: true,
-                contatos: {
+                unidadecontato: {
                   include: {
                     contato: true,
                   },
@@ -415,7 +415,7 @@ export const buscarFaturamentosEProjecoes = {
             laudos: fat.contrato?.laudos ?? undefined,
             pagoEm: fat.pagoEm?.toISOString() ?? undefined,
             vencimento: p.contrato.diaVencimento ?? undefined,
-            contatos: fat.contrato?.unidade?.contatos.map((uc) => ({
+            contatos: fat.contrato?.unidade?.unidadecontato.map((uc) => ({
               id: uc.contato.idContato,
               nome: uc.contato.nome,
               email: uc.contato.email,
@@ -457,7 +457,7 @@ export const buscarFaturamentosEProjecoes = {
         esocial: p.contrato?.esocial ?? undefined,
         laudos: p.contrato?.laudos ?? undefined,
         vencimento: p.contrato.diaVencimento ?? undefined,
-        contatos: p.contrato?.unidade?.contatos.map((uc) => ({
+        contatos: p.contrato?.unidade?.unidadecontato.map((uc) => ({
           id: uc.contato.idContato,
           nome: uc.contato.nome,
           email: uc.contato.email,
@@ -503,7 +503,7 @@ export const gerarFaturamentoDeProjecao = {
     if (!projecao.contrato) throw new Error("Contrato não vinculado à projeção");
 
     // 🔹 Verifica se existe competência financeira
-    const competenciaFinanceira = await tx.competenciaFinanceira.findUnique({
+    const competenciaFinanceira = await tx.competenciafinanceira.findUnique({
       where: { competencia: projecao.competencia },
     });
 

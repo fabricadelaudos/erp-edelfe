@@ -9,7 +9,7 @@ export type EmpresaComRelacionamentos = Prisma.empresaGetPayload<{
   include: {
     unidades: {
       include: {
-        contatos: {
+        unidadecontato: {
           include: {
             contato: true,
           },
@@ -238,7 +238,7 @@ export const buscarEmpresa = {
       include: {
         unidades: {
           include: {
-            contatos: {
+            unidadecontato: {
               include: {
                 contato: true,
               },
@@ -260,7 +260,7 @@ export const buscarEmpresas = {
       include: {
         unidades: {
           include: {
-            contatos: {
+            unidadecontato: {
               include: {
                 contato: true,
               },
@@ -278,7 +278,7 @@ export const buscarContatos = {
   async execute(idEmpresa: number) {
     const contatos = await prisma.contato.findMany({
       where: {
-        unidades: {
+        unidadecontato: {
           some: {
             unidade: {
               fkEmpresaId: idEmpresa,
@@ -287,7 +287,7 @@ export const buscarContatos = {
         },
       },
       include: {
-        unidades: {
+        unidadecontato: {
           include: {
             unidade: true,
           },
@@ -306,7 +306,7 @@ export const listarEmpresas = {
       include: {
         unidades: {
           include: {
-            contatos: {
+            unidadecontato: {
               include: {
                 contato: true,
               },
@@ -372,7 +372,7 @@ export const criarEmpresa = {
                   });
 
                   // 2. Cria o vínculo unidadeContato
-                  await tx.unidadeContato.create({
+                  await tx.unidadecontato.create({
                     data: {
                       fkUnidadeId: unidadeCriada.idUnidade,
                       fkContatoId: contatoCriado.idContato,
@@ -442,7 +442,7 @@ export const criarEmpresa = {
         include: {
           unidades: {
             include: {
-              contatos: { include: { contato: true } },
+              unidadecontato: { include: { contato: true } },
               contratos: true,
             },
           },
@@ -481,7 +481,7 @@ export const editarEmpresa = {
       include: {
         unidades: {
           include: {
-            contatos: {
+            unidadecontato: {
               include: {
                 contato: true,
               },
@@ -543,7 +543,7 @@ export const editarEmpresa = {
           // 2.1 Contatos
           if (Array.isArray(unidadeFront.contatos)) {
             const contatosEnviados = unidadeFront.contatos || [];
-            const contatosExistentes = await tx.unidadeContato.findMany({
+            const contatosExistentes = await tx.unidadecontato.findMany({
               where: { fkUnidadeId: unidadeDB.idUnidade },
               include: { contato: true },
             });
@@ -574,7 +574,7 @@ export const editarEmpresa = {
 
                 // Vincular se ainda não estiver vinculado
                 if (!contatosExistentesMap.has(contato.idContato)) {
-                  await tx.unidadeContato.create({
+                  await tx.unidadecontato.create({
                     data: {
                       fkUnidadeId: unidadeDB.idUnidade,
                       fkContatoId: contato.idContato,
@@ -588,7 +588,7 @@ export const editarEmpresa = {
               } else if (contatosReutilizadosMap.has(chave)) {
                 // 2. Já foi criado nesta mesma empresa — só vincula
                 const contatoExistenteId = contatosReutilizadosMap.get(chave)!;
-                await tx.unidadeContato.create({
+                await tx.unidadecontato.create({
                   data: {
                     fkUnidadeId: unidadeDB.idUnidade,
                     fkContatoId: contatoExistenteId,
@@ -611,7 +611,7 @@ export const editarEmpresa = {
                   },
                 });
 
-                await tx.unidadeContato.create({
+                await tx.unidadecontato.create({
                   data: {
                     fkUnidadeId: unidadeDB.idUnidade,
                     fkContatoId: novoContato.idContato,
@@ -625,7 +625,7 @@ export const editarEmpresa = {
 
             // Remover vínculos que não estão mais em uso
             for (const vinculoRestante of contatosExistentesMap.values()) {
-              await tx.unidadeContato.delete({
+              await tx.unidadecontato.delete({
                 where: { id: vinculoRestante.id },
               });
             }
@@ -829,7 +829,7 @@ export const editarEmpresa = {
           include: {
             unidades: {
               include: {
-                contatos: {
+                unidadecontato: {
                   include: {
                     contato: true,
                   },

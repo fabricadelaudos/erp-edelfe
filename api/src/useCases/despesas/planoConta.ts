@@ -6,7 +6,7 @@ export const buscarPlanoContaCategoria = {
   async execute(id: number) {
     return await prisma.planocontacategoria.findUnique({
       where: { idPlanoContaCategoria: id },
-      include: { subcategorias: true }
+      include: { planocontasubcategoria: true }
     });
   }
 };
@@ -14,7 +14,7 @@ export const buscarPlanoContaCategoria = {
 export const buscarPlanoContaCategorias = {
   async execute() {
     return await prisma.planocontacategoria.findMany({
-      include: { subcategorias: true },
+      include: { planocontasubcategoria: true },
       orderBy: { nome: 'asc' }
     });
   }
@@ -30,7 +30,7 @@ export const salvarPlanoContaCategoria = {
       // === EDIÇÃO ===
       const categoriaAntes = await prisma.planocontacategoria.findUnique({
         where: { idPlanoContaCategoria },
-        include: { subcategorias: true }
+        include: { planocontasubcategoria: true }
       });
 
       await prisma.planocontacategoria.update({
@@ -69,7 +69,7 @@ export const salvarPlanoContaCategoria = {
 
       const atualizado = await prisma.planocontacategoria.findUnique({
         where: { idPlanoContaCategoria },
-        include: { subcategorias: true }
+        include: { planocontasubcategoria: true }
       });
 
       await registrarEvento({
@@ -100,7 +100,7 @@ export const salvarPlanoContaCategoria = {
 
       const criado = await prisma.planocontacategoria.findUnique({
         where: { idPlanoContaCategoria: novaCategoria.idPlanoContaCategoria },
-        include: { subcategorias: true }
+        include: { planocontasubcategoria: true }
       });
 
       await registrarEvento({

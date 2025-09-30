@@ -87,7 +87,7 @@ export const getReceitaVsDespesa = {
         where: { competenciaPagamento: competencia, status: "PAGA" },
       });
 
-      const despesa = await prisma.parcelaContaPagar.aggregate({
+      const despesa = await prisma.parcelacontapagar.aggregate({
         _sum: { valor: true },
         where: {
           status: "PAGA",
@@ -112,7 +112,7 @@ export const getReceitaVsDespesa = {
         select: { competenciaPagamento: true, valorTotal: true },
       });
 
-      const despesas = await prisma.parcelaContaPagar.findMany({
+      const despesas = await prisma.parcelacontapagar.findMany({
         where: {
           status: "PAGA",
           pagoEm: { gte: new Date(`${ano}-01-01`), lte: new Date(`${ano}-12-31`) },
@@ -176,10 +176,10 @@ export const getDespesasCategoria = {
         valor: true,
         contapagar: {
           select: {
-            planoconta: {
+            planocontasubcategoria: {
               select: {
                 nome: true,
-                categoria: {
+                planocontacategoria: {
                   select: {
                     idPlanoContaCategoria: true,
                     nome: true,
@@ -196,7 +196,7 @@ export const getDespesasCategoria = {
     const subcategoriasMap = new Map<string, number>();
 
     for (const parcela of parcelas) {
-      const sub = parcela.contapagar?.planoconta?.nome;
+      const sub = parcela.contapagar?.planocontasubcategoria?.nome;
       const valor = Number(parcela.valor || 0);
 
       if (!sub) continue;
@@ -241,14 +241,14 @@ export const getFaturamentosRecentes = {
 
 export const getDespesasRecentes = {
   async execute(limit = 10) {
-    const despesas = await prisma.parcelaContaPagar.findMany({
+    const despesas = await prisma.parcelacontapagar.findMany({
       take: limit,
       orderBy: { vencimento: "desc" },
       include: {
-        contaPagar: {
+        contapagar: {
           include: {
             fornecedor: true,
-            planoConta: { include: { categoria: true } },
+            planocontasubcategoria: { include: { planocontacategoria: true } },
           },
         },
       },
@@ -259,9 +259,9 @@ export const getDespesasRecentes = {
       vencimento: d.vencimento,
       valor: Number(d.valor),
       status: d.status,
-      fornecedor: d.contaPagar.fornecedor.nome,
-      categoria: d.contaPagar.planoConta.categoria.nome,
-      subcategoria: d.contaPagar.planoConta.nome,
+      fornecedor: d.contapagar.fornecedor.nome,
+      categoria: d.contapagar.planocontasubcategoria.planocontacategoria.nome,
+      subcategoria: d.contapagar.planocontasubcategoria.nome,
     }));
   },
 };
