@@ -180,7 +180,7 @@ model contapagar {
   status                     contapagar_status             @default(ABERTA)
   banco                      banco                         @relation(fields: [fkBancoId], references: [idBanco], map: "contaPagar_fkBancoId_fkey")
   fornecedor                 fornecedor                    @relation(fields: [fkFornecedorId], references: [idFornecedor], map: "contaPagar_fkFornecedorId_fkey")
-  planocontasubcategoria     planocontasubcategoria        @relation(fields: [fkPlanoContaSubCategoriaId], references: [idPlanoContaSubCategoria], map: "contaPagar_fkPlanoContaSubCategoriaId_fkey")
+  planoconta                 planocontasubcategoria        @relation(fields: [fkPlanoContaSubCategoriaId], references: [idPlanoContaSubCategoria], map: "contaPagar_fkPlanoContaSubCategoriaId_fkey")
   parcelasconta              parcelacontapagar[]
 
   @@index([fkBancoId], map: "contaPagar_fkBancoId_fkey")

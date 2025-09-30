@@ -16,7 +16,7 @@ export const getKpis = {
           _sum: { impostoValor: true },
           where: { competenciaPagamento: competencia, status: "PAGA" },
         }),
-        prisma.parcelaContaPagar.aggregate({
+        prisma.parcelacontapagar.aggregate({
           _sum: { valor: true },
           where: {
             status: "PAGA",
@@ -52,7 +52,7 @@ export const getKpis = {
             status: "PAGA",
           },
         }),
-        prisma.parcelaContaPagar.aggregate({
+        prisma.parcelacontapagar.aggregate({
           _sum: { valor: true },
           where: {
             status: "PAGA",
@@ -164,7 +164,7 @@ export const getDespesasCategoria = {
     }
 
     // Buscar as parcelas pagas dentro do período
-    const parcelas = await prisma.parcelaContaPagar.findMany({
+    const parcelas = await prisma.parcelacontapagar.findMany({
       where: {
         status: "PAGA",
         pagoEm: {
@@ -174,11 +174,11 @@ export const getDespesasCategoria = {
       },
       select: {
         valor: true,
-        contaPagar: {
+        contapagar: {
           select: {
-            planoConta: {
+            planoconta: {
               select: {
-                nome: true, // subcategoria
+                nome: true,
                 categoria: {
                   select: {
                     idPlanoContaCategoria: true,
@@ -196,7 +196,7 @@ export const getDespesasCategoria = {
     const subcategoriasMap = new Map<string, number>();
 
     for (const parcela of parcelas) {
-      const sub = parcela.contaPagar?.planoConta?.nome;
+      const sub = parcela.contapagar?.planoconta?.nome;
       const valor = Number(parcela.valor || 0);
 
       if (!sub) continue;
@@ -284,7 +284,7 @@ export const getFaturamentoAnual = {
     });
 
     // Parcelas do ano (despesas)
-    const parcelas = await prisma.parcelaContaPagar.findMany({
+    const parcelas = await prisma.parcelacontapagar.findMany({
       where: {
         vencimento: {
           gte: new Date(`${anoUsado}-01-01`),
