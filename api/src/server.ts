@@ -34,6 +34,15 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (duration > 500) console.log(`${req.method} ${req.url} - ${duration}ms`);
+  });
+  next();
+});
+
 app.use(express.json());
 
 app.use("/api", authRoutes);
