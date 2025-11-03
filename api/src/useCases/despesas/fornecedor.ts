@@ -32,9 +32,15 @@ export const listarFornecedores = {
 
 export const criarFornecedor = {
   async execute(data: any) {
-    const { idUsuario, idFornecedor, ...dados } = data;
+    const { idUsuario, idFornecedor, tipoDocumento, documento, ...resto } = data;
 
     try {
+      const dados: any = {
+        ...resto,
+        ...(tipoDocumento ? { tipoDocumento } : {}),
+        ...(documento ? { documento } : {}),
+      };
+
       const novo = await prisma.fornecedor.create({ data: dados });
 
       await registrarEvento({
@@ -58,25 +64,33 @@ export const criarFornecedor = {
 
 export const editarFornecedor = {
   async execute(id: number, data: any) {
-    const { idUsuario, ...dados } = data;
+    const { idUsuario, tipoDocumento, documento, ...resto } = data;
+
+    console.log("Editar fornecedor:", data);
+    // Remove campos vazios (string vazia ou null/undefined)
+    const dados: any = {
+      ...resto,
+      ...(tipoDocumento ? { tipoDocumento } : {}),
+      ...(documento ? { documento } : {}),
+    };
 
     const antes = await prisma.fornecedor.findUnique({ where: { idFornecedor: id } });
 
     const atualizado = await prisma.fornecedor.update({
       where: { idFornecedor: id },
-      data: dados
+      data: dados,
     });
 
     await registrarEvento({
       idUsuario,
-      tipo: 'editar',
-      entidade: 'fornecedor',
+      tipo: "editar",
+      entidade: "fornecedor",
       entidadeId: id,
       descricao: `Fornecedor '${atualizado.nome}' editado com sucesso!`,
       dadosAntes: antes,
-      dadosDepois: atualizado
+      dadosDepois: atualizado,
     });
 
     return atualizado;
-  }
+  },
 };
