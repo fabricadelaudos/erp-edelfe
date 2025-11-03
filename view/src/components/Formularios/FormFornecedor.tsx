@@ -71,6 +71,7 @@ export default function FormFornecedor({ dados, onSalvar, onCancelar, loading = 
           onChange={(e) =>
             handleChange("tipoDocumento", e.target.value as Fornecedor["tipoDocumento"])
           }
+          required={false}
           options={[
             { label: "CNPJ", value: "CNPJ" },
             { label: "CAEPF", value: "CAEPF" },

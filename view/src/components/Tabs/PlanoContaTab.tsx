@@ -142,7 +142,7 @@ export default function PlanoContasTab() {
 
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                {categoria.subcategorias.length} subcategorias
+                {categoria.subcategorias?.length ?? 0} subcategorias
               </span>
               <ToolTip text="Editar">
                 <button
@@ -157,9 +157,8 @@ export default function PlanoContasTab() {
               </ToolTip>
             </div>
           </div>
-
           {/* Subcategorias */}
-          {categoria.expanded && categoria.subcategorias.length > 0 && (
+          {categoria.expanded && categoria.subcategorias?.length > 0 && (
             <>
               <div className="px-4 pb-4 pt-2 text-gray-700 rounded">
                 <p className="font-medium text-sm">Lista de Subcategorias:</p>
