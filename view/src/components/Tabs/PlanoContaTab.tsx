@@ -38,7 +38,7 @@ export default function PlanoContasTab() {
         idPlanoContaCategoria: 0,
         nome: "",
         ativo: true,
-        subcategorias: [],
+        planocontasubcategoria: [],
       }
     );
     setModalAberto(true);
@@ -51,7 +51,7 @@ export default function PlanoContasTab() {
         idPlanoContaCategoria: dados.idPlanoContaCategoria,
         nome: dados.nome,
         ativo: dados.ativo,
-        subcategorias: dados.subcategorias.map((s) => ({
+        planocontasubcategoria: dados.planocontasubcategoria.map((s) => ({
           idPlanoContaSubCategoria: s.idPlanoContaSubCategoria,
           nome: s.nome,
           ativo: s.ativo,
@@ -142,7 +142,7 @@ export default function PlanoContasTab() {
 
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                {categoria.subcategorias?.length ?? 0} subcategorias
+                {categoria.planocontasubcategoria?.length ?? 0} subcategorias
               </span>
               <ToolTip text="Editar">
                 <button
@@ -158,12 +158,12 @@ export default function PlanoContasTab() {
             </div>
           </div>
           {/* Subcategorias */}
-          {categoria.expanded && categoria.subcategorias?.length > 0 && (
+          {categoria.expanded && categoria.planocontasubcategoria && categoria.planocontasubcategoria?.length > 0 && (
             <>
               <div className="px-4 pb-4 pt-2 text-gray-700 rounded">
                 <p className="font-medium text-sm">Lista de Subcategorias:</p>
                 <ul className="px-6 pt-1 text-xs text-gray-700 space-y-1">
-                  {categoria.subcategorias.map((sub) => (
+                  {categoria.planocontasubcategoria.map((sub) => (
                     <li
                       key={sub.idPlanoContaSubCategoria}
                       className="list-decimal"
@@ -186,7 +186,7 @@ export default function PlanoContasTab() {
             idPlanoContaCategoria: 0,
             nome: "",
             ativo: true,
-            subcategorias: [],
+            planocontasubcategoria: [],
           });
         }}
         titulo={
@@ -204,7 +204,7 @@ export default function PlanoContasTab() {
                 idPlanoContaCategoria: 0,
                 nome: "",
                 ativo: true,
-                subcategorias: [],
+                planocontasubcategoria: [],
               });
             }}
             loading={loading}

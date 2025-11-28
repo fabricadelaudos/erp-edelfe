@@ -22,7 +22,7 @@ export const buscarPlanoContaCategorias = {
 
 export const salvarPlanoContaCategoria = {
   async execute(data: any) {
-    const { idUsuario, idPlanoContaCategoria, nome, subcategorias } = data;
+    const { idUsuario, idPlanoContaCategoria, nome, planocontasubcategoria } = data;
 
     if (!nome) throw new Error("Nome da categoria é obrigatório");
 
@@ -38,7 +38,7 @@ export const salvarPlanoContaCategoria = {
         data: { nome }
       });
 
-      const idsRecebidos = subcategorias
+      const idsRecebidos = planocontasubcategoria
         .filter((s: any) => s.idPlanoContaSubCategoria)
         .map((s: any) => s.idPlanoContaSubCategoria);
 
@@ -51,7 +51,7 @@ export const salvarPlanoContaCategoria = {
       });
 
       // Atualizar ou criar
-      for (const sub of subcategorias) {
+      for (const sub of planocontasubcategoria) {
         if (sub.idPlanoContaSubCategoria) {
           await prisma.planocontasubcategoria.update({
             where: { idPlanoContaSubCategoria: sub.idPlanoContaSubCategoria },
@@ -89,7 +89,7 @@ export const salvarPlanoContaCategoria = {
         data: { nome }
       });
 
-      for (const sub of subcategorias) {
+      for (const sub of planocontasubcategoria) {
         await prisma.planocontasubcategoria.create({
           data: {
             nome: sub.nome,

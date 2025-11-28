@@ -13,25 +13,29 @@ interface Props {
 }
 
 export default function FormPlanoConta({ dados, onSalvar, onCancelar, loading = false }: Props) {
-  const [form, setForm] = useState<PlanoContaCategoria>({ ...dados });
+  const [form, setForm] = useState<PlanoContaCategoria>({
+    ...dados,
+    planocontasubcategoria: Array.isArray(dados.planocontasubcategoria) ? dados.planocontasubcategoria : [],
+  });
+
 
   const handleChange = (campo: keyof PlanoContaCategoria, valor: any) => {
     setForm({ ...form, [campo]: valor });
   };
 
   const adicionarSubcategoria = () => {
-    setForm({
-      ...form,
-      subcategorias: [
+    setForm((ant) => ({
+      ...ant,
+      planocontasubcategoria: [
         {
-          idPlanoContaSubCategoria: 0,
+          idPlanoContaSubCategoria: undefined,
           nome: "",
           ativo: true,
-          categoria: form,
+          categoria: undefined,
         },
-        ...form.subcategorias,
+        ...(ant.planocontasubcategoria ?? []),
       ],
-    });
+    }));
   };
 
   const atualizarSubcategoria = (
@@ -39,19 +43,19 @@ export default function FormPlanoConta({ dados, onSalvar, onCancelar, loading = 
     campo: keyof PlanoContaSubCategoria,
     valor: any
   ) => {
-    const subs = [...form.subcategorias];
+    const subs = [...form.planocontasubcategoria];
     if (campo === "nome") {
       subs[i].nome = valor;
     } else if (campo === "categoria") {
       subs[i].categoria = valor;
     }
-    setForm({ ...form, subcategorias: subs });
+    setForm({ ...form, planocontasubcategoria: subs });
   };
 
   const removerSubcategoria = (i: number) => {
     setForm({
       ...form,
-      subcategorias: form.subcategorias.filter((_, idx) => idx !== i),
+      planocontasubcategoria: form.planocontasubcategoria.filter((_, idx) => idx !== i),
     });
   };
 
@@ -94,12 +98,12 @@ export default function FormPlanoConta({ dados, onSalvar, onCancelar, loading = 
           </button>
         </div>
 
-        {form.subcategorias.length === 0 && (
+        {form.planocontasubcategoria && form.planocontasubcategoria.length === 0 && (
           <p className="text-sm text-gray-500 italic">Nenhuma subcategoria adicionada.</p>
         )}
 
         <div className="max-h-72 overflow-y-auto curtom-scrollbar">
-          {form.subcategorias.map((sub, i) => (
+          {form.planocontasubcategoria && form.planocontasubcategoria.map((sub, i) => (
             <div
               key={i}
               className="flex items-center gap-2 rounded p-2"

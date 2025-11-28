@@ -96,7 +96,7 @@ export async function buscarPlanoContas(): Promise<PlanoContaCategoria[]> {
 }
 
 
-export async function salvarPlanoConta(data: Partial<PlanoContaCategoria> & { subcategorias: { idPlanoContaSubCategoria?: number; nome: string }[] }): Promise<PlanoContaCategoria> {
+export async function salvarPlanoConta(data: Partial<PlanoContaCategoria> & { planocontasubcategoria: { idPlanoContaSubCategoria?: number; nome: string }[] }): Promise<PlanoContaCategoria> {
   return await apiFetch(`${basePlanoConta}/salvar`, {
     method: "POST",
     body: JSON.stringify(data),

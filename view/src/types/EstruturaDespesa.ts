@@ -18,11 +18,11 @@ export interface PlanoContaCategoria {
   idPlanoContaCategoria: number;
   nome: string;
   ativo: boolean;
-  subcategorias: PlanoContaSubCategoria[];
+  planocontasubcategoria: PlanoContaSubCategoria[];
 }
 
 export interface PlanoContaSubCategoria {
-  idPlanoContaSubCategoria: number;
+  idPlanoContaSubCategoria?: number;
   nome: string;
   ativo: boolean;
   categoria?: PlanoContaCategoria;
