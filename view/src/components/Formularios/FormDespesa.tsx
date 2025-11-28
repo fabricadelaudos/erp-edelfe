@@ -164,17 +164,15 @@ export default function FormDespesa({ contaPagar, parcela, onClose }: FormDespes
           value={form.planoConta?.idPlanoContaSubCategoria ?? ""}
           onChange={(v) => {
             const subSelecionada = planos
-              .flatMap((c) => c.subcategorias ?? [])
+              .flatMap((c) => c.planocontasubcategoria ?? [])
               .find((s) => s.idPlanoContaSubCategoria === v);
             handleChange("planoConta", subSelecionada || null);
           }}
           groups={planos.map((cat) => ({
-            // mostra id + nome da categoria
             label: `${cat.idPlanoContaCategoria} - ${cat.nome}`,
-            options: (cat.subcategorias ?? []).map((sub) => ({
-              // mostra id + nome da subcategoria
+            options: (cat.planocontasubcategoria ?? []).map((sub) => ({
               label: `${sub.idPlanoContaSubCategoria} - ${sub.nome}`,
-              value: sub.idPlanoContaSubCategoria,
+              value: sub.idPlanoContaSubCategoria ?? 0,
             })),
           }))}
           loading={loading}
