@@ -53,8 +53,10 @@ export default function DespesaPage() {
     setLoading(true);
     const contas = await buscarContasPagar();
 
+    console.log(contas);
+
     const todasParcelas = contas.flatMap((c) =>
-      c.parcelasConta.map((p) => ({
+      c.parcelacontapagar.map((p) => ({
         ...p,
         contaPagar: c,
       }))
@@ -65,7 +67,7 @@ export default function DespesaPage() {
       ...new Set(todasParcelas.map((p) => p.contaPagar.fornecedor.nome)),
     ]);
     setTodosPlanos([
-      ...new Set(todasParcelas.map((p) => p.contaPagar.planoConta.nome)),
+      ...new Set(todasParcelas.map((p) => p.contaPagar.planocontasubcategoria.nome)),
     ]);
 
     setLoading(false);
@@ -81,7 +83,7 @@ export default function DespesaPage() {
 
     const contas = await buscarContasPagar();
     const todasParcelas = contas.flatMap((c) =>
-      c.parcelasConta.map((p) => ({
+      c.parcelacontapagar.map((p) => ({
         ...p,
         contaPagar: c
       }))
@@ -121,7 +123,7 @@ export default function DespesaPage() {
     const Filtradas = parcelas.filter((p) => {
       const dentroDoStatus = !filtroStatus || p.status === filtroStatus;
       const dentroFornecedor = !filtroFornecedor || p.contaPagar.fornecedor.nome === filtroFornecedor;
-      const dentroPlano = !filtroPlanoConta || p.contaPagar.planoConta.nome === filtroPlanoConta;
+      const dentroPlano = !filtroPlanoConta || p.contaPagar.planocontasubcategoria.nome === filtroPlanoConta;
 
       const venc = new Date(p.vencimento);
       const vencInicio = filtroVencimentoInicio ? new Date(filtroVencimentoInicio) : null;
@@ -478,10 +480,10 @@ export default function DespesaPage() {
             header: "Plano de Contas",
             accessor: "contaPagar",
             render: (_, row) => {
-              const idCategoria = row.contaPagar.planoConta.categoria?.idPlanoContaCategoria ?? "";
-              const categoria = row.contaPagar.planoConta.categoria?.nome ?? "";
-              const idSubCategoria = row.contaPagar.planoConta.idPlanoContaSubCategoria ?? "";
-              const subcategoria = row.contaPagar.planoConta.nome;
+              const idCategoria = row.contaPagar.planocontasubcategoria.categoria?.idPlanoContaCategoria ?? "";
+              const categoria = row.contaPagar.planocontasubcategoria.categoria?.nome ?? "";
+              const idSubCategoria = row.contaPagar.planocontasubcategoria.idPlanoContaSubCategoria ?? "";
+              const subcategoria = row.contaPagar.planocontasubcategoria.nome;
               return (
                 <div className="text-xs italic text-gray-700">{`${idCategoria} - ${categoria} - ${idSubCategoria} - ${subcategoria}`}</div>
               );

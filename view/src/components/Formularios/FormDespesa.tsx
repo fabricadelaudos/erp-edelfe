@@ -89,7 +89,7 @@ export default function FormDespesa({ contaPagar, parcela, onClose }: FormDespes
           intervalo: Number(form.intervalo),
           recorrente: Boolean(form.recorrente),
           fkFornecedorId: form.fornecedor?.idFornecedor,
-          fkPlanoContaSubCategoriaId: form.planoConta?.idPlanoContaSubCategoria,
+          fkPlanoContaSubCategoriaId: form.planocontasubcategoria?.idPlanoContaSubCategoria,
           fkBancoId: form.banco?.idBanco,
         };
 
@@ -161,7 +161,7 @@ export default function FormDespesa({ contaPagar, parcela, onClose }: FormDespes
 
         <GroupedSelect
           label="Plano de Contas *"
-          value={form.planoConta?.idPlanoContaSubCategoria ?? ""}
+          value={form.planocontasubcategoria?.idPlanoContaSubCategoria ?? ""}
           onChange={(v) => {
             const subSelecionada = planos
               .flatMap((c) => c.planocontasubcategoria ?? [])

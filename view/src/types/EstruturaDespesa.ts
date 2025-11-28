@@ -5,7 +5,7 @@ export interface Fornecedor {
   documento: string;
   nome: string;
   observacao?: string;
-  ativo: boolean;  
+  ativo: boolean;
 }
 
 export interface Banco {
@@ -26,6 +26,7 @@ export interface PlanoContaSubCategoria {
   nome: string;
   ativo: boolean;
   categoria?: PlanoContaCategoria;
+  planocontacategoria?: PlanoContaCategoria;
 }
 
 export interface ParcelaContaPagar {
@@ -51,9 +52,10 @@ export interface ContaPagar {
   status: 'ABERTA' | 'PAGA' | 'VENCIDA';
 
   fornecedor: Fornecedor;
-  planoConta: PlanoContaSubCategoria;
   banco: Banco;
-  parcelasConta: ParcelaContaPagar[];
+
+  planocontasubcategoria: PlanoContaSubCategoria;
+  parcelacontapagar: ParcelaContaPagar[];
 }
 
 export type ParcelaComConta = ParcelaContaPagar & { contaPagar: ContaPagar };
