@@ -55,6 +55,15 @@ export default function ModalEditarFaturamento({
         atualizado.valorPrevisto = calculado;
       }
 
+      // Se for faturamento e vidas forem alteradas
+      if (prev.tipo === "FATURAMENTO" && campo === "vidas") {
+        const base = Number(prev.contrato?.valorBase ?? 0);
+        const vidas = Number(valor);
+        const calculado = base * vidas;
+
+        atualizado.valorBase = calculado;
+      }
+
       return atualizado;
     });
   };
