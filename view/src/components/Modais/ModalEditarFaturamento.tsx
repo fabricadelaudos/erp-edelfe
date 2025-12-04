@@ -76,11 +76,6 @@ export default function ModalEditarFaturamento({
         atualizado.valorBase = novoValorBase;
         atualizado.impostoValor = novoImpostoValor;
         atualizado.valorTotal = novoValorTotal;
-
-        console.log("Base:", novoValorBase);
-        console.log("Imp %:", impostoPercent);
-        console.log("Imp R$:", novoImpostoValor);
-        console.log("Total:", novoValorTotal);
       }
 
       return atualizado;
