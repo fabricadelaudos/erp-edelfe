@@ -56,12 +56,31 @@ export default function ModalEditarFaturamento({
       }
 
       // Se for faturamento e vidas forem alteradas
-      if (prev.tipo === "FATURAMENTO" && campo === "vidas") {
-        const base = Number(prev.contrato?.valorBase ?? 0);
-        const vidas = Number(valor);
-        const calculado = base * vidas;
+      if (prev.tipo === "FATURAMENTO" && campo === "vidas" && prev.contrato?.porVida) {
 
-        atualizado.valorBase = calculado;
+        const valorPorVida = Number(prev.contrato?.valorBase ?? 0);
+        const vidas = Number(valor);
+
+        // novo valor base calculado
+        const novoValorBase = valorPorVida * vidas;
+
+        // imposto existente no registro
+        const impostoPercent = Number(prev.impostoPorcentagem ?? 0);
+
+        // calcular imposto em R$
+        const novoImpostoValor = (novoValorBase * impostoPercent) / 100;
+
+        // calcular valor total
+        const novoValorTotal = novoValorBase + novoImpostoValor;
+
+        atualizado.valorBase = novoValorBase;
+        atualizado.impostoValor = novoImpostoValor;
+        atualizado.valorTotal = novoValorTotal;
+
+        console.log("Base:", novoValorBase);
+        console.log("Imp %:", impostoPercent);
+        console.log("Imp R$:", novoImpostoValor);
+        console.log("Total:", novoValorTotal);
       }
 
       return atualizado;
