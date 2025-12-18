@@ -1,5 +1,5 @@
 import type { Faturamento, FaturamentoOuProjecao } from "../types/EstruturaFaturamento";
-import { apiFetch } from "./apiFetch";
+import { apiFetch, apiPatch } from "./apiFetch";
 
 export interface FaturamentoInput {
   fkContratoId: number;
@@ -72,5 +72,20 @@ export const editarProjecoesEmMassa = async (
   return apiFetch(`/faturamento/projecao`, {
     method: "PUT",
     body: JSON.stringify(lista),
+  });
+};
+
+export const toggleBoletoEmitido = async (id: number, valor: boolean) => {
+  console.log("toggleBoletoEmitido", id, valor);
+  await apiPatch(`/faturamento/${id}/boleto`, {
+    method: "PATCH",
+    body: JSON.stringify({ boletoEmitido: valor }),
+  });
+};
+
+export const toggleEmailEnviado = async (id: number, valor: boolean) => {
+  await apiPatch(`/faturamento/${id}/email`, {
+    method: "PATCH",
+    body: JSON.stringify({ emailEnviado: valor }),
   });
 };

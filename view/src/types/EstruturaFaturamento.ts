@@ -14,6 +14,8 @@ export interface Faturamento {
   competencia: string;
   competenciaPagamento?: string;
   pagoEm?: string;
+  boletoEmitido?: boolean;
+  emailEnviado?: boolean;
 }
 
 export interface Projecao {
@@ -54,6 +56,8 @@ export interface FaturamentoOuProjecao {
   laudos?: boolean;
   pagoEm?: string;
   vencimento?: string;
+  boletoEmitido?: boolean;
+  emailEnviado?: boolean;
 
   contatos?: {
     idContato: number;

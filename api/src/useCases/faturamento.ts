@@ -17,6 +17,8 @@ interface FaturamentoInput {
   pagoEm?: string;
   competenciaPagamento?: string;
   numeroNota?: string;
+  boletoEmitido?: boolean;
+  emailEnviado?: boolean;
 }
 
 export const buscarFaturamentosPorContrato = {
@@ -46,6 +48,9 @@ export const criarFaturamento = {
         vidas: data.vidas,
         pagoEm: data.pagoEm ? new Date(data.pagoEm) : undefined,
         competenciaPagamento: data.competenciaPagamento,
+        numeroNota: data.numeroNota,
+        boletoEmitido: data.boletoEmitido ?? false,
+        emailEnviado: data.emailEnviado ?? false,
       },
     });
 
@@ -85,6 +90,8 @@ export const editarFaturamento = {
         status: dados.status,
         pagoEm,
         competenciaPagamento,
+        boletoEmitido: dados.boletoEmitido ?? false,
+        emailEnviado: dados.emailEnviado ?? false,
       },
     });
 
@@ -144,6 +151,8 @@ export const editarFaturamentosEmMassa = {
             status: item.dados.status ?? existente.status,
             pagoEm,
             competenciaPagamento,
+            boletoEmitido: item.dados.boletoEmitido ?? false,
+            emailEnviado: item.dados.emailEnviado ?? false,
           },
         });
 
@@ -415,6 +424,8 @@ export const buscarFaturamentosEProjecoes = {
             laudos: fat.contrato?.laudos ?? undefined,
             pagoEm: fat.pagoEm?.toISOString() ?? undefined,
             vencimento: p.contrato.diaVencimento ?? undefined,
+            boletoEmitido: fat.boletoEmitido ?? undefined,
+            emailEnviado: fat.emailEnviado ?? undefined,
             contatos: fat.contrato?.unidade?.unidadecontato.map((uc) => ({
               id: uc.contato.idContato,
               nome: uc.contato.nome,
@@ -538,6 +549,8 @@ export const gerarFaturamentoDeProjecao = {
         status: "ABERTA",
         vidas: projecao.vidas ?? 0,
         numeroNota: "",
+        boletoEmitido: false,
+        emailEnviado: false,
       },
     });
 
@@ -559,5 +572,73 @@ export const gerarFaturamentoDeProjecao = {
     });
 
     return faturamento;
+  },
+};
+
+export const emitirBoleto = {
+  async execute(
+    idFaturamento: number,
+    boletoEmitido: boolean,
+    user: any,
+    tx: Prisma.TransactionClient = prisma
+  ) {
+    const faturamentoAntes = await tx.faturamento.findUnique({
+      where: { idFaturamento },
+    });
+
+    if (!faturamentoAntes) {
+      throw new Error("Faturamento não encontrado");
+    }
+
+    const faturamentoDepois = await tx.faturamento.update({
+      where: { idFaturamento },
+      data: { boletoEmitido },
+    });
+
+    await registrarEvento({
+      idUsuario: user?.idUsuario,
+      tipo: "EMISSAO",
+      descricao: boletoEmitido
+        ? `Marcou boleto como emitido no faturamento ${idFaturamento}`
+        : `Desmarcou boleto como emitido no faturamento ${idFaturamento}`,
+      entidade: "faturamento",
+      entidadeId: idFaturamento,
+      dadosAntes: faturamentoAntes,
+      dadosDepois: faturamentoDepois,
+    });
+  },
+};
+
+export const enviarEmailFaturamento = {
+  async execute(
+    idFaturamento: number,
+    emailEnviado: boolean,
+    user: any,
+    tx: Prisma.TransactionClient = prisma
+  ) {
+    const faturamentoAntes = await tx.faturamento.findUnique({
+      where: { idFaturamento },
+    });
+
+    if (!faturamentoAntes) {
+      throw new Error("Faturamento não encontrado");
+    }
+
+    const faturamentoDepois = await tx.faturamento.update({
+      where: { idFaturamento },
+      data: { emailEnviado },
+    });
+
+    await registrarEvento({
+      idUsuario: user?.idUsuario,
+      tipo: "ENVIO_EMAIL",
+      descricao: emailEnviado
+        ? `Marcou e-mail como enviado no faturamento ${idFaturamento}`
+        : `Desmarcou e-mail como enviado no faturamento ${idFaturamento}`,
+      entidade: "faturamento",
+      entidadeId: idFaturamento,
+      dadosAntes: faturamentoAntes,
+      dadosDepois: faturamentoDepois,
+    });
   },
 };

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { buscarFaturamentoPorCompetenciaController, buscarFaturamentosEProjecoesController, buscarFaturamentosPorContratoController, criarFaturamentoController, editarFaturamentoController, editarFaturamentosEmMassaController, editarProjecaoController, gerarFaturamentoController } from "../controllers/faturamentoController";
+import { buscarFaturamentoPorCompetenciaController, buscarFaturamentosEProjecoesController, buscarFaturamentosPorContratoController, criarFaturamentoController, editarFaturamentoController, editarFaturamentosEmMassaController, editarProjecaoController, gerarFaturamentoController, toggleBoletoEmitidoController, toggleEmailEnviadoController } from "../controllers/faturamentoController";
 import { authorize } from "../middlewares/authorize";
 
 const faturamentoRoutes = Router();
@@ -14,5 +14,9 @@ faturamentoRoutes.get("/competencia/:competencia", authorize(), buscarFaturament
 faturamentoRoutes.post("/gerar", authorize(), gerarFaturamentoController);
 
 faturamentoRoutes.get("/completo", authorize(), buscarFaturamentosEProjecoesController);
+
+// Boleto/Email
+faturamentoRoutes.patch("/:id/boleto", authorize(), toggleBoletoEmitidoController);
+faturamentoRoutes.patch("/:id/email", authorize(), toggleEmailEnviadoController);
 
 export default faturamentoRoutes;

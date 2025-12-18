@@ -5,6 +5,8 @@ import {
   editarFaturamentosEmMassa,
   editarProjecao,
   editarProjecoesEmMassa,
+  toggleBoletoEmitido,
+  toggleEmailEnviado,
 } from "../services/apiFaturamento";
 import type {
   FaturamentoOuProjecao,
@@ -13,7 +15,7 @@ import TabelaBase, { type Column } from "../components/Tabelas/TabelaBase";
 import ModalEditarFaturamento from "../components/Modais/ModalEditarFaturamento";
 import { formatarDataInput, formatarDocumento } from "../components/Auxiliares/formatter";
 import { Input, SearchableSelect, SelectInput } from "../components/Inputs";
-import { CheckCircle2, ClockAlert, FilePlus2, ListFilter } from "lucide-react";
+import { Ban, CheckCircle2, CircleCheckBig, CircleMinus, ClockAlert, FilePlus2, ListFilter } from "lucide-react";
 import Copiavel from "../components/Auxiliares/Copiavel";
 import toast from "react-hot-toast";
 import ToolTip from "../components/Auxiliares/ToolTip";
@@ -54,6 +56,9 @@ export default function FaturamentoPage() {
   const [totalImposto, setTotalImposto] = useState(0);
   const [totalValor, setTotalValor] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const [loadingBoletoId, setLoadingBoletoId] = useState<number | null>(null);
+  const [loadingEmailId, setLoadingEmailId] = useState<number | null>(null);
 
   const calcularTotais = (lista: FaturamentoOuProjecao[]) => {
     setTotalTitulos(lista.length);
@@ -130,13 +135,6 @@ export default function FaturamentoPage() {
       },
     },
     {
-      header: "NF",
-      accessor: "numeroNota",
-      render: (v: string | undefined, row) =>
-        row.tipo === "FATURAMENTO" ? v || "-" : "—",
-      sortable: true,
-    },
-    {
       header: "Valor Base",
       accessor: "valorPrevisto",
       render: (_, row) => {
@@ -176,6 +174,105 @@ export default function FaturamentoPage() {
         );
       },
       sortable: true,
+    },
+    {
+      header: "Boleto",
+      accessor: "boletoEmitido",
+      sortable: true,
+      render: (_: any, row: FaturamentoOuProjecao) => {
+        if (row.tipo !== "FATURAMENTO") return "—";
+
+        const ativo = !!row.boletoEmitido;
+        const carregando = loadingBoletoId === row.id;
+
+        return (
+          <div className="w-full flex justify-center items-center">
+            <button
+              disabled={carregando}
+              onClick={async () => {
+                const novoValor = !ativo;
+                setLoadingBoletoId(row.id);
+
+                try {
+                  await toggleBoletoEmitido(row.id, novoValor);
+                  atualizarBoletoNaTabela(row.id, novoValor);
+                } catch {
+                  toast.error("Erro ao atualizar boleto");
+                } finally {
+                  setLoadingBoletoId(null);
+                }
+              }}
+              className={`p-1 rounded-full text-xs font-semibold transition flex items-center gap-1
+          ${carregando
+                  ? "bg-blue-100 border border-blue-600 text-blue-600 cursor-wait"
+                  : ativo
+                    ? "bg-green-100 border border-green-700 text-green-700 hover:bg-green-200"
+                    : "bg-red-100 text-red-500 border border-red-500 hover:bg-red-200"
+                }
+        `}
+            >
+              {carregando ? (
+                <>
+                  <span className="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" />
+                </>
+              ) : (
+                ativo ? <CircleCheckBig size={12} /> : <CircleMinus size={12} />
+              )}
+            </button>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Email",
+      accessor: "emailEnviado",
+      sortable: true,
+      render: (_: any, row: FaturamentoOuProjecao) => {
+        if (row.tipo !== "FATURAMENTO") return "—";
+
+        const ativo = !!row.emailEnviado;
+        const carregando = loadingEmailId === row.id;
+
+        return (
+          <div className="w-full flex justify-center items-center">
+            <button
+              disabled={carregando || !row.boletoEmitido}
+              title={!row.boletoEmitido ? "Emita o boleto antes de enviar o e-mail" : ""}
+              onClick={async () => {
+                const novoValor = !ativo;
+                setLoadingEmailId(row.id);
+
+                try {
+                  await toggleEmailEnviado(row.id, novoValor);
+                  atualizarEmailNaTabela(row.id, novoValor);
+                } catch {
+                  toast.error("Erro ao atualizar e-mail");
+                } finally {
+                  setLoadingEmailId(null);
+                }
+              }}
+              className={`p-1 rounded-full text-xs font-semibold transition flex items-center gap-1
+          ${carregando
+                  ? "bg-blue-100 border border-blue-600 text-blue-600 cursor-wait"
+                  : ativo
+                    ? "bg-green-100 border border-green-700 text-green-700 hover:bg-green-200"
+                    : row.boletoEmitido
+                      ? "bg-red-100 text-red-500 border border-red-500 hover:bg-red-200"
+                      : "bg-gray-100 text-gray-400 border border-gray-400 cursor-not-allowed"
+                }
+        `}
+            >
+              {carregando ? (
+                <>
+                  <span className="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" />
+                </>
+              ) : (
+                ativo ? <CircleCheckBig size={12} /> : row.boletoEmitido ? <CircleMinus size={12} /> : <Ban size={12} />
+              )}
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -346,6 +443,26 @@ export default function FaturamentoPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const atualizarBoletoNaTabela = (id: number, valor: boolean) => {
+    setFaturamentos((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, boletoEmitido: valor }
+          : item
+      )
+    );
+  };
+
+  const atualizarEmailNaTabela = (id: number, valor: boolean) => {
+    setFaturamentos((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, emailEnviado: valor }
+          : item
+      )
+    );
   };
 
   const cardClasses =

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, editarFaturamentosEmMassa, editarProjecao, gerarFaturamento } from "../useCases/faturamento";
+import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, editarFaturamentosEmMassa, editarProjecao, emitirBoleto, enviarEmailFaturamento, gerarFaturamento } from "../useCases/faturamento";
 
 export const buscarFaturamentosPorContratoController = async (req: Request, res: Response) => {
   try {
@@ -39,7 +39,7 @@ export const editarFaturamentosEmMassaController = async (req: Request, res: Res
   const user = req.user;
 
   try {
-    const lista = req.body; // deve ser [{ id, dados: {...} }]
+    const lista = req.body;
     if (!Array.isArray(lista)) {
       throw new Error("O corpo da requisição deve ser uma lista de faturamentos");
     }
@@ -117,5 +117,33 @@ export const buscarFaturamentosEProjecoesController = async (req: Request, res: 
   } catch (e) {
     console.error("Erro ao buscar faturamentos e projeções:", e);
     return res.status(500).json({ error: "Erro ao buscar faturamentos e projeções." });
+  }
+};
+
+export const toggleBoletoEmitidoController = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const user = req.user;
+  const { boletoEmitido } = req.body;
+
+  try {
+    await emitirBoleto.execute(id, boletoEmitido, user);
+    return res.status(204).send();
+  } catch (e) {
+    console.error("Erro ao emitir boleto:", e);
+    return res.status(500).json({ error: "Erro ao emitir boleto." });
+  }
+};
+
+export const toggleEmailEnviadoController = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const user = req.user;
+  const { emailEnviado } = req.body; // boolean
+
+  try {
+    await enviarEmailFaturamento.execute(id, emailEnviado, user);
+    return res.status(204).send();
+  } catch (e) {
+    console.error("Erro ao marcar envio de e-mail:", e);
+    return res.status(500).json({ error: "Erro ao marcar envio de e-mail." });
   }
 };
