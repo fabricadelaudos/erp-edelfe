@@ -424,8 +424,8 @@ export const buscarFaturamentosEProjecoes = {
             laudos: fat.contrato?.laudos ?? undefined,
             pagoEm: fat.pagoEm?.toISOString() ?? undefined,
             vencimento: p.contrato.diaVencimento ?? undefined,
-            boletoEmitido: fat.boletoEmitido ?? undefined,
-            emailEnviado: fat.emailEnviado ?? undefined,
+            boletoEmitido: fat.boletoEmitido ?? false,
+            emailEnviado: fat.emailEnviado ?? false,
             contatos: fat.contrato?.unidade?.unidadecontato.map((uc) => ({
               id: uc.contato.idContato,
               nome: uc.contato.nome,

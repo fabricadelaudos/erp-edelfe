@@ -19,6 +19,9 @@ export interface FaturamentoOuProjecao {
   pagoEm?: string;
   vencimento?: string;
 
+  boletoEmitido?: boolean;
+  emailEnviado?: boolean;
+
   // Só para FATURAMENTO
   valorBase?: number;
   valorTotal?: number;
