@@ -31,6 +31,8 @@ app.use(cors({
     'http://localhost:5173',
     'https://edelfe.fabricadelaudos.com',
   ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 }));
 
