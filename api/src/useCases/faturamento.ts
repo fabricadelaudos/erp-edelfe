@@ -353,7 +353,18 @@ export const gerarFaturamento = {
 
 export const buscarFaturamentosEProjecoes = {
   async execute() {
+    const empresaAtivaWhere = {
+      contrato: {
+        unidade: {
+          empresa: {
+            ativo: true,
+          },
+        },
+      },
+    };
+
     const projecoes = await prisma.projecao.findMany({
+      where: empresaAtivaWhere,
       orderBy: { competencia: "asc" },
       include: {
         contrato: {

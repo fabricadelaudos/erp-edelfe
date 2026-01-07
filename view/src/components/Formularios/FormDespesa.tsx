@@ -161,23 +161,27 @@ export default function FormDespesa({ contaPagar, parcela, onClose }: FormDespes
 
         <GroupedSelect
           label="Plano de Contas *"
-          value={form.planocontasubcategoria?.idPlanoContaSubCategoria ?? ""}
+          value={String(form.planocontasubcategoria?.idPlanoContaSubCategoria ?? "")}
           onChange={(v) => {
+            const id = Number(v);
+
             const subSelecionada = planos
               .flatMap((c) => c.planocontasubcategoria ?? [])
-              .find((s) => s.idPlanoContaSubCategoria === v);
-            handleChange("planoConta", subSelecionada || null);
+              .find((s) => Number(s.idPlanoContaSubCategoria) === id);
+
+            handleChange("planocontasubcategoria", subSelecionada || null);
           }}
           groups={planos.map((cat) => ({
             label: `${cat.idPlanoContaCategoria} - ${cat.nome}`,
             options: (cat.planocontasubcategoria ?? []).map((sub) => ({
               label: `${sub.idPlanoContaSubCategoria} - ${sub.nome}`,
-              value: sub.idPlanoContaSubCategoria ?? 0,
+              value: String(sub.idPlanoContaSubCategoria ?? ""),
             })),
           }))}
           loading={loading}
           disabled={!!parcela}
         />
+
 
         <SearchableSelect
           label="Banco *"

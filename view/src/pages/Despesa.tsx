@@ -32,6 +32,7 @@ export default function DespesaPage() {
   const [filtroVencimentoInicio, setFiltroVencimentoInicio] = useState(
     formatarDataInput(primeiroDiaMes)
   );
+  const [filtroNumerodocumento, setFiltroNumerodocumento] = useState("");
   const [filtroVencimentoFim, setFiltroVencimentoFim] = useState(
     formatarDataInput(ultimoDiaMes)
   );
@@ -124,7 +125,7 @@ export default function DespesaPage() {
       const dentroDoStatus = !filtroStatus || p.status === filtroStatus;
       const dentroFornecedor = !filtroFornecedor || p.contaPagar.fornecedor.nome === filtroFornecedor;
       const dentroPlano = !filtroPlanoConta || p.contaPagar.planocontasubcategoria.nome === filtroPlanoConta;
-
+      const doc = p.contaPagar.numeroDocumento === filtroNumerodocumento;
       const venc = new Date(p.vencimento);
       const vencInicio = filtroVencimentoInicio ? new Date(filtroVencimentoInicio) : null;
       const vencFim = filtroVencimentoFim ? new Date(filtroVencimentoFim) : null;
@@ -137,7 +138,8 @@ export default function DespesaPage() {
         dentroDoStatus &&
         dentroFornecedor &&
         dentroPlano &&
-        dentroVencimento
+        dentroVencimento &&
+        doc
       );
     });
 
@@ -154,6 +156,7 @@ export default function DespesaPage() {
     setFiltroPagamentoFim("");
     setFiltroVencimentoInicio("");
     setFiltroVencimentoFim("");
+    setFiltroNumerodocumento("");
   }
 
   const confirmarPagamento = async (parcela: ParcelaComConta) => {
@@ -259,7 +262,7 @@ export default function DespesaPage() {
               </div>
 
               {/* Grupo: Período de Vencimento */}
-              <div className="col-span-2">
+              <div className="col-span-1">
                 <div className="grid grid-cols-2 gap-4 h-full">
                   <Input
                     name="vencimentoInicio"
@@ -278,6 +281,18 @@ export default function DespesaPage() {
                     required={false}
                   />
                 </div>
+              </div>
+
+              {/* Numero do Documento */}
+              <div className="col-span-">
+                <Input
+                  name="numerodocumento"
+                  label="Numero do Documento"
+                  type="text"
+                  value={filtroNumerodocumento}
+                  onChange={(e) => setFiltroNumerodocumento(e.target.value)}
+                  required={false}
+                />
               </div>
             </div>
 
@@ -480,12 +495,10 @@ export default function DespesaPage() {
             header: "Plano de Contas",
             accessor: "contaPagar",
             render: (_, row) => {
-              const idCategoria = row.contaPagar.planocontasubcategoria.categoria?.idPlanoContaCategoria ?? "";
-              const categoria = row.contaPagar.planocontasubcategoria.categoria?.nome ?? "";
               const idSubCategoria = row.contaPagar.planocontasubcategoria.idPlanoContaSubCategoria ?? "";
               const subcategoria = row.contaPagar.planocontasubcategoria.nome;
               return (
-                <div className="text-xs italic text-gray-700">{`${idCategoria} - ${categoria} - ${idSubCategoria} - ${subcategoria}`}</div>
+                <div className="text-xs italic text-gray-700">{`${idSubCategoria} - ${subcategoria}`}</div>
               );
             },
             sortable: true,

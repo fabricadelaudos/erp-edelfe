@@ -76,7 +76,6 @@ export const editarProjecoesEmMassa = async (
 };
 
 export const toggleBoletoEmitido = async (id: number, valor: boolean) => {
-  console.log("toggleBoletoEmitido", id, valor);
   await apiPatch(`/faturamento/${id}/boleto`, {
     method: "PATCH",
     body: JSON.stringify({ boletoEmitido: valor }),
