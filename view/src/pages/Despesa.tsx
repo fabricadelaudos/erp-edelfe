@@ -121,11 +121,18 @@ export default function DespesaPage() {
 
   const handleAplicarFiltrar = async () => {
     setLoading(true);
-    const Filtradas = parcelas.filter((p) => {
+
+    const filtradas = parcelas.filter((p) => {
       const dentroDoStatus = !filtroStatus || p.status === filtroStatus;
-      const dentroFornecedor = !filtroFornecedor || p.contaPagar.fornecedor.nome === filtroFornecedor;
-      const dentroPlano = !filtroPlanoConta || p.contaPagar.planocontasubcategoria.nome === filtroPlanoConta;
-      const doc = p.contaPagar.numeroDocumento === filtroNumerodocumento;
+      const dentroFornecedor =
+        !filtroFornecedor || p.contaPagar.fornecedor.nome === filtroFornecedor;
+      const dentroPlano =
+        !filtroPlanoConta || p.contaPagar.planocontasubcategoria.nome === filtroPlanoConta;
+
+      const dentroDocumento =
+        !filtroNumerodocumento ||
+        String(p.contaPagar.numeroDocumento ?? "").includes(filtroNumerodocumento);
+
       const venc = new Date(p.vencimento);
       const vencInicio = filtroVencimentoInicio ? new Date(filtroVencimentoInicio) : null;
       const vencFim = filtroVencimentoFim ? new Date(filtroVencimentoFim) : null;
@@ -139,14 +146,14 @@ export default function DespesaPage() {
         dentroFornecedor &&
         dentroPlano &&
         dentroVencimento &&
-        doc
+        dentroDocumento
       );
     });
 
-    setParcelasFiltradas(Filtradas);
-    await calcularTotais(Filtradas);
+    setParcelasFiltradas(filtradas);
+    await calcularTotais(filtradas);
     setLoading(false);
-  }
+  };
 
   const handleLimparFiltros = () => {
     setFiltroStatus("");

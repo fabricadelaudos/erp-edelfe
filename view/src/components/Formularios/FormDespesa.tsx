@@ -151,7 +151,7 @@ export default function FormDespesa({ contaPagar, parcela, onClose }: FormDespes
           onChange={(v) => handleChange("tipoDocumentoConta", v)}
           options={[
             { label: "BOLETO", value: "BOLETO" },
-            { label: "DÉBITO AUTOMÁTICO", value: "DEBITO" },
+            { label: "DEBITO_AUTOMATICO", value: "DEBITO" },
             { label: "FATURA", value: "FATURA" },
             { label: "NOTA FISCAL", value: "NF" },
             { label: "PIX", value: "PIX" },
