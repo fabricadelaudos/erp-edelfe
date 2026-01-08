@@ -7,6 +7,30 @@ function adicionarDias(data: Date, dias: number) {
   return nova;
 }
 
+function addMonthsKeepDay(date: Date, monthsToAdd: number) {
+  const base = new Date(date);
+
+  const targetYear = base.getFullYear();
+  const targetMonth = base.getMonth() + monthsToAdd;
+
+  const day = base.getDate();
+
+  // vai pro dia 1 do mês alvo
+  const d = new Date(targetYear, targetMonth, 1, 12, 0, 0);
+
+  // último dia do mês alvo
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+
+  // mantém o dia se existir, senão usa o último dia
+  d.setDate(Math.min(day, lastDay));
+
+  // mantém horário “limpo”
+  d.setHours(0, 0, 0, 0);
+
+  return d;
+}
+
+
 export const buscarContaPagar = {
   async execute(id: number) {
     return await prisma.contapagar.findUnique({
@@ -34,21 +58,36 @@ export const criarContaPagar = {
 
     const conta = await prisma.contapagar.create({ data: dados });
 
-    const parcelas = [];
-    const valorTotal = parseFloat(dados.valorTotal);
+    const parcelas: any[] = [];
+    const valorTotal = Number(dados.valorTotal ?? 0);
+    const qtdParcelas = Number(dados.parcelas ?? 1);
     const primeiraParcela = new Date(dados.vencimento);
 
-    for (let i = 0; i < dados.parcelas; i++) {
-      const vencimento = adicionarDias(primeiraParcela, dados.intervalo * i);
-      const valor = dados.recorrente
-        ? valorTotal
-        : parseFloat((valorTotal / dados.parcelas).toFixed(2));
+    // ✅ Divide mantendo soma correta (evita centavos sobrando)
+    const valorBase = dados.recorrente
+      ? valorTotal
+      : Number((valorTotal / qtdParcelas).toFixed(2));
+
+    let soma = 0;
+
+    for (let i = 0; i < qtdParcelas; i++) {
+      const vencimento = addMonthsKeepDay(primeiraParcela, i);
+
+      let valor = valorBase;
+
+      if (!dados.recorrente) {
+        // última parcela ajusta diferença por arredondamento
+        if (i === qtdParcelas - 1) {
+          valor = Number((valorTotal - soma).toFixed(2));
+        }
+        soma = Number((soma + valor).toFixed(2));
+      }
 
       parcelas.push({
         fkContaPagarId: conta.idContaPagar,
         numero: i + 1,
         vencimento,
-        valor
+        valor,
       });
     }
 
@@ -56,18 +95,18 @@ export const criarContaPagar = {
 
     await registrarEvento({
       idUsuario,
-      tipo: 'criar',
-      entidade: 'contaPagar',
+      tipo: "criar",
+      entidade: "contaPagar",
       entidadeId: conta.idContaPagar,
       descricao: `Conta a pagar criada no valor de R$ ${valorTotal.toFixed(2)}`,
-      dadosDepois: conta
+      dadosDepois: conta,
     });
 
     return await prisma.contapagar.findUnique({
       where: { idContaPagar: conta.idContaPagar },
-      include: { parcelacontapagar: true }
+      include: { parcelacontapagar: true },
     });
-  }
+  },
 };
 
 export const editarContaPagar = {

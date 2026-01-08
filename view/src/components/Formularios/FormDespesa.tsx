@@ -268,6 +268,7 @@ export default function FormDespesa({ contaPagar, parcela, onClose }: FormDespes
           value={form.intervalo}
           onChange={(e) => handleChange("intervalo", e.target.value)}
           disable={!!parcela}
+          required={false}
         />
 
         <ToggleInput

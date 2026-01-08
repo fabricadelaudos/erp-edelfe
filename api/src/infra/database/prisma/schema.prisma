@@ -162,7 +162,7 @@ model contapagar {
   valorTotal                 Decimal                       @db.Decimal(10, 2)
   parcelas                   Int
   vencimento                 DateTime
-  intervalo                  Int
+  intervalo                  Int?
   recorrente                 Boolean                       @default(false)
   status                     contapagar_status             @default(ABERTA)
   banco                      banco                         @relation(fields: [fkBancoId], references: [idBanco], map: "contaPagar_fkBancoId_fkey")

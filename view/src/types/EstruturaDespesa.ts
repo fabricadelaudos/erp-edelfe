@@ -47,7 +47,7 @@ export interface ContaPagar {
   valorTotal: string;
   parcelas: number;
   vencimento: string;
-  intervalo: number;
+  intervalo?: number;
   recorrente: boolean;
   status: 'ABERTA' | 'PAGA' | 'VENCIDA';
 
