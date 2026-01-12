@@ -19,6 +19,7 @@ interface FaturamentoInput {
   numeroNota?: string;
   boletoEmitido?: boolean;
   emailEnviado?: boolean;
+  notaEmitida?: boolean;
 }
 
 export const buscarFaturamentosPorContrato = {
@@ -51,6 +52,7 @@ export const criarFaturamento = {
         numeroNota: data.numeroNota,
         boletoEmitido: data.boletoEmitido ?? false,
         emailEnviado: data.emailEnviado ?? false,
+        notaEmitida: data.notaEmitida ?? false,
       },
     });
 
@@ -92,6 +94,7 @@ export const editarFaturamento = {
         competenciaPagamento,
         boletoEmitido: dados.boletoEmitido ?? false,
         emailEnviado: dados.emailEnviado ?? false,
+        notaEmitida: dados.notaEmitida ?? false,
       },
     });
 
@@ -153,6 +156,7 @@ export const editarFaturamentosEmMassa = {
             competenciaPagamento,
             boletoEmitido: item.dados.boletoEmitido ?? false,
             emailEnviado: item.dados.emailEnviado ?? false,
+            notaEmitida: item.dados.notaEmitida ?? false,
           },
         });
 
@@ -437,6 +441,7 @@ export const buscarFaturamentosEProjecoes = {
             vencimento: p.contrato.diaVencimento ?? undefined,
             boletoEmitido: fat.boletoEmitido ?? false,
             emailEnviado: fat.emailEnviado ?? false,
+            notaEmitida: fat.notaEmitida ?? false,
             contatos: fat.contrato?.unidade?.unidadecontato.map((uc) => ({
               id: uc.contato.idContato,
               nome: uc.contato.nome,
@@ -562,6 +567,7 @@ export const gerarFaturamentoDeProjecao = {
         numeroNota: "",
         boletoEmitido: false,
         emailEnviado: false,
+        notaEmitida: false,
       },
     });
 
@@ -646,6 +652,40 @@ export const enviarEmailFaturamento = {
       descricao: emailEnviado
         ? `Marcou e-mail como enviado no faturamento ${idFaturamento}`
         : `Desmarcou e-mail como enviado no faturamento ${idFaturamento}`,
+      entidade: "faturamento",
+      entidadeId: idFaturamento,
+      dadosAntes: faturamentoAntes,
+      dadosDepois: faturamentoDepois,
+    });
+  },
+};
+
+export const emitirNota = {
+  async execute(
+    idFaturamento: number,
+    notaEmitida: boolean,
+    user: any,
+    tx: Prisma.TransactionClient = prisma
+  ) {
+    const faturamentoAntes = await tx.faturamento.findUnique({
+      where: { idFaturamento },
+    });
+
+    if (!faturamentoAntes) {
+      throw new Error("Faturamento não encontrado");
+    }
+
+    const faturamentoDepois = await tx.faturamento.update({
+      where: { idFaturamento },
+      data: { notaEmitida },
+    });
+
+    await registrarEvento({
+      idUsuario: user?.idUsuario,
+      tipo: "EMISSAO",
+      descricao: notaEmitida
+        ? `Marcou nota como emitido no faturamento ${idFaturamento}`
+        : `Desmarcou nota como emitido no faturamento ${idFaturamento}`,
       entidade: "faturamento",
       entidadeId: idFaturamento,
       dadosAntes: faturamentoAntes,

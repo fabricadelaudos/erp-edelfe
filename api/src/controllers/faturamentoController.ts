@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, editarFaturamentosEmMassa, editarProjecao, emitirBoleto, enviarEmailFaturamento, gerarFaturamento } from "../useCases/faturamento";
+import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, editarFaturamentosEmMassa, editarProjecao, emitirBoleto, emitirNota, enviarEmailFaturamento, gerarFaturamento } from "../useCases/faturamento";
 
 export const buscarFaturamentosPorContratoController = async (req: Request, res: Response) => {
   try {
@@ -141,6 +141,20 @@ export const toggleEmailEnviadoController = async (req: Request, res: Response) 
 
   try {
     await enviarEmailFaturamento.execute(id, emailEnviado, user);
+    return res.status(204).send();
+  } catch (e) {
+    console.error("Erro ao marcar envio de e-mail:", e);
+    return res.status(500).json({ error: "Erro ao marcar envio de e-mail." });
+  }
+};
+
+export const toggleNotaEmitidaController = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const user = req.user;
+  const { notaEmitida } = req.body; // boolean
+
+  try {
+    await emitirNota.execute(id, notaEmitida, user);
     return res.status(204).send();
   } catch (e) {
     console.error("Erro ao marcar envio de e-mail:", e);

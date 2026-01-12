@@ -58,6 +58,7 @@ export interface FaturamentoOuProjecao {
   vencimento?: string;
   boletoEmitido?: boolean;
   emailEnviado?: boolean;
+  notaEmitida?: boolean;
 
   contatos?: {
     idContato: number;

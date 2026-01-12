@@ -88,3 +88,10 @@ export const toggleEmailEnviado = async (id: number, valor: boolean) => {
     body: JSON.stringify({ emailEnviado: valor }),
   });
 };
+
+export const toggleNotaEmitida = async (id: number, valor: boolean) => {
+  await apiPatch(`/faturamento/${id}/nota`, {
+    method: "PATCH",
+    body: JSON.stringify({ notaEmitida: valor }),
+  });
+};

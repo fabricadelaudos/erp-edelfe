@@ -113,6 +113,7 @@ model faturamento {
   numeroNota                String?
   boletoEmitido             Boolean?                @default(false)
   emailEnviado              Boolean?                @default(false)
+  notaEmitida               Boolean?                @default(false)
 
   competenciaFinanceira     competenciafinanceira? @relation(fields: [fkCompetenciaFinanceiraId], references: [idCompetenciaFinanceira])
   contrato                  contrato               @relation(fields: [fkContratoId], references: [idContrato], onDelete: Cascade)
