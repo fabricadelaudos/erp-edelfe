@@ -8,6 +8,8 @@ import {
   buscarParcelaController,
   atualizarParcelaController,
   confirmarPagamentoController,
+  excluirParcelaContaPagarController,
+  excluirContaPagarController,
 } from '../../controllers/despesas/contaPagarController';
 
 const contasPagarRoutes = Router();
@@ -21,5 +23,8 @@ contasPagarRoutes.get('/:id', authorize(), buscarContaPagarController);
 contasPagarRoutes.get('/', authorize(), buscarContasPagarController);
 contasPagarRoutes.post('/', authorize(), criarContaPagarController);
 contasPagarRoutes.put('/:id', authorize(), editarContaPagarController);
+
+contasPagarRoutes.delete('/parcela/:id', authorize(), excluirParcelaContaPagarController);
+contasPagarRoutes.delete('/:id', authorize(), excluirContaPagarController);
 
 export default contasPagarRoutes;

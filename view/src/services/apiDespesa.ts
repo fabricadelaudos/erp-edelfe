@@ -36,6 +36,18 @@ export async function editarContaPagar(id: number, data: any): Promise<ContaPaga
   });
 }
 
+export async function excluirParcelaContaPagar(idParcela: number) {
+  return apiFetch(`/contapagar/parcela/${idParcela}`, {
+    method: "DELETE",
+  });
+}
+
+export async function excluirContaPagar(idContaPagar: number) {
+  return apiFetch(`/contapagar/${idContaPagar}`, {
+    method: "DELETE",
+  });
+}
+
 export async function editarParcelaContaPagar(id: number, data: any): Promise<ContaPagar> {
   return await apiFetch(`${baseConta}/parcela/${id}`, {
     method: "PUT",

@@ -7,6 +7,8 @@ import {
   buscarParcela,
   atualizarParcela,
   confirmarPagamento,
+  excluirContaPagar,
+  excluirParcelaContaPagar,
 } from '../../useCases/despesas/contaPagar';
 
 export const buscarContaPagarController = async (req: Request, res: Response) => {
@@ -49,6 +51,20 @@ export const editarContaPagarController = async (req: Request, res: Response) =>
   }
 };
 
+export const excluirContaPagarController = async (req: Request, res: Response) => {
+  try {
+    const idContaPagar = Number(req.params.id);
+    const idUsuario = (req as any).user?.idUsuario ?? null;
+
+    const result = await excluirContaPagar.execute({ idContaPagar, idUsuario });
+
+    return res.status(200).json(result);
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 // Parcelas
 export const buscarParcelaController = async (req: Request, res: Response) => {
   try {
@@ -79,3 +95,17 @@ export const confirmarPagamentoController = async (req: Request, res: Response) 
     return res.status(500).json({ error: err.message });
   }
 };
+
+export const excluirParcelaContaPagarController = async (req: Request, res: Response) => {
+  try {
+    const idParcela = Number(req.params.id);
+    const idUsuario = (req as any).user?.idUsuario ?? null;
+
+    const result = await excluirParcelaContaPagar.execute({ idParcela, idUsuario });
+
+    return res.status(200).json(result);
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+}

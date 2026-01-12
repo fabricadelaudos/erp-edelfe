@@ -190,8 +190,7 @@ export default function FaturamentoPage() {
         return (
           <div className="w-full flex justify-center items-center">
             <button
-              disabled={carregando || !row.notaEmitida}
-              title={!row.notaEmitida ? "Emita o boleto antes de enviar o e-mail" : ""}
+              disabled={carregando}
               onClick={async () => {
                 const novoValor = !ativo;
                 setLoadingNotaId(row.id);
@@ -207,9 +206,9 @@ export default function FaturamentoPage() {
               }}
               className={`p-1 rounded-full text-xs font-semibold transition flex items-center gap-1
           ${carregando
-                  ? "bg-yellow-100 border border-yellow-600 text-yellow-600 cursor-wait"
+                  ? "bg-blue-100 border border-blue-600 text-blue-600 cursor-wait"
                   : ativo
-                    ? "bg-green-100 border border-green-700 text-green-700 hover:bg-green-200"
+                    ? "bg-yellow-100 border border-yellow-700 text-yellow-700 hover:bg-yellow-200"
                     : "bg-red-100 text-red-500 border border-red-500 hover:bg-red-200"
                 }
         `}

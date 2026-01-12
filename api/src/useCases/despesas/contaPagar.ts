@@ -142,6 +142,64 @@ export const editarContaPagar = {
   }
 };
 
+type InputContaPagar = {
+  idContaPagar: number;
+  idUsuario?: number | null;
+};
+
+export const excluirContaPagar = {
+  async execute({ idContaPagar, idUsuario }: InputContaPagar) {
+    if (!idContaPagar || Number.isNaN(idContaPagar)) {
+      throw new Error("idContaPagar inválido");
+    }
+
+    const conta = await prisma.contapagar.findUnique({
+      where: { idContaPagar },
+      select: { idContaPagar: true },
+    });
+
+    if (!conta) {
+      throw new Error("Conta a pagar não encontrada");
+    }
+
+    // Regra recomendada: impedir excluir conta se tem parcela paga
+    const temPaga = await prisma.parcelacontapagar.count({
+      where: { fkContaPagarId: idContaPagar, status: "PAGA" as any },
+    });
+
+    if (temPaga > 0) {
+      throw new Error("Não é permitido excluir a conta: existem parcelas pagas");
+      // Se você quiser permitir: remova esse throw
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1) deleta parcelas
+      await tx.parcelacontapagar.deleteMany({
+        where: { fkContaPagarId: idContaPagar },
+      });
+
+      // 2) deleta conta
+      await tx.contapagar.delete({
+        where: { idContaPagar },
+      });
+
+      // registrarEvento?.({
+      //   idUsuario,
+      //   acao: "EXCLUIR_CONTA_PAGAR",
+      //   detalhes: `Conta ${idContaPagar} removida com todas as parcelas`,
+      // });
+
+      return {
+        ok: true,
+        deletedContaId: idContaPagar,
+        message: "Conta excluída com todas as parcelas.",
+      };
+    });
+
+    return result;
+  }
+};
+
 // Parcelas
 export const buscarParcela = {
   async execute(id: number) {
@@ -212,3 +270,86 @@ export const confirmarPagamento = {
     return parcela;
   }
 };
+
+type InputParcelaContaPagar = {
+  idParcela: number;
+  idUsuario?: number | null;
+};
+
+export const excluirParcelaContaPagar = {
+  async execute({ idParcela, idUsuario }: InputParcelaContaPagar) {
+    if (!idParcela || Number.isNaN(idParcela)) {
+      throw new Error("idParcela inválido");
+    }
+
+
+    // Busca a parcela para saber conta e status
+    const parcela = await prisma.parcelacontapagar.findUnique({
+      where: { idParcela },
+      select: {
+        idParcela: true,
+        status: true,
+        fkContaPagarId: true,
+        numero: true,
+      },
+    });
+
+    if (!parcela) {
+      throw new Error("Parcela não encontrada");
+    }
+
+    // Regra recomendada: não excluir parcela paga
+    if (parcela.status === "PAGA") {
+      throw new Error("Não é permitido excluir uma parcela paga");
+    }
+
+    const fkContaPagarId = parcela.fkContaPagarId;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1) Exclui a parcela
+      await tx.parcelacontapagar.delete({
+        where: { idParcela },
+      });
+
+      // 2) Verifica quantas parcelas sobraram
+      const restantes = await tx.parcelacontapagar.count({
+        where: { fkContaPagarId },
+      });
+
+      // 3) Se não sobrou nenhuma, exclui a conta
+      if (restantes === 0) {
+        await tx.contapagar.delete({
+          where: { idContaPagar: fkContaPagarId },
+        });
+
+        // registrarEvento?.({
+        //   idUsuario,
+        //   acao: "EXCLUIR_CONTA_PAGAR_AUTO",
+        //   detalhes: `Conta ${fkContaPagarId} removida pois ficou sem parcelas`,
+        // });
+
+        return {
+          ok: true,
+          deletedParcelaId: idParcela,
+          deletedContaId: fkContaPagarId,
+          message: "Parcela excluída e conta removida (não havia mais parcelas).",
+        };
+      }
+
+      // registrarEvento?.({
+      //   idUsuario,
+      //   acao: "EXCLUIR_PARCELA_CONTA_PAGAR",
+      //   detalhes: `Parcela ${idParcela} (nº ${parcela.numero}) removida da conta ${fkContaPagarId}`,
+      // });
+
+      return {
+        ok: true,
+        deletedParcelaId: idParcela,
+        deletedContaId: null,
+        message: "Parcela excluída com sucesso.",
+      };
+    });
+
+    return result;
+  }
+}

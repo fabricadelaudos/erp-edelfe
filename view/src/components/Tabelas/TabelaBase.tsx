@@ -39,6 +39,7 @@ export default function TabelaBase<T extends object>({
   selectedRowsExternal,
   rowIdAccessor,
 }: TabelaBaseProps<T>) {
+  const [perPage, setPerPage] = useState(itemsPerPage);
   const [sortConfig, setSortConfig] = useState<{ key: keyof T | null; direction: "asc" | "desc" }>({
     key: null,
     direction: "asc",
@@ -78,9 +79,9 @@ export default function TabelaBase<T extends object>({
   }, [data, sortConfig]);
 
   const totalItems = sortedData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const totalPages = Math.ceil(totalItems / perPage);
+  const startIndex = (currentPage - 1) * perPage;
+  const endIndex = startIndex + perPage;
   const currentData = sortedData.slice(startIndex, endIndex);
 
   const goToPage = (page: number) => {
@@ -117,7 +118,7 @@ export default function TabelaBase<T extends object>({
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pb-4">
       <div className="rounded-md border border-gray-200">
         <div className="overflow-x-auto custom-scrollbar rounded-t-md">
           <table className={`min-w-[1200px] w-full bg-white text-center rounded-t-md ${className}`}>
@@ -242,9 +243,29 @@ export default function TabelaBase<T extends object>({
 
           {/* Paginação */}
           <div className="flex justify-between items-center px-4 py-3 bg-gray-50 text-gray-700 rounded-b-md text-sm font-medium">
-            <p className="text-gray-600">
-              Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} itens
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <select
+                  className="border border-gray-300 rounded px-2 py-1 bg-white"
+                  value={perPage}
+                  onChange={(e) => {
+                    setPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  {[10, 25, 50, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <p className="text-gray-600">
+                Mostrando {totalItems === 0 ? 0 : startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} itens
+              </p>
+            </div>
+
             <div className="flex items-center gap-1">
               <button onClick={() => goToPage(1)} disabled={currentPage === 1} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">«</button>
               <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded hover:bg-gray-100 cursor-pointer disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:text-gray-500">‹</button>

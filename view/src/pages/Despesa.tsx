@@ -10,6 +10,7 @@ import ToolTip from "../components/Auxiliares/ToolTip";
 import Swal from "sweetalert2";
 import { formatarData, formatarReais } from "../components/Auxiliares/formatter";
 import Spinner from "../components/Loading";
+import ModalExcluirDespesa from "../components/Modais/ModalExcluirDespesa";
 
 export default function DespesaPage() {
 
@@ -49,6 +50,14 @@ export default function DespesaPage() {
   const [totalAbertoValor, setTotalAbertoValor] = useState(0);
 
   const [loading, setLoading] = useState(false);
+
+  const [modalExcluirOpen, setModalExcluirOpen] = useState(false);
+  const [contaParaExcluir, setContaParaExcluir] = useState<ParcelaComConta["contaPagar"] | null>(null);
+
+  const abrirModalExcluir = (parcela: ParcelaComConta) => {
+    setContaParaExcluir(parcela.contaPagar);
+    setModalExcluirOpen(true);
+  };
 
   const carregarContas = async () => {
     setLoading(true);
@@ -532,19 +541,43 @@ export default function DespesaPage() {
           },
         ]}
         acoesExtras={(row) => (
-          <ToolTip text="Confirmar Pagamento" position="left">
-            <button
-              className="text-green-600 hover:text-green-700"
-              onClick={() => confirmarPagamento(row)}
-              disabled={row.status === "PAGA"}
-            >
-              <BanknoteIcon />
-            </button>
-          </ToolTip>
+          <div className="flex items-center gap-2 justify-center">
+            <ToolTip text="Confirmar Pagamento" position="left">
+              <button
+                className="text-green-600 hover:text-green-700"
+                onClick={() => confirmarPagamento(row)}
+                disabled={row.status === "PAGA"}
+              >
+                <BanknoteIcon />
+              </button>
+            </ToolTip>
+
+            <ToolTip text="Excluir despesa" position="left">
+              <button
+                className="text-red-600 hover:text-red-700"
+                onClick={() => abrirModalExcluir(row)}
+              >
+                {/* pode usar Trash2 aqui se quiser */}
+                <span className="font-bold">🗑</span>
+              </button>
+            </ToolTip>
+          </div>
         )}
         onEdit={handleEditarParcela}
         isLoading={loading}
       />
+
+      {modalExcluirOpen && (
+        <ModalExcluirDespesa
+          isOpen={modalExcluirOpen}
+          onClose={() => {
+            setModalExcluirOpen(false);
+            setContaParaExcluir(null);
+          }}
+          contaPagar={contaParaExcluir}
+          onDeleted={carregarContas}
+        />
+      )}
 
       {/* Modal Cadastro de Despesa */}
       {modalAberto && (
