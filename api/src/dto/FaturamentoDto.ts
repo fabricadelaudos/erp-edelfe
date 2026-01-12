@@ -21,6 +21,7 @@ export interface FaturamentoOuProjecao {
 
   boletoEmitido?: boolean;
   emailEnviado?: boolean;
+  notaEmitida?: boolean;
 
   // Só para FATURAMENTO
   valorBase?: number;
