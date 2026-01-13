@@ -286,8 +286,8 @@ export default function FaturamentoPage() {
         return (
           <div className="w-full flex justify-center items-center">
             <button
-              disabled={carregando || !row.emailEnviado}
-              title={!row.emailEnviado ? "Emita o boleto antes de enviar o e-mail" : ""}
+              disabled={carregando || !row.boletoEmitido}
+              title={!row.boletoEmitido ? "Emita o boleto antes de enviar o e-mail" : ""}
               onClick={async () => {
                 const novoValor = !ativo;
                 setLoadingEmailId(row.id);
