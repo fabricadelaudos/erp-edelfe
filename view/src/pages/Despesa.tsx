@@ -48,6 +48,7 @@ export default function DespesaPage() {
   const [totalPagoValor, setTotalPagoValor] = useState(0);
   const [totalAberto, setTotalAberto] = useState(0);
   const [totalAbertoValor, setTotalAbertoValor] = useState(0);
+  const [totalGeral, setTotalGeral] = useState(0);
 
   const [loading, setLoading] = useState(false);
 
@@ -62,8 +63,6 @@ export default function DespesaPage() {
   const carregarContas = async () => {
     setLoading(true);
     const contas = await buscarContasPagar();
-
-    console.log(contas);
 
     const todasParcelas = contas.flatMap((c) =>
       c.parcelacontapagar.map((p) => ({
@@ -126,6 +125,7 @@ export default function DespesaPage() {
     setTotalPagoValor(totalPagoValor);
     setTotalAberto(totalAberto);
     setTotalAbertoValor(totalAbertoValor);
+    setTotalGeral(totalPagoValor + totalAbertoValor);
   };
 
   const handleAplicarFiltrar = async () => {
@@ -366,7 +366,7 @@ export default function DespesaPage() {
         </>
       )}
 
-      <div className="grid grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-6 gap-4 mb-4">
         <div className={cardClasses}>
           <div className="w-full">
             <p className="text-sm text-gray-500">Total de Títulos</p>
@@ -431,6 +431,20 @@ export default function DespesaPage() {
             ) : (
               <p className="text-lg font-bold text-red-600 text-right">
                 R$ {totalAbertoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className={cardClasses}>
+          <div className="w-full">
+            <p className="text-sm text-gray-500">Total</p>
+            {loading ? (
+              <div className="flex justify-end py-1">
+                <Spinner size={20} className="text-orange-600" />
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-orange-600 text-right">
+                R$ {totalGeral.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
             )}
           </div>
