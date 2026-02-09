@@ -107,7 +107,7 @@ export default function ModalEditarFaturamento({
     <ModalBase
       isOpen={aberto}
       onClose={onClose}
-      titulo={isProjecao ? "Detalhes da Projeção" : "Detalhes do Faturamento"}
+      titulo={isProjecao ? `Detalhes da Projeção #${dados.id}` : `Detalhes do Faturamento #${dados.id}`}
     >
       <div className="flex flex-col gap-6 p-4 text-sm">
         {isProjecao && (

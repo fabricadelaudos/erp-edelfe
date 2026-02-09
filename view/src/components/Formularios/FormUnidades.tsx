@@ -3,8 +3,9 @@ import type { Contato, Unidade } from "../../types/EstruturaEmpresa";
 import { Input, SelectInput, TextArea } from "../Inputs";
 import ListaContato from "../Listas/ListaContato";
 import ListaContratos from "../Listas/ListaContrato";
-import { buscarCep, buscarContatos } from "../../services/apiEmpresa";
+import { buscarCep, buscarCnpj, buscarContatos } from "../../services/apiEmpresa";
 import { formatarDocumento, limparFormatacao } from "../Auxiliares/formatter";
+import toast from "react-hot-toast";
 
 interface Props {
   unidade: Unidade;
@@ -15,6 +16,7 @@ export default function FormUnidade({ unidade, onChange }: Props) {
   const [aba, setAba] = useState<'dados' | 'contato' | 'contrato'>('dados');
   const [formLocal, setFormLocal] = useState<Unidade>({ ...unidade });
   const [contatosEmpresa, setContatosEmpresa] = useState<Contato[]>([]);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
 
   useEffect(() => {
     setFormLocal({
@@ -51,6 +53,55 @@ export default function FormUnidade({ unidade, onChange }: Props) {
     setFormLocal((prev) => ({ ...prev, [campo]: valor }));
   };
 
+  const handleBuscarCnpj = async () => {
+    try {
+      if (formLocal.tipoDocumento !== "CNPJ") return;
+
+      const cnpj = String(formLocal.documento || "").replace(/\D/g, "");
+      if (cnpj.length !== 14) {
+        toast.error("Informe um CNPJ válido (14 dígitos).");
+        return;
+      }
+
+      setCnpjLoading(true);
+
+      const raw = await buscarCnpj(cnpj);
+      
+      const info =
+        (Array.isArray(raw) ? raw[0] : raw?.data ?? raw?.rows?.[0] ?? raw) || null;
+
+      if (!info) {
+        alert("CNPJ não encontrado.");
+        return;
+      }
+
+      setFormLocal((prev) => ({
+        ...prev,
+        cep: (info.cep || "").replace(/\D/g, "") || prev.cep,
+        endereco: info.logradouro || prev.endereco,
+
+        // BrasilAPI manda como string, garanta string no state:
+        numero: info.numero != null ? String(info.numero) : prev.numero,
+        complemento: info.complemento != null ? String(info.complemento) : prev.complemento,
+
+        bairro: info.bairro || prev.bairro,
+        cidade: info.municipio || prev.cidade,
+        uf: info.uf || prev.uf,
+
+        // se quiser preencher nomes também:
+        razaoSocial: info.razao_social || prev.razaoSocial,
+        nomeFantasia: info.nome_fantasia || prev.nomeFantasia,
+      }));
+
+
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao buscar CNPJ.");
+    } finally {
+      setCnpjLoading(false);
+    }
+  };
+
   const handleSalvar = () => {
     onChange(formLocal);
   };
@@ -85,23 +136,53 @@ export default function FormUnidade({ unidade, onChange }: Props) {
       <div className="flex-1 space-y-4">
         {aba === "dados" && (
           <div className="space-y-4">
-            <div className="col-span-2 flex items-center justify-end gap-2">
-              <label htmlFor="retemIss" className="text-sm text-gray-700">
-                Esta unidade retém ISS na fonte
-              </label>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={formLocal.retemIss}
-                onClick={() => atualizarCampo("retemIss", !formLocal.retemIss)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${formLocal.retemIss ? "bg-orange-500" : "bg-gray-300"
-                  }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${formLocal.retemIss ? "translate-x-6" : "translate-x-1"
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <Input
+                    name="documento"
+                    label="Documento"
+                    value={formatarDocumento(formLocal.documento, formLocal.tipoDocumento)}
+                    onChange={(e) =>
+                      atualizarCampo("documento", limparFormatacao(e.target.value))
+                    }
+                    required
+                  />
+                </div>
+
+                {formLocal.tipoDocumento === "CNPJ" && (
+                  <button
+                    type="button"
+                    onClick={handleBuscarCnpj}
+                    disabled={cnpjLoading}
+                    className={`h-[42px] px-3 rounded-lg border text-sm font-medium ${cnpjLoading
+                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
+                      }`}
+                    title="Buscar dados do CNPJ na BrasilAPI"
+                  >
+                    {cnpjLoading ? "Buscando..." : "Buscar CNPJ"}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <label htmlFor="retemIss" className="text-sm text-gray-700">
+                  Esta unidade retém ISS na fonte
+                </label>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formLocal.retemIss}
+                  onClick={() => atualizarCampo("retemIss", !formLocal.retemIss)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${formLocal.retemIss ? "bg-orange-500" : "bg-gray-300"
                     }`}
-                />
-              </button>
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${formLocal.retemIss ? "translate-x-6" : "translate-x-1"
+                      }`}
+                  />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

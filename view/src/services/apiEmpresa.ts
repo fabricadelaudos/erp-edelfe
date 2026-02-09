@@ -34,4 +34,16 @@ export async function buscarCep(cep: string): Promise<EnderecoCep | null> {
   }
 }
 
+export async function buscarCnpj(documento: string) {
+  const cnpj = String(documento || "").replace(/\D/g, "");
+  if (cnpj.length !== 14) return null;
+
+  const url = `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`;
+
+  const res = await fetch(url);
+  if (!res.ok) return null;
+
+  return await res.json();
+}
+
 export const buscarContatos = async (idEmpresa: number): Promise<Contato[]> => apiFetch<Contato[]>(`/empresa/${idEmpresa}/contatos`);

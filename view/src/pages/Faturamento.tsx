@@ -93,6 +93,7 @@ export default function FaturamentoPage() {
   };
 
   const colunasFaturamento: Column<FaturamentoOuProjecao>[] = [
+    { header: "ID", accessor: "id", sortable: true },
     { header: "Empresa", accessor: "empresa", sortable: true },
     { header: "Unidade", accessor: "unidade", sortable: true },
     {
