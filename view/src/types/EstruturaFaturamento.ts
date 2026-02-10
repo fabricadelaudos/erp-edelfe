@@ -38,7 +38,7 @@ export interface FaturamentoOuProjecao {
   valorTotal?: number;
   impostoPorcentagem?: number;
   impostoValor?: number;
-
+  retemIss?: number;
   vidas?: number;
   status: string;
   numeroNota?: string;

@@ -28,6 +28,7 @@ export default function ModalEditarFaturamento({
     const isProjecao = faturamento.tipo === "PROJECAO";
     const valorBase = Number(faturamento?.contrato?.valorBase ?? 0);
     const vidas = Number(faturamento.vidas ?? faturamento.vidas ?? 0);
+    const valorTotal = Number(faturamento?.valorTotal ?? 0);
 
     const valorCalculado = isProjecao && faturamento.contrato?.porVida ? valorBase * vidas : faturamento.valorPrevisto;
 
@@ -35,6 +36,7 @@ export default function ModalEditarFaturamento({
       ...faturamento,
       valorPrevisto: valorCalculado,
       vidas: vidas,
+      valorTotal: valorTotal,
     });
   }, [faturamento]);
 
@@ -287,6 +289,13 @@ export default function ModalEditarFaturamento({
                 <label className="font-medium text-gray-600 mb-1 block">Imposto (R$)</label>
                 <Copiavel valor={formatarReais(dados.impostoValor?.toString()) ?? "—"} />
               </div>
+
+              {dados.retemIss && (
+                <div>
+                  <label className="font-medium text-gray-600 mb-1 block">Valor Liquido</label>
+                  <Copiavel valor={formatarReais(dados.valorTotal?.toString()) ?? "—"} />
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-4">

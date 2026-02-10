@@ -442,6 +442,7 @@ export const buscarFaturamentosEProjecoes = {
             boletoEmitido: fat.boletoEmitido ?? false,
             emailEnviado: fat.emailEnviado ?? false,
             notaEmitida: fat.notaEmitida ?? false,
+            retemIss: fat.contrato?.unidade?.retemIss ?? false,
             contatos: fat.contrato?.unidade?.unidadecontato.map((uc) => ({
               id: uc.contato.idContato,
               nome: uc.contato.nome,
@@ -484,6 +485,7 @@ export const buscarFaturamentosEProjecoes = {
         esocial: p.contrato?.esocial ?? undefined,
         laudos: p.contrato?.laudos ?? undefined,
         vencimento: p.contrato.diaVencimento ?? undefined,
+        retemIss: p.contrato?.unidade?.retemIss ?? false,
         contatos: p.contrato?.unidade?.unidadecontato.map((uc) => ({
           id: uc.contato.idContato,
           nome: uc.contato.nome,
