@@ -21,10 +21,10 @@ export default function FormUnidade({ unidade, onChange }: Props) {
   useEffect(() => {
     setFormLocal({
       ...unidade,
-      contatos: Array.isArray(unidade.contatos)
-        ? unidade.contatos
-        : unidade.contatos
-          ? [unidade.contatos]
+      contatos: Array.isArray((unidade as any).unidadecontato)
+        ? (unidade as any).unidadecontato
+        : (unidade as any).unidadecontato
+          ? [(unidade as any).unidadecontato]
           : [],
     });
   }, [unidade]);
@@ -66,7 +66,7 @@ export default function FormUnidade({ unidade, onChange }: Props) {
       setCnpjLoading(true);
 
       const raw = await buscarCnpj(cnpj);
-      
+
       const info =
         (Array.isArray(raw) ? raw[0] : raw?.data ?? raw?.rows?.[0] ?? raw) || null;
 

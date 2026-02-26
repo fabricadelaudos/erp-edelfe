@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Contato, unidadeContato } from "../../types/EstruturaEmpresa";
 import FormContato from "../Formularios/FormContato";
-import ModalBase from "../Modais/ModalBase"; // mesmo ModalBase que você já usa em EmpresaPage
+import ModalBase from "../Modais/ModalBase";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { formatarTelefone } from "../Auxiliares/formatter";
 import Swal from "sweetalert2";

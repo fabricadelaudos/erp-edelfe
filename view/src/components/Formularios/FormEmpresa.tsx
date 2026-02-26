@@ -27,6 +27,7 @@ export default function FormEmpresa({ onSalvar, empresaSelecionada }: Props) {
 
   useEffect(() => {
     if (empresaSelecionada) {
+      console.log(empresaSelecionada);
       setForm(empresaSelecionada);
     }
   }, [empresaSelecionada]);
