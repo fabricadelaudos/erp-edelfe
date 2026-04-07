@@ -17,6 +17,46 @@ export interface FaturamentoInput {
   numeroNota?: string;
 }
 
+// apiFaturamento.ts
+export type FiltrosFaturamento = {
+  status?: string;
+  empresa?: string;
+  unidade?: string;
+  nota?: string;
+  competenciaInicio?: string;
+  competenciaFim?: string;
+  pagamentoInicio?: string;
+  pagamentoFim?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+};
+
+export type ListaFaturamentoResponse = {
+  items: FaturamentoOuProjecao[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export const buscarFaturamentoLista = async (filtros: FiltrosFaturamento) => {
+  const params = new URLSearchParams();
+
+  Object.entries(filtros || {}).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+    params.set(k, String(v));
+  });
+
+  return apiFetch<ListaFaturamentoResponse>(`/faturamento/lista?${params.toString()}`);
+};
+
+export const buscarOpcoesFaturamento = async () => {
+  return apiFetch<{ empresas: { label: string, value: string }[]; unidades: { label: string, value: string }[] }>(
+    "/faturamento/opcoes"
+  );
+};
+
 export async function buscarFaturamentosPorContrato(idContrato: number): Promise<Faturamento[]> {
   return apiFetch<Faturamento[]>(`/faturamento/contrato/${idContrato}`);
 }

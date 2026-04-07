@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosPorContrato, criarFaturamento, editarFaturamento, editarFaturamentosEmMassa, editarProjecao, emitirBoleto, emitirNota, enviarEmailFaturamento, gerarFaturamento } from "../useCases/faturamento";
+import { buscarFaturamentoCompetencia, buscarFaturamentosEProjecoes, buscarFaturamentosEProjecoesLista, buscarFaturamentosPorContrato, buscarOpcoesFaturamento, criarFaturamento, editarFaturamento, editarFaturamentosEmMassa, editarProjecao, emitirBoleto, emitirNota, enviarEmailFaturamento, gerarFaturamento } from "../useCases/faturamento";
 
 export const buscarFaturamentosPorContratoController = async (req: Request, res: Response) => {
   try {
@@ -117,6 +117,47 @@ export const buscarFaturamentosEProjecoesController = async (req: Request, res: 
   } catch (e) {
     console.error("Erro ao buscar faturamentos e projeções:", e);
     return res.status(500).json({ error: "Erro ao buscar faturamentos e projeções." });
+  }
+};
+
+export const buscarFaturamentosEProjecoesListaController = async (req: Request, res: Response) => {
+  try {
+    const q = req.query;
+
+    const filtros = {
+      status: q.status ? String(q.status) : "",
+      empresa: q.empresa ? String(q.empresa) : "",
+      unidade: q.unidade ? String(q.unidade) : "",
+      nota: q.nota ? String(q.nota) : "",
+
+      competenciaInicio: q.competenciaInicio ? String(q.competenciaInicio) : "",
+      competenciaFim: q.competenciaFim ? String(q.competenciaFim) : "",
+
+      pagamentoInicio: q.pagamentoInicio ? String(q.pagamentoInicio) : "",
+      pagamentoFim: q.pagamentoFim ? String(q.pagamentoFim) : "",
+
+      // ordenação/paginação (opcional)
+      sortBy: q.sortBy ? String(q.sortBy) : "competencia",
+      sortDir: q.sortDir ? String(q.sortDir) : "asc",
+      page: q.page ? Number(q.page) : 1,
+      pageSize: q.pageSize ? Number(q.pageSize) : 200,
+    };
+
+    const r = await buscarFaturamentosEProjecoesLista.execute(filtros);
+    return res.json(r);
+  } catch (e) {
+    console.error("Erro ao buscar faturamentos/projeções (lista):", e);
+    return res.status(500).json({ error: "Erro ao buscar faturamentos/projeções." });
+  }
+};
+
+export const buscarOpcoesFaturamentoController = async (req: Request, res: Response) => {
+  try {
+    const r = await buscarOpcoesFaturamento.execute();
+    return res.json(r);
+  } catch (e) {
+    console.error("Erro ao buscar opções do faturamento:", e);
+    return res.status(500).json({ error: "Erro ao buscar opções do faturamento." });
   }
 };
 

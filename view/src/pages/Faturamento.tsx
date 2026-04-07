@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import {
+  buscarFaturamentoLista,
   buscarFaturamentoOuProjecao,
+  buscarOpcoesFaturamento,
   editarFaturamento,
   editarFaturamentosEmMassa,
   editarProjecao,
@@ -61,6 +63,49 @@ export default function FaturamentoPage() {
   const [loadingBoletoId, setLoadingBoletoId] = useState<number | null>(null);
   const [loadingEmailId, setLoadingEmailId] = useState<number | null>(null);
   const [loadingNotaId, setLoadingNotaId] = useState<number | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await buscarOpcoesFaturamento();
+        setEmpresas(r.empresas || []);
+        setUnidades(r.unidades || []);
+
+        await handleBuscar();
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, []);
+
+  const handleBuscar = async () => {
+    try {
+      setLoading(true);
+      const r = await buscarFaturamentoLista({
+        status: filtros.status,
+        empresa: filtros.empresa,
+        unidade: filtros.unidade,
+        nota: filtros.nota,
+        competenciaInicio: filtros.competenciaInicio,
+        competenciaFim: filtros.competenciaFim,
+        pagamentoInicio: filtros.pagamentoInicio,
+        pagamentoFim: filtros.pagamentoFim,
+        page: 1,
+        pageSize: 200,
+        sortBy: "competencia",
+        sortDir: "asc",
+      });
+
+      setFaturamentos(r.items || []);
+      handleSelecionar([]);
+      calcularTotais(r.items || []);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao buscar faturamento.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calcularTotais = (lista: FaturamentoOuProjecao[]) => {
     setTotalTitulos(lista.length);
@@ -379,6 +424,7 @@ export default function FaturamentoPage() {
     try {
       setLoading(true);
       const lista = await buscarFaturamentoOuProjecao();
+      console.log("faturamentos/projecoes", lista);
       setFaturamentos(lista);
       carregarOpcoes(lista);
       calcularTotais(lista);
@@ -391,7 +437,7 @@ export default function FaturamentoPage() {
   };
 
   useEffect(() => {
-    buscarFaturamento();
+    // buscarFaturamento();
   }, []);
 
   const abrirModal = (item: FaturamentoOuProjecao) => {
@@ -655,12 +701,22 @@ export default function FaturamentoPage() {
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setFiltros({
-                status: "", empresa: "", unidade: "", competenciaInicio: "",
-                competenciaFim: "", pagamentoInicio: "", pagamentoFim: "", nota: ""
+                status: "", empresa: "", unidade: "",
+                competenciaInicio: "", competenciaFim: "",
+                pagamentoInicio: "", pagamentoFim: "",
+                nota: ""
               })}
               className="bg-gray-200 text-gray-600 px-4 py-2 rounded hover:bg-gray-300"
             >
               Limpar
+            </button>
+
+            <button
+              onClick={handleBuscar}
+              className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-60"
+              disabled={loading}
+            >
+              {loading ? "Buscando..." : "Buscar"}
             </button>
           </div>
         </div>
